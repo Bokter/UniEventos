@@ -6,3 +6,28 @@ services:
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/src:/app/src
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/unieventos
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: unieventos
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
