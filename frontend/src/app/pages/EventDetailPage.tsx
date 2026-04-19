@@ -10,7 +10,8 @@ import { EventMap } from "../components/EventMap";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { mockEvents, currentUser } from "../data/mockData";
+import { mockEvents } from "../data/mockData";
+import { obtenerUsuario } from "../services/auth.service";
 // import { projectId, publicAnonKey } from "/utils/supabase/info"; // Comentado - Implementar integración Mux
 import { toast } from "sonner";
 
@@ -79,10 +80,13 @@ export function EventDetailPage() {
     );
   }
 
-  const isOrganizer = currentUser?.id === event.organizer.id;
+  const usuario = obtenerUsuario();
+
+  // Es organizador si el id del usuario actual coincide con el del organizador del evento
+  const isOrganizer = !!usuario && String(usuario.id) === String(event.organizer.id);
 
   const handleStartStream = async () => {
-    if (!currentUser || !isOrganizer) {
+    if (!usuario || !isOrganizer) {
       toast.error("Solo el organizador del evento puede iniciar una transmisión");
       return;
     }
@@ -145,7 +149,7 @@ export function EventDetailPage() {
   };
 
   const handleEndStream = async () => {
-    if (!currentUser || !isOrganizer) {
+    if (!usuario || !isOrganizer) {
       toast.error("Solo el organizador del evento puede finalizar una transmisión");
       return;
     }
@@ -198,7 +202,7 @@ export function EventDetailPage() {
   };
 
   const handleToggleFavorite = () => {
-    if (!currentUser) {
+    if (!usuario) {
       navigate("/login");
       return;
     }
@@ -344,7 +348,7 @@ export function EventDetailPage() {
           <div className="md:col-span-1">
             <div className="sticky top-24 space-y-4">
               {/* Sign Up Button - Only shown when not logged in */}
-              {!currentUser && (
+              {!usuario && (
                 <Button
                   className="w-full bg-[#1D9E75] hover:bg-[#188c66] text-white"
                   onClick={() => navigate("/login")}

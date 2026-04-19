@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Navigate } from "react-router";
 import { ArrowLeft, ArrowRight, Upload, Check } from "lucide-react";
 import L from "leaflet";
 import { format } from "date-fns";
@@ -10,7 +10,8 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { CategoryBadge } from "../components/CategoryBadge";
-import { currentUser, EventCategory, mockEvents } from "../data/mockData";
+import { EventCategory, mockEvents } from "../data/mockData";
+import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
 // Fix for default marker icon
@@ -109,14 +110,10 @@ export function PublishEventPage() {
   const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
 
-  useEffect(() => {
-    if (!currentUser || currentUser.role !== 'Organizer') {
-      navigate("/login");
-    }
-  }, [navigate]);
-
-  if (!currentUser || currentUser.role !== 'Organizer') {
-    return null;
+  const { usuario, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!usuario || usuario.rol !== 'organizador') {
+    return <Navigate to="/login" replace />;
   }
 
   const handleNext = () => {
@@ -140,8 +137,10 @@ export function PublishEventPage() {
   };
 
   const handleSubmit = () => {
-    if (!locationCoords) return;
+    if (!locationCoords || !usuario) return;
 
+    // TODO: cuando el módulo de eventos esté listo, reemplazar con:
+    // fetch('/eventos', { method: 'POST', headers: { Authorization: `Bearer ${obtenerToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({...}) })
     const newEvent = {
       id: String(mockEvents.length + 1),
       title,
@@ -155,13 +154,17 @@ export function PublishEventPage() {
         lng: locationCoords[1],
       },
       coverImage: coverImage || 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      organizer: currentUser,
+      organizer: {
+        id: String(usuario.id),
+        name: usuario.nombre_completo,
+        email: usuario.email,
+      },
       status: 'In review' as const,
       submittedDate: new Date(),
     };
 
     mockEvents.push(newEvent);
-    toast.success("Event submitted for review!");
+    toast.success("¡Evento enviado a revisión!");
     navigate("/organizer/dashboard");
   };
 
@@ -432,8 +435,8 @@ export function PublishEventPage() {
                   <p style={{ fontWeight: 600 }}>{locationName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Organizer</p>
-                  <p style={{ fontWeight: 600 }}>{currentUser.name}</p>
+                  <p className="text-sm text-muted-foreground">Organizador</p>
+                  <p style={{ fontWeight: 600 }}>{usuario.nombre_completo}</p>
                 </div>
               </div>
 

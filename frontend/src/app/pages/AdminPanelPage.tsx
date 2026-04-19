@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router";
+import { useState } from "react";
+import { useNavigate, Link, Navigate } from "react-router";
 import { FileText, Users, Tag, Flag, LogOut, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
-import { currentUser, getPendingEvents, mockEvents, setCurrentUser, Event } from "../data/mockData";
+import { getPendingEvents, mockEvents, Event } from "../data/mockData";
+import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
 export function AdminPanelPage() {
@@ -20,14 +21,11 @@ export function AdminPanelPage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  useEffect(() => {
-    if (!currentUser || currentUser.role !== 'Admin') {
-      navigate("/login");
-    }
-  }, [navigate]);
+  const { usuario, isLoading, logout } = useAuth();
 
-  if (!currentUser || currentUser.role !== 'Admin') {
-    return null;
+  if (isLoading) return null;
+  if (!usuario || usuario.rol !== 'admin') {
+    return <Navigate to="/login" replace />;
   }
 
   const pendingEvents = getPendingEvents();
@@ -55,22 +53,22 @@ export function AdminPanelPage() {
     selectedEvent.status = 'Rejected';
     selectedEvent.rejectionReason = rejectionReason;
     toast.success(`Event "${selectedEvent.title}" rejected`);
-    
+
     setRejectDialogOpen(false);
     setSelectedEvent(null);
     setRejectionReason("");
   };
 
   const handleLogout = () => {
-    setCurrentUser(null);
-    toast.success("Logged out successfully");
+    logout();
+    toast.success("Sesión cerrada");
     navigate("/");
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showSearch={false} />
-      
+
       <div className="flex">
         {/* Sidebar */}
         <div className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)]">
@@ -79,11 +77,10 @@ export function AdminPanelPage() {
             <nav className="space-y-1">
               <button
                 onClick={() => setActiveTab('pending')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  activeTab === 'pending'
-                    ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                    : 'hover:bg-gray-50 text-muted-foreground'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'pending'
+                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
+                  : 'hover:bg-gray-50 text-muted-foreground'
+                  }`}
               >
                 <FileText className="h-4 w-4" />
                 <span>Pending review</span>
@@ -95,44 +92,40 @@ export function AdminPanelPage() {
               </button>
               <button
                 onClick={() => setActiveTab('all')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  activeTab === 'all'
-                    ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                    : 'hover:bg-gray-50 text-muted-foreground'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'all'
+                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
+                  : 'hover:bg-gray-50 text-muted-foreground'
+                  }`}
               >
                 <FileText className="h-4 w-4" />
                 <span>All events</span>
               </button>
               <button
                 onClick={() => setActiveTab('users')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  activeTab === 'users'
-                    ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                    : 'hover:bg-gray-50 text-muted-foreground'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'users'
+                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
+                  : 'hover:bg-gray-50 text-muted-foreground'
+                  }`}
               >
                 <Users className="h-4 w-4" />
                 <span>Users</span>
               </button>
               <button
                 onClick={() => setActiveTab('categories')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  activeTab === 'categories'
-                    ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                    : 'hover:bg-gray-50 text-muted-foreground'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'categories'
+                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
+                  : 'hover:bg-gray-50 text-muted-foreground'
+                  }`}
               >
                 <Tag className="h-4 w-4" />
                 <span>Categories</span>
               </button>
               <button
                 onClick={() => setActiveTab('reports')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  activeTab === 'reports'
-                    ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                    : 'hover:bg-gray-50 text-muted-foreground'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'reports'
+                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
+                  : 'hover:bg-gray-50 text-muted-foreground'
+                  }`}
               >
                 <Flag className="h-4 w-4" />
                 <span>Reports</span>
@@ -145,7 +138,7 @@ export function AdminPanelPage() {
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-red-50 text-destructive transition-colors"
               >
                 <LogOut className="h-4 w-4" />
-                <span>Log out</span>
+                <span>Cerrar sesión</span>
               </button>
             </div>
           </div>
