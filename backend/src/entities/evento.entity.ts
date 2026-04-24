@@ -47,7 +47,7 @@ export class Evento {
   estado: EstadoEvento;
 
   @Column({ type: 'text', nullable: true })
-  observacion_admin: string;
+  observacion_admin: string | null;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
