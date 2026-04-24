@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Navigate } from "react-router";
+import { useNavigate, Navigate, useSearchParams } from "react-router";
 import { ArrowLeft, ArrowRight, Upload, Check } from "lucide-react";
 import L from "leaflet";
 import { format } from "date-fns";
@@ -96,6 +96,8 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
 
 export function PublishEventPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
   const [step, setStep] = useState(1);
 
   // Form state
@@ -111,6 +113,25 @@ export function PublishEventPage() {
   const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
 
   const { usuario, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (editId) {
+      const eventToEdit = mockEvents.find(e => e.id === editId);
+      if (eventToEdit) {
+        setTitle(eventToEdit.title);
+        setDescription(eventToEdit.description);
+        setCategory(eventToEdit.category);
+        setDateStart(format(eventToEdit.dateStart, 'yyyy-MM-dd'));
+        setTimeStart(format(eventToEdit.dateStart, 'HH:mm'));
+        setDateEnd(format(eventToEdit.dateEnd, 'yyyy-MM-dd'));
+        setTimeEnd(format(eventToEdit.dateEnd, 'HH:mm'));
+        setLocationName(eventToEdit.location.name);
+        setLocationCoords([eventToEdit.location.lat, eventToEdit.location.lng]);
+        setCoverImage(eventToEdit.coverImage);
+      }
+    }
+  }, [editId]);
+
   if (isLoading) return null;
   if (!usuario || usuario.rol !== 'organizador') {
     return <Navigate to="/login" replace />;
@@ -136,36 +157,58 @@ export function PublishEventPage() {
     setStep(step - 1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (targetStatus: 'Draft' | 'In review' = 'In review') => {
     if (!locationCoords || !usuario) return;
 
-    // TODO: cuando el módulo de eventos esté listo, reemplazar con:
-    // fetch('/eventos', { method: 'POST', headers: { Authorization: `Bearer ${obtenerToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({...}) })
-    const newEvent = {
-      id: String(mockEvents.length + 1),
-      title,
-      description,
-      category,
-      dateStart: new Date(`${dateStart}T${timeStart}`),
-      dateEnd: new Date(`${dateEnd}T${timeEnd}`),
-      location: {
-        name: locationName,
-        lat: locationCoords[0],
-        lng: locationCoords[1],
-      },
-      coverImage: coverImage || 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      organizer: {
-        id: String(usuario.id),
-        name: usuario.nombre_completo,
-        email: usuario.email,
-      },
-      status: 'In review' as const,
-      submittedDate: new Date(),
-    };
+    if (editId) {
+      const eventToEdit = mockEvents.find(e => e.id === editId);
+      if (eventToEdit) {
+        eventToEdit.title = title;
+        eventToEdit.description = description;
+        eventToEdit.category = category;
+        eventToEdit.dateStart = new Date(`${dateStart}T${timeStart}`);
+        eventToEdit.dateEnd = new Date(`${dateEnd}T${timeEnd}`);
+        eventToEdit.location = {
+          name: locationName,
+          lat: locationCoords[0],
+          lng: locationCoords[1],
+        };
+        eventToEdit.coverImage = coverImage || eventToEdit.coverImage;
+        // Si estaba rechazado o en borrador, lo pasamos al estado indicado
+        eventToEdit.status = targetStatus;
+        if (targetStatus === 'In review') {
+          eventToEdit.rejectionReason = undefined;
+        }
+        toast.success(targetStatus === 'Draft' ? "¡Borrador actualizado!" : "¡Evento actualizado y enviado a revisión!");
+        navigate("/organizer/dashboard");
+      }
+    } else {
+      const newEvent = {
+        id: String(mockEvents.length + 1),
+        title,
+        description,
+        category,
+        dateStart: new Date(`${dateStart}T${timeStart}`),
+        dateEnd: new Date(`${dateEnd}T${timeEnd}`),
+        location: {
+          name: locationName,
+          lat: locationCoords[0],
+          lng: locationCoords[1],
+        },
+        coverImage: coverImage || 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+        organizer: {
+          id: String(usuario.id),
+          name: usuario.nombre_completo,
+          email: usuario.email,
+        },
+        status: targetStatus,
+        submittedDate: targetStatus === 'In review' ? new Date() : undefined,
+      };
 
-    mockEvents.push(newEvent);
-    toast.success("¡Evento enviado a revisión!");
-    navigate("/organizer/dashboard");
+      mockEvents.push(newEvent);
+      toast.success(targetStatus === 'Draft' ? "¡Guardado como borrador!" : "¡Evento enviado a revisión!");
+      navigate("/organizer/dashboard");
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,9 +237,9 @@ export function PublishEventPage() {
           Back to Dashboard
         </Button>
 
-        <h1 className="text-3xl mb-2" style={{ fontWeight: 700 }}>Publish New Event</h1>
+        <h1 className="text-3xl mb-2" style={{ fontWeight: 700 }}>{editId ? "Editar Evento" : "Publicar Nuevo Evento"}</h1>
         <p className="text-muted-foreground mb-8">
-          Create and submit an event for review
+          {editId ? "Actualiza los datos de tu evento" : "Crea y envía un evento para revisión"}
         </p>
 
         {/* Step Indicator */}
@@ -471,9 +514,14 @@ export function PublishEventPage() {
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} className="bg-[#1D9E75] hover:bg-[#188c66]">
-                Submit for Review
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => handleSubmit('Draft')} variant="outline" className="border-primary text-primary hover:bg-primary/5">
+                  Guardar como borrador
+                </Button>
+                <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66]">
+                  Submit for Review
+                </Button>
+              </div>
             )}
           </div>
         </div>

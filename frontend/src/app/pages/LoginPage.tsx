@@ -16,7 +16,10 @@ function redirigirPorRol(rol: Rol, navigate: ReturnType<typeof useNavigate>) {
     navigate("/admin");
   } else if (rol === "organizador") {
     navigate("/organizer/dashboard");
-  } else {
+  } else if (rol === "miembro") {
+    navigate("/user/dashboard");
+  }
+  else {
     navigate("/");
   }
 }

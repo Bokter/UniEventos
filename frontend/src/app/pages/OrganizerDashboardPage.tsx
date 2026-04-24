@@ -10,14 +10,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import {
   getEventsByOrganizer,
   Event,
-  // mockData sigue usándose para los eventos mientras el módulo de eventos no esté listo
+  mockEvents
 } from "../data/mockData";
+import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
 export function OrganizerDashboardPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'events' | 'notifications' | 'profile'>('events');
+  const [activeTab, setActiveTab] = useState<SidebarTab>('events');
+  const [refresh, setRefresh] = useState(0);
 
   const { usuario, isLoading, logout } = useAuth();
 
@@ -35,9 +37,12 @@ export function OrganizerDashboardPage() {
   };
 
   const handleCancel = (eventId: string) => {
-    // TODO: cuando el módulo de eventos esté listo, llamar a PATCH /eventos/:id/cancelar
-    toast.success("Evento cancelado (simulado)");
-    console.log("Cancelar evento:", eventId);
+    const event = mockEvents.find(e => e.id === eventId);
+    if (event) {
+      event.status = 'Cancelled';
+      toast.success("Evento cancelado exitosamente");
+      setRefresh(prev => prev + 1); // Forzar re-render
+    }
   };
 
   const handleLogout = () => {
@@ -52,63 +57,7 @@ export function OrganizerDashboardPage() {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)]">
-          <div className="p-6">
-            <h2 className="text-sm text-muted-foreground mb-4">PANEL DEL ORGANIZADOR</h2>
-            <nav className="space-y-1">
-              <button
-                onClick={() => setActiveTab('events')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  activeTab === 'events'
-                    ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                    : 'hover:bg-gray-50 text-muted-foreground'
-                }`}
-              >
-                <FileText className="h-4 w-4" />
-                <span>Mis eventos</span>
-              </button>
-              <button
-                onClick={() => navigate("/organizer/publish")}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-gray-50 text-muted-foreground transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Publicar evento</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('notifications')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  activeTab === 'notifications'
-                    ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                    : 'hover:bg-gray-50 text-muted-foreground'
-                }`}
-              >
-                <Bell className="h-4 w-4" />
-                <span>Notificaciones</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                  activeTab === 'profile'
-                    ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                    : 'hover:bg-gray-50 text-muted-foreground'
-                }`}
-              >
-                <User className="h-4 w-4" />
-                <span>Mi perfil</span>
-              </button>
-            </nav>
-
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-red-50 text-destructive transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Cerrar sesión</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Contenido principal */}
         <div className="flex-1 p-8">
@@ -121,13 +70,6 @@ export function OrganizerDashboardPage() {
                     Gestiona y realiza seguimiento de tus eventos
                   </p>
                 </div>
-                <Button
-                  onClick={() => navigate("/organizer/publish")}
-                  className="bg-[#1D9E75] hover:bg-[#188c66] text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Publicar evento
-                </Button>
               </div>
 
               {organizerEvents.length > 0 ? (
@@ -221,13 +163,6 @@ export function OrganizerDashboardPage() {
                   <p className="text-muted-foreground mb-6">
                     ¡Publica tu primer evento para empezar!
                   </p>
-                  <Button
-                    onClick={() => navigate("/organizer/publish")}
-                    className="bg-[#1D9E75] hover:bg-[#188c66] text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Publicar evento
-                  </Button>
                 </div>
               )}
             </>

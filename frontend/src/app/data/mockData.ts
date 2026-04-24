@@ -230,3 +230,28 @@ export const getApprovedEvents = () => mockEvents.filter(e => e.status === 'Appr
 export const getPendingEvents = () => mockEvents.filter(e => e.status === 'In review');
 export const getEventsByOrganizer = (organizerId: string) => 
   mockEvents.filter(e => e.organizer.id === organizerId);
+
+export const mockCategories = [
+  { id: '1', name: 'Cultural', description: 'Eventos culturales y artísticos', eventCount: 15 },
+  { id: '2', name: 'Academic', description: 'Conferencias, charlas y seminarios', eventCount: 28 },
+  { id: '3', name: 'Sports', description: 'Eventos deportivos y torneos', eventCount: 8 },
+  { id: '4', name: 'Workshop', description: 'Talleres prácticos y de habilidades', eventCount: 12 },
+  { id: '5', name: 'Other', description: 'Otros tipos de eventos', eventCount: 5 },
+];
+
+// Simulador de eventos favoritos para el usuario actual
+export let mockFavoriteEvents = mockEvents.filter(e => ['1', '2'].includes(e.id));
+
+export const toggleFavorite = (eventId: string) => {
+  const event = mockEvents.find(e => e.id === eventId);
+  if (!event) return false;
+  
+  const index = mockFavoriteEvents.findIndex(e => e.id === eventId);
+  if (index > -1) {
+    mockFavoriteEvents.splice(index, 1);
+    return false;
+  } else {
+    mockFavoriteEvents.push(event);
+    return true;
+  }
+};

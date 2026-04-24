@@ -75,6 +75,15 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                     Dashboard
                   </Button>
                 )}
+                {(!usuario.rol || usuario.rol === 'miembro') && (
+                  <Button
+                    onClick={() => navigate("/user/dashboard")}
+                    variant="outline"
+                    className="border-primary text-primary hover:bg-primary/5"
+                  >
+                    Mi Panel
+                  </Button>
+                )}
                 <div className="flex items-center gap-2 ml-2">
                   <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
                     {usuario.nombre_completo.charAt(0).toUpperCase()}

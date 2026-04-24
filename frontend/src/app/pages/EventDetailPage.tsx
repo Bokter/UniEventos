@@ -10,7 +10,7 @@ import { EventMap } from "../components/EventMap";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { mockEvents } from "../data/mockData";
+import { mockEvents, mockFavoriteEvents, toggleFavorite } from "../data/mockData";
 import { obtenerUsuario } from "../services/auth.service";
 // import { projectId, publicAnonKey } from "/utils/supabase/info"; // Comentado - Implementar integración Mux
 import { toast } from "sonner";
@@ -27,7 +27,9 @@ interface StreamData {
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(() => {
+    return mockFavoriteEvents.some(e => e.id === id);
+  });
   const [streamData, setStreamData] = useState<StreamData | null>(null);
   const [isLoadingStream, setIsLoadingStream] = useState(false);
   const [showStreamDialog, setShowStreamDialog] = useState(false);
@@ -207,8 +209,11 @@ export function EventDetailPage() {
       return;
     }
 
-    setIsFavorite(!isFavorite);
-    if (!isFavorite) {
+    if (!id) return;
+    const isNowFavorite = toggleFavorite(id);
+    setIsFavorite(isNowFavorite);
+    
+    if (isNowFavorite) {
       toast.success("Event added to favorites!");
     } else {
       toast.success("Event removed from favorites");
@@ -347,16 +352,6 @@ export function EventDetailPage() {
           {/* Sidebar */}
           <div className="md:col-span-1">
             <div className="sticky top-24 space-y-4">
-              {/* Sign Up Button - Only shown when not logged in */}
-              {!usuario && (
-                <Button
-                  className="w-full bg-[#1D9E75] hover:bg-[#188c66] text-white"
-                  onClick={() => navigate("/login")}
-                >
-                  Sign Up for Event
-                </Button>
-              )}
-
               {/* Favorite Button */}
               <Button
                 variant={isFavorite ? "default" : "outline"}

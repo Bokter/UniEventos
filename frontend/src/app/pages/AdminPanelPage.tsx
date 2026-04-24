@@ -10,16 +10,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
-import { getPendingEvents, mockEvents, Event } from "../data/mockData";
+import { getPendingEvents, mockEvents, Event, mockUsers, mockCategories, User, UserRole } from "../data/mockData";
+import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
+import { EditUserModal } from "../components/EditUserModal";
+import { EditCategoryModal } from "../components/EditCategoryModal";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
 export function AdminPanelPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'pending' | 'all' | 'users' | 'categories' | 'reports'>('pending');
+  const [activeTab, setActiveTab] = useState<SidebarTab>('pending');
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+
+  const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
+  const [selectedUserToEdit, setSelectedUserToEdit] = useState<User | null>(null);
+
+  const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
+  const [selectedCategoryToEdit, setSelectedCategoryToEdit] = useState<any | null>(null);
+  
+  const [refresh, setRefresh] = useState(0);
 
   const { usuario, isLoading, logout } = useAuth();
 
@@ -65,84 +76,75 @@ export function AdminPanelPage() {
     navigate("/");
   };
 
+  const handleEditUserClick = (user: User) => {
+    setSelectedUserToEdit(user);
+    setEditUserDialogOpen(true);
+  };
+
+  const handleSaveUserRole = (userId: string, newRole: UserRole) => {
+    const user = mockUsers.find(u => u.id === userId);
+    if (user) {
+      user.role = newRole;
+      toast.success("Rol de usuario actualizado");
+      setRefresh(prev => prev + 1);
+    }
+  };
+
+  const handleEditCategoryClick = (category: any) => {
+    setSelectedCategoryToEdit(category);
+    setEditCategoryDialogOpen(true);
+  };
+
+  const handleSaveCategory = (categoryId: string | null, newName: string, newDescription: string) => {
+    if (categoryId) {
+      const category = mockCategories.find(c => c.id === categoryId);
+      if (category) {
+        category.name = newName as any;
+        category.description = newDescription;
+        toast.success("Categoría actualizada");
+      }
+    } else {
+      const newCategory = {
+        id: String(mockCategories.length + 1),
+        name: newName,
+        description: newDescription,
+        eventCount: 0
+      };
+      mockCategories.push(newCategory);
+      toast.success("Categoría creada");
+    }
+    setRefresh(prev => prev + 1);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    if (confirm("¿Estás seguro de que quieres eliminar este usuario?")) {
+      const index = mockUsers.findIndex(u => u.id === userId);
+      if (index > -1) {
+        mockUsers.splice(index, 1);
+        toast.success("Usuario eliminado");
+        setRefresh(prev => prev + 1);
+      }
+    }
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    if (confirm("¿Estás seguro de que quieres eliminar esta categoría?")) {
+      const index = mockCategories.findIndex(c => c.id === categoryId);
+      if (index > -1) {
+        mockCategories.splice(index, 1);
+        toast.success("Categoría eliminada");
+        setRefresh(prev => prev + 1);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showSearch={false} />
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)]">
-          <div className="p-6">
-            <h2 className="text-sm text-muted-foreground mb-4">ADMIN PANEL</h2>
-            <nav className="space-y-1">
-              <button
-                onClick={() => setActiveTab('pending')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'pending'
-                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                  : 'hover:bg-gray-50 text-muted-foreground'
-                  }`}
-              >
-                <FileText className="h-4 w-4" />
-                <span>Pending review</span>
-                {pendingEvents.length > 0 && (
-                  <span className="ml-auto bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">
-                    {pendingEvents.length}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'all'
-                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                  : 'hover:bg-gray-50 text-muted-foreground'
-                  }`}
-              >
-                <FileText className="h-4 w-4" />
-                <span>All events</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('users')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'users'
-                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                  : 'hover:bg-gray-50 text-muted-foreground'
-                  }`}
-              >
-                <Users className="h-4 w-4" />
-                <span>Users</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('categories')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'categories'
-                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                  : 'hover:bg-gray-50 text-muted-foreground'
-                  }`}
-              >
-                <Tag className="h-4 w-4" />
-                <span>Categories</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('reports')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === 'reports'
-                  ? 'bg-primary/10 text-primary border-l-4 border-primary'
-                  : 'hover:bg-gray-50 text-muted-foreground'
-                  }`}
-              >
-                <Flag className="h-4 w-4" />
-                <span>Reports</span>
-              </button>
-            </nav>
-
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-red-50 text-destructive transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Cerrar sesión</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} pendingEventsCount={pendingEvents.length} />
 
         {/* Main Content */}
         <div className="flex-1 p-8">
@@ -279,29 +281,92 @@ export function AdminPanelPage() {
           {activeTab === 'users' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Users</h1>
+                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Usuarios</h1>
                 <p className="text-muted-foreground">
-                  Manage system users
+                  Gestionar usuarios del sistema
                 </p>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-muted-foreground">User management interface</p>
+              <div className="bg-white rounded-lg border border-gray-200">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Rol</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell style={{ fontWeight: 500 }}>{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
+                            user.role === 'Organizer' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="ghost" onClick={() => handleEditUserClick(user)}>Editar</Button>
+                          <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteUser(user.id)}>Eliminar</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </>
           )}
 
           {activeTab === 'categories' && (
             <>
-              <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Categories</h1>
-                <p className="text-muted-foreground">
-                  Manage event categories
-                </p>
+              <div className="mb-6 flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Categorías</h1>
+                  <p className="text-muted-foreground">
+                    Gestionar categorías de eventos
+                  </p>
+                </div>
+                <Button 
+                  className="bg-primary text-white"
+                  onClick={() => {
+                    setSelectedCategoryToEdit(null);
+                    setEditCategoryDialogOpen(true);
+                  }}
+                >
+                  Nueva Categoría
+                </Button>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                <Tag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-muted-foreground">Category management interface</p>
+              <div className="bg-white rounded-lg border border-gray-200">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Descripción</TableHead>
+                      <TableHead>Eventos Totales</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockCategories.map((category) => (
+                      <TableRow key={category.id}>
+                        <TableCell>
+                          <CategoryBadge category={category.name as any} />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{category.description}</TableCell>
+                        <TableCell>{category.eventCount}</TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="ghost" onClick={() => handleEditCategoryClick(category)}>Editar</Button>
+                          <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteCategory(category.id)}>Eliminar</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </>
           )}
@@ -370,6 +435,20 @@ export function AdminPanelPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modales de edición */}
+      <EditUserModal 
+        isOpen={editUserDialogOpen} 
+        onClose={() => setEditUserDialogOpen(false)} 
+        user={selectedUserToEdit} 
+        onSave={handleSaveUserRole} 
+      />
+      <EditCategoryModal 
+        isOpen={editCategoryDialogOpen} 
+        onClose={() => setEditCategoryDialogOpen(false)} 
+        category={selectedCategoryToEdit} 
+        onSave={handleSaveCategory} 
+      />
     </div>
   );
 }
