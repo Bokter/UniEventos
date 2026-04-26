@@ -44,6 +44,34 @@ export function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: signInEmail, password: signInPassword })
+      });
+      
+      if (!response.ok) throw new Error('Credenciales inválidas');
+      
+      const { token, usuario } = await response.json();
+      
+      // Guardar token y actualizar contexto (Ejemplo)
+      // localStorage.setItem('token', token);
+      // loginContext(usuario); 
+      
+      toast.success(`¡Bienvenido/a, ${usuario.nombre_completo}!`);
+      redirigirPorRol(usuario.rol, navigate);
+      return;
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al iniciar sesión");
+      return;
+    } finally {
+      setIsLoading(false);
+    }
+    */
+
     try {
       const usuario = await login(signInEmail, signInPassword);
       toast.success(`¡Bienvenido/a, ${usuario.nombre_completo}!`);
@@ -79,6 +107,34 @@ export function LoginPage() {
     }
 
     setIsLoading(true);
+
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          nombre_completo: registerName, 
+          email: registerEmail, 
+          password: registerPassword 
+        })
+      });
+      
+      if (!response.ok) throw new Error('Error en el registro');
+      
+      const { token, usuario } = await response.json();
+      
+      toast.success("¡Cuenta creada exitosamente!");
+      redirigirPorRol(usuario.rol, navigate);
+      return;
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al registrarse");
+      return;
+    } finally {
+      setIsLoading(false);
+    }
+    */
 
     try {
       const usuario = await register(registerName, registerEmail, registerPassword);

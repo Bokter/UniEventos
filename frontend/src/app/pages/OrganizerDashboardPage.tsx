@@ -28,15 +28,50 @@ export function OrganizerDashboardPage() {
     return <Navigate to="/login" replace />;
   }
 
-  // Por ahora usamos mockData para los eventos (hasta que el módulo de eventos esté listo)
-  // Cuando el backend esté listo, reemplazar con: fetch('/eventos?organizador=true', { headers: { Authorization: `Bearer ${obtenerToken()}` } })
+  // Lógica de carga inicial 
+  /*
+  useEffect(() => {
+    const fetchOrganizerEvents = async () => {
+      try {
+        const response = await fetch(`${API_URL}/eventos/mis-eventos`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        setEvents(data);
+      } catch (error) {
+        toast.error("Error al cargar tus eventos");
+      }
+    };
+    fetchOrganizerEvents();
+  }, [token]);
+  */
+
   const organizerEvents = getEventsByOrganizer(String(usuario.id));
 
   const handleEdit = (eventId: string) => {
     navigate(`/organizer/publish?edit=${eventId}`);
   };
 
-  const handleCancel = (eventId: string) => {
+  const handleCancel = async (eventId: string) => {
+    if (!confirm("¿Estás seguro de que quieres cancelar este evento? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const response = await fetch(`${API_URL}/eventos/${eventId}/cancelar`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Error al cancelar');
+      toast.success("Evento cancelado");
+    } catch (error) {
+      toast.error("No se pudo cancelar el evento");
+      return;
+    }
+    */
+
     const event = mockEvents.find(e => e.id === eventId);
     if (event) {
       event.status = 'Cancelled';
@@ -73,7 +108,7 @@ export function OrganizerDashboardPage() {
               </div>
 
               {organizerEvents.length > 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200">
+                <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -106,7 +141,7 @@ export function OrganizerDashboardPage() {
                             <StatusBadge status={event.status} />
                             {/* Mostrar observación del admin si fue rechazado */}
                             {event.status === 'Rejected' && event.rejectionReason && (
-                              <div className="mt-1 text-xs text-destructive bg-red-50 border border-red-200 rounded p-2">
+                              <div className="mt-1 text-xs text-destructive bg-red-50 border border-red-200 rounded p-2 max-w-md break-words whitespace-normal">
                                 <span style={{ fontWeight: 600 }}>Observación del admin: </span>
                                 {event.rejectionReason}
                               </div>

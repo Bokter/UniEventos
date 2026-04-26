@@ -29,7 +29,7 @@ export function AdminPanelPage() {
 
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [selectedCategoryToEdit, setSelectedCategoryToEdit] = useState<any | null>(null);
-  
+
   const [refresh, setRefresh] = useState(0);
 
   const { usuario, isLoading, logout } = useAuth();
@@ -42,11 +42,27 @@ export function AdminPanelPage() {
   const pendingEvents = getPendingEvents();
   const allEvents = mockEvents;
 
-  const handleApprove = (eventId: string) => {
+  const handleApprove = async (eventId: string) => {
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const response = await fetch(`${API_URL}/eventos/${eventId}/aprobar`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Error al aprobar');
+      toast.success("Evento aprobado!");
+    } catch (error) {
+      toast.error("Error al conectar con el servidor");
+      return;
+    }
+    */
+
     const event = mockEvents.find(e => e.id === eventId);
     if (event) {
       event.status = 'Approved';
       toast.success(`Event "${event.title}" approved!`);
+      setRefresh(prev => prev + 1);
     }
   };
 
@@ -55,11 +71,27 @@ export function AdminPanelPage() {
     setRejectDialogOpen(true);
   };
 
-  const handleRejectConfirm = () => {
+  const handleRejectConfirm = async () => {
     if (!selectedEvent || !rejectionReason.trim()) {
       toast.error("Please provide a rejection reason");
       return;
     }
+
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const response = await fetch(`${API_URL}/eventos/${selectedEvent.id}/rechazar`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ observacion: rejectionReason })
+      });
+      if (!response.ok) throw new Error('Error al rechazar');
+      toast.success("Evento rechazado");
+    } catch (error) {
+      toast.error("Error al procesar el rechazo");
+      return;
+    }
+    */
 
     selectedEvent.status = 'Rejected';
     selectedEvent.rejectionReason = rejectionReason;
@@ -68,6 +100,7 @@ export function AdminPanelPage() {
     setRejectDialogOpen(false);
     setSelectedEvent(null);
     setRejectionReason("");
+    setRefresh(prev => prev + 1);
   };
 
   const handleLogout = () => {
@@ -81,7 +114,22 @@ export function AdminPanelPage() {
     setEditUserDialogOpen(true);
   };
 
-  const handleSaveUserRole = (userId: string, newRole: UserRole) => {
+  const handleSaveUserRole = async (userId: string, newRole: UserRole) => {
+    /* 
+    // CONEXIÓN CON BACKEND (Ejemplo de implementación)
+    try {
+      const response = await fetch(`${API_URL}/admin/usuarios/${userId}/rol`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ rol: newRole })
+      });
+      if (!response.ok) throw new Error('Error al actualizar rol');
+    } catch (error) {
+      toast.error("Error al actualizar el rol");
+      return;
+    }
+    */
+
     const user = mockUsers.find(u => u.id === userId);
     if (user) {
       user.role = newRole;
@@ -95,7 +143,24 @@ export function AdminPanelPage() {
     setEditCategoryDialogOpen(true);
   };
 
-  const handleSaveCategory = (categoryId: string | null, newName: string, newDescription: string) => {
+  const handleSaveCategory = async (categoryId: string | null, newName: string, newDescription: string) => {
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const url = categoryId ? `${API_URL}/categorias/${categoryId}` : `${API_URL}/categorias`;
+      const method = categoryId ? 'PUT' : 'POST';
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ nombre: newName, descripcion: newDescription })
+      });
+      if (!response.ok) throw new Error('Error al guardar categoría');
+    } catch (error) {
+      toast.error("Error al procesar la categoría");
+      return;
+    }
+    */
+
     if (categoryId) {
       const category = mockCategories.find(c => c.id === categoryId);
       if (category) {
@@ -108,7 +173,8 @@ export function AdminPanelPage() {
         id: String(mockCategories.length + 1),
         name: newName,
         description: newDescription,
-        eventCount: 0
+        eventCount: 0,
+        isActive: true
       };
       mockCategories.push(newCategory);
       toast.success("Categoría creada");
@@ -116,8 +182,22 @@ export function AdminPanelPage() {
     setRefresh(prev => prev + 1);
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
     if (confirm("¿Estás seguro de que quieres eliminar este usuario?")) {
+      /* 
+      // CONEXIÓN CON BACKEND
+      try {
+        const response = await fetch(`${API_URL}/admin/usuarios/${userId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Error al eliminar');
+      } catch (error) {
+        toast.error("Error al eliminar el usuario");
+        return;
+      }
+      */
+
       const index = mockUsers.findIndex(u => u.id === userId);
       if (index > -1) {
         mockUsers.splice(index, 1);
@@ -127,14 +207,84 @@ export function AdminPanelPage() {
     }
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
+  const handleDeleteCategory = async (categoryId: string) => {
     if (confirm("¿Estás seguro de que quieres eliminar esta categoría?")) {
+      /* 
+      // CONEXIÓN CON BACKEND
+      try {
+        const response = await fetch(`${API_URL}/categorias/${categoryId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Error al eliminar');
+      } catch (error) {
+        toast.error("Error al eliminar la categoría");
+        return;
+      }
+      */
+
       const index = mockCategories.findIndex(c => c.id === categoryId);
       if (index > -1) {
         mockCategories.splice(index, 1);
         toast.success("Categoría eliminada");
         setRefresh(prev => prev + 1);
       }
+    }
+  };
+
+  const handleToggleUserStatus = async (userId: string) => {
+    // Lógica para Mock (Actual)
+    const user = mockUsers.find(u => u.id === userId);
+    if (user) {
+      const newStatus = user.isActive === false ? true : false;
+
+      /* 
+      // CONEXIÓN CON BACKEND 
+      try {
+        const response = await fetch(`${API_URL}/admin/usuarios/${userId}/estado`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ activo: newStatus })
+        });
+        if (!response.ok) throw new Error('Error al actualizar estado');
+        toast.success(`Usuario ${newStatus ? 'activado' : 'desactivado'}`);
+      } catch (error) {
+        toast.error("No se pudo cambiar el estado del usuario");
+        return;
+      }
+      */
+
+      user.isActive = newStatus;
+      toast.success(`Usuario ${user.isActive ? 'activado' : 'desactivado'}`);
+      setRefresh(prev => prev + 1);
+    }
+  };
+
+  const handleToggleCategoryStatus = async (categoryId: string) => {
+    // Lógica para Mock (Actual)
+    const category = mockCategories.find(c => c.id === categoryId);
+    if (category) {
+      const newStatus = category.isActive === false ? true : false;
+
+      /* 
+      // CONEXIÓN CON BACKEND 
+      try {
+        const response = await fetch(`${API_URL}/admin/categorias/${categoryId}/estado`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ activo: newStatus })
+        });
+        if (!response.ok) throw new Error('Error al actualizar estado');
+        toast.success(`Categoría ${newStatus ? 'activada' : 'desactivada'}`);
+      } catch (error) {
+        toast.error("No se pudo cambiar el estado de la categoría");
+        return;
+      }
+      */
+
+      category.isActive = newStatus;
+      toast.success(`Categoría ${category.isActive ? 'activada' : 'desactivada'}`);
+      setRefresh(prev => prev + 1);
     }
   };
 
@@ -158,7 +308,7 @@ export function AdminPanelPage() {
               </div>
 
               {pendingEvents.length > 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200">
+                <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -237,7 +387,7 @@ export function AdminPanelPage() {
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg border border-gray-200">
+              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -286,13 +436,14 @@ export function AdminPanelPage() {
                   Gestionar usuarios del sistema
                 </p>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200">
+              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nombre</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Rol</TableHead>
+                      <TableHead>Estado</TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -302,15 +453,22 @@ export function AdminPanelPage() {
                         <TableCell style={{ fontWeight: 500 }}>{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
-                            user.role === 'Organizer' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs ${user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
+                              user.role === 'Organizer' ? 'bg-blue-100 text-blue-700' :
+                                'bg-gray-100 text-gray-700'
+                            }`}>
                             {user.role}
                           </span>
                         </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs ${user.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {user.isActive !== false ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </TableCell>
                         <TableCell className="text-right">
+                          <Button size="sm" variant="ghost" onClick={() => handleToggleUserStatus(user.id)}>
+                            {user.isActive !== false ? 'Desactivar' : 'Activar'}
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => handleEditUserClick(user)}>Editar</Button>
                           <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteUser(user.id)}>Eliminar</Button>
                         </TableCell>
@@ -331,7 +489,7 @@ export function AdminPanelPage() {
                     Gestionar categorías de eventos
                   </p>
                 </div>
-                <Button 
+                <Button
                   className="bg-primary text-white"
                   onClick={() => {
                     setSelectedCategoryToEdit(null);
@@ -341,13 +499,14 @@ export function AdminPanelPage() {
                   Nueva Categoría
                 </Button>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200">
+              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nombre</TableHead>
                       <TableHead>Descripción</TableHead>
                       <TableHead>Eventos Totales</TableHead>
+                      <TableHead>Estado</TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -359,7 +518,15 @@ export function AdminPanelPage() {
                         </TableCell>
                         <TableCell className="text-muted-foreground">{category.description}</TableCell>
                         <TableCell>{category.eventCount}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs ${category.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {category.isActive !== false ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </TableCell>
                         <TableCell className="text-right">
+                          <Button size="sm" variant="ghost" onClick={() => handleToggleCategoryStatus(category.id)}>
+                            {category.isActive !== false ? 'Desactivar' : 'Activar'}
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => handleEditCategoryClick(category)}>Editar</Button>
                           <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteCategory(category.id)}>Eliminar</Button>
                         </TableCell>
@@ -437,17 +604,17 @@ export function AdminPanelPage() {
       </Dialog>
 
       {/* Modales de edición */}
-      <EditUserModal 
-        isOpen={editUserDialogOpen} 
-        onClose={() => setEditUserDialogOpen(false)} 
-        user={selectedUserToEdit} 
-        onSave={handleSaveUserRole} 
+      <EditUserModal
+        isOpen={editUserDialogOpen}
+        onClose={() => setEditUserDialogOpen(false)}
+        user={selectedUserToEdit}
+        onSave={handleSaveUserRole}
       />
-      <EditCategoryModal 
-        isOpen={editCategoryDialogOpen} 
-        onClose={() => setEditCategoryDialogOpen(false)} 
-        category={selectedCategoryToEdit} 
-        onSave={handleSaveCategory} 
+      <EditCategoryModal
+        isOpen={editCategoryDialogOpen}
+        onClose={() => setEditCategoryDialogOpen(false)}
+        category={selectedCategoryToEdit}
+        onSave={handleSaveCategory}
       />
     </div>
   );

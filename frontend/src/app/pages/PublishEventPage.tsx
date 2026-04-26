@@ -157,8 +157,53 @@ export function PublishEventPage() {
     setStep(step - 1);
   };
 
-  const handleSubmit = (targetStatus: 'Draft' | 'In review' = 'In review') => {
+  const handleSubmit = async (targetStatus: 'Draft' | 'In review' = 'In review') => {
     if (!locationCoords || !usuario) return;
+
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const eventData = {
+        titulo: title,
+        descripcion: description,
+        categoria: category,
+        fecha_inicio: `${dateStart}T${timeStart}`,
+        fecha_fin: `${dateEnd}T${timeEnd}`,
+        lugar: {
+          nombre: locationName,
+          lat: locationCoords[0],
+          lng: locationCoords[1]
+        },
+        imagen_portada: coverImage
+      };
+
+      const url = editId ? `${API_URL}/eventos/${editId}` : `${API_URL}/eventos`;
+      const method = editId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(eventData)
+      });
+      
+      const data = await response.json();
+      const eventId = editId || data.id;
+
+      if (targetStatus === 'In review') {
+        await fetch(`${API_URL}/eventos/${eventId}/enviar`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
+
+      toast.success("¡Operación exitosa!");
+      navigate("/organizer/dashboard");
+      return;
+    } catch (error) {
+      toast.error("Error al guardar el evento");
+      return;
+    }
+    */
 
     if (editId) {
       const eventToEdit = mockEvents.find(e => e.id === editId);

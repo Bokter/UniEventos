@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate } from "react-router";
 import { Heart, User } from "lucide-react";
 import { Navbar } from "../components/Navbar";
@@ -10,6 +10,24 @@ import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
 export function UserDashboardPage() {
   const [activeTab, setActiveTab] = useState<SidebarTab>('favorites');
   const { usuario, isLoading } = useAuth();
+
+  // Lógica de carga inicial de favoritos (Comentada para futura conexión)
+  /*
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const response = await fetch(`${API_URL}/favoritos`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        // setFavorites(data);
+      } catch (error) {
+        console.error("Error al cargar favoritos", error);
+      }
+    };
+    fetchFavorites();
+  }, [token]);
+  */
 
   if (isLoading) return null;
   // If not logged in, or if it's admin/organizer, they shouldn't be here, but we'll just check if logged in.
