@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Navigate, useSearchParams } from "react-router";
 import { ArrowLeft, ArrowRight, Upload, Check } from "lucide-react";
 import L from "leaflet";
 import { format } from "date-fns";
@@ -10,7 +10,8 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { CategoryBadge } from "../components/CategoryBadge";
-import { currentUser, EventCategory, mockEvents } from "../data/mockData";
+import { EventCategory, mockEvents } from "../data/mockData";
+import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
 // Fix for default marker icon
@@ -95,6 +96,8 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
 
 export function PublishEventPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
   const [step, setStep] = useState(1);
 
   // Form state
@@ -109,14 +112,29 @@ export function PublishEventPage() {
   const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
 
-  useEffect(() => {
-    if (!currentUser || currentUser.role !== 'Organizer') {
-      navigate("/login");
-    }
-  }, [navigate]);
+  const { usuario, isLoading } = useAuth();
 
-  if (!currentUser || currentUser.role !== 'Organizer') {
-    return null;
+  useEffect(() => {
+    if (editId) {
+      const eventToEdit = mockEvents.find(e => e.id === editId);
+      if (eventToEdit) {
+        setTitle(eventToEdit.title);
+        setDescription(eventToEdit.description);
+        setCategory(eventToEdit.category);
+        setDateStart(format(eventToEdit.dateStart, 'yyyy-MM-dd'));
+        setTimeStart(format(eventToEdit.dateStart, 'HH:mm'));
+        setDateEnd(format(eventToEdit.dateEnd, 'yyyy-MM-dd'));
+        setTimeEnd(format(eventToEdit.dateEnd, 'HH:mm'));
+        setLocationName(eventToEdit.location.name);
+        setLocationCoords([eventToEdit.location.lat, eventToEdit.location.lng]);
+        setCoverImage(eventToEdit.coverImage);
+      }
+    }
+  }, [editId]);
+
+  if (isLoading) return null;
+  if (!usuario || usuario.rol !== 'organizador') {
+    return <Navigate to="/login" replace />;
   }
 
   const handleNext = () => {
@@ -139,30 +157,103 @@ export function PublishEventPage() {
     setStep(step - 1);
   };
 
-  const handleSubmit = () => {
-    if (!locationCoords) return;
+  const handleSubmit = async (targetStatus: 'Draft' | 'In review' = 'In review') => {
+    if (!locationCoords || !usuario) return;
 
-    const newEvent = {
-      id: String(mockEvents.length + 1),
-      title,
-      description,
-      category,
-      dateStart: new Date(`${dateStart}T${timeStart}`),
-      dateEnd: new Date(`${dateEnd}T${timeEnd}`),
-      location: {
-        name: locationName,
-        lat: locationCoords[0],
-        lng: locationCoords[1],
-      },
-      coverImage: coverImage || 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      organizer: currentUser,
-      status: 'In review' as const,
-      submittedDate: new Date(),
-    };
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const eventData = {
+        titulo: title,
+        descripcion: description,
+        categoria: category,
+        fecha_inicio: `${dateStart}T${timeStart}`,
+        fecha_fin: `${dateEnd}T${timeEnd}`,
+        lugar: {
+          nombre: locationName,
+          lat: locationCoords[0],
+          lng: locationCoords[1]
+        },
+        imagen_portada: coverImage
+      };
 
-    mockEvents.push(newEvent);
-    toast.success("Event submitted for review!");
-    navigate("/organizer/dashboard");
+      const url = editId ? `${API_URL}/eventos/${editId}` : `${API_URL}/eventos`;
+      const method = editId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(eventData)
+      });
+      
+      const data = await response.json();
+      const eventId = editId || data.id;
+
+      if (targetStatus === 'In review') {
+        await fetch(`${API_URL}/eventos/${eventId}/enviar`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
+
+      toast.success("¡Operación exitosa!");
+      navigate("/organizer/dashboard");
+      return;
+    } catch (error) {
+      toast.error("Error al guardar el evento");
+      return;
+    }
+    */
+
+    if (editId) {
+      const eventToEdit = mockEvents.find(e => e.id === editId);
+      if (eventToEdit) {
+        eventToEdit.title = title;
+        eventToEdit.description = description;
+        eventToEdit.category = category;
+        eventToEdit.dateStart = new Date(`${dateStart}T${timeStart}`);
+        eventToEdit.dateEnd = new Date(`${dateEnd}T${timeEnd}`);
+        eventToEdit.location = {
+          name: locationName,
+          lat: locationCoords[0],
+          lng: locationCoords[1],
+        };
+        eventToEdit.coverImage = coverImage || eventToEdit.coverImage;
+        // Si estaba rechazado o en borrador, lo pasamos al estado indicado
+        eventToEdit.status = targetStatus;
+        if (targetStatus === 'In review') {
+          eventToEdit.rejectionReason = undefined;
+        }
+        toast.success(targetStatus === 'Draft' ? "¡Borrador actualizado!" : "¡Evento actualizado y enviado a revisión!");
+        navigate("/organizer/dashboard");
+      }
+    } else {
+      const newEvent = {
+        id: String(mockEvents.length + 1),
+        title,
+        description,
+        category,
+        dateStart: new Date(`${dateStart}T${timeStart}`),
+        dateEnd: new Date(`${dateEnd}T${timeEnd}`),
+        location: {
+          name: locationName,
+          lat: locationCoords[0],
+          lng: locationCoords[1],
+        },
+        coverImage: coverImage || 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+        organizer: {
+          id: String(usuario.id),
+          name: usuario.nombre_completo,
+          email: usuario.email,
+        },
+        status: targetStatus,
+        submittedDate: targetStatus === 'In review' ? new Date() : undefined,
+      };
+
+      mockEvents.push(newEvent);
+      toast.success(targetStatus === 'Draft' ? "¡Guardado como borrador!" : "¡Evento enviado a revisión!");
+      navigate("/organizer/dashboard");
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,9 +282,9 @@ export function PublishEventPage() {
           Back to Dashboard
         </Button>
 
-        <h1 className="text-3xl mb-2" style={{ fontWeight: 700 }}>Publish New Event</h1>
+        <h1 className="text-3xl mb-2" style={{ fontWeight: 700 }}>{editId ? "Editar Evento" : "Publicar Nuevo Evento"}</h1>
         <p className="text-muted-foreground mb-8">
-          Create and submit an event for review
+          {editId ? "Actualiza los datos de tu evento" : "Crea y envía un evento para revisión"}
         </p>
 
         {/* Step Indicator */}
@@ -432,8 +523,8 @@ export function PublishEventPage() {
                   <p style={{ fontWeight: 600 }}>{locationName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Organizer</p>
-                  <p style={{ fontWeight: 600 }}>{currentUser.name}</p>
+                  <p className="text-sm text-muted-foreground">Organizador</p>
+                  <p style={{ fontWeight: 600 }}>{usuario.nombre_completo}</p>
                 </div>
               </div>
 
@@ -468,9 +559,14 @@ export function PublishEventPage() {
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} className="bg-[#1D9E75] hover:bg-[#188c66]">
-                Submit for Review
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => handleSubmit('Draft')} variant="outline" className="border-primary text-primary hover:bg-primary/5">
+                  Guardar como borrador
+                </Button>
+                <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66]">
+                  Submit for Review
+                </Button>
+              </div>
             )}
           </div>
         </div>

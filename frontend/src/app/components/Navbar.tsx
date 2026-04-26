@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "react-router";
-import { Search, LogIn, Plus } from "lucide-react";
+import { Search, LogIn, Plus, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { currentUser } from "../data/mockData";
+import { useAuth } from "../../context/AuthContext";
 
 interface NavbarProps {
   showSearch?: boolean;
@@ -12,10 +12,11 @@ interface NavbarProps {
 
 export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: NavbarProps) {
   const navigate = useNavigate();
+  const { usuario, logout } = useAuth();
 
   return (
-    <nav className="border-b border-gray-200 bg-white sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="border-b border-gray-200 bg-white sticky top-0 z-50 min-w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
@@ -45,27 +46,27 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            {currentUser ? (
+            {usuario ? (
               <>
-                {currentUser.role === 'Organizer' && (
+                {usuario.rol === 'organizador' && (
                   <Button
                     onClick={() => navigate("/organizer/publish")}
                     className="bg-[#1D9E75] hover:bg-[#188c66] text-white"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Publish event
+                    Publicar evento
                   </Button>
                 )}
-                {currentUser.role === 'Admin' && (
+                {usuario.rol === 'admin' && (
                   <Button
                     onClick={() => navigate("/admin")}
                     variant="outline"
                     className="border-primary text-primary hover:bg-primary/5"
                   >
-                    Admin Panel
+                    Panel Admin
                   </Button>
                 )}
-                {currentUser.role === 'Organizer' && (
+                {usuario.rol === 'organizador' && (
                   <Button
                     onClick={() => navigate("/organizer/dashboard")}
                     variant="outline"
@@ -74,12 +75,33 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                     Dashboard
                   </Button>
                 )}
+                {(!usuario.rol || usuario.rol === 'miembro') && (
+                  <Button
+                    onClick={() => navigate("/user/dashboard")}
+                    variant="outline"
+                    className="border-primary text-primary hover:bg-primary/5"
+                  >
+                    Mi Panel
+                  </Button>
+                )}
                 <div className="flex items-center gap-2 ml-2">
                   <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
-                    {currentUser.name.charAt(0)}
+                    {usuario.nombre_completo.charAt(0).toUpperCase()}
                   </div>
-                  <span className="hidden lg:block">{currentUser.name}</span>
+                  <span className="hidden lg:block">{usuario.nombre_completo}</span>
                 </div>
+                <Button
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground"
+                  size="icon"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
               </>
             ) : (
               <>
@@ -89,14 +111,14 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   className="border-primary text-primary hover:bg-primary/5"
                 >
                   <LogIn className="h-4 w-4 mr-2" />
-                  Sign in
+                  Iniciar sesión
                 </Button>
                 <Button
                   onClick={() => navigate("/login")}
                   className="bg-[#1D9E75] hover:bg-[#188c66] text-white hidden sm:flex"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Publish event
+                  Publicar evento
                 </Button>
               </>
             )}

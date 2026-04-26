@@ -6,131 +6,186 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { setCurrentUser, mockUsers, UserRole } from "../data/mockData";
 import { toast } from "sonner";
+import { useAuth } from "../../context/AuthContext";
+import { type Rol } from "../services/auth.service";
+
+// Redirige al usuario según su rol
+function redirigirPorRol(rol: Rol, navigate: ReturnType<typeof useNavigate>) {
+  if (rol === "admin") {
+    navigate("/admin");
+  } else if (rol === "organizador") {
+    navigate("/organizer/dashboard");
+  } else if (rol === "miembro") {
+    navigate("/user/dashboard");
+  }
+  else {
+    navigate("/");
+  }
+}
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { login, register } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sign in state
+  // Estado del formulario de inicio de sesión
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
 
-  // Register state
+  // Estado del formulario de registro
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
-  const [registerRole, setRegisterRole] = useState<UserRole>("Attendee");
 
-  const handleSignIn = (e: React.FormEvent) => {
+  // ─── Manejador de inicio de sesión ──────────────────────────
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // For demo purposes, let user sign in as any mock user
-      const user = mockUsers.find(u => u.email === signInEmail);
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: signInEmail, password: signInPassword })
+      });
       
-      if (user) {
-        setCurrentUser(user);
-        toast.success(`Welcome back, ${user.name}!`);
-        
-        if (user.role === 'Admin') {
-          navigate("/admin");
-        } else if (user.role === 'Organizer') {
-          navigate("/organizer/dashboard");
-        } else {
-          navigate("/");
-        }
-      } else {
-        toast.error("Invalid email or password");
-      }
+      if (!response.ok) throw new Error('Credenciales inválidas');
       
+      const { token, usuario } = await response.json();
+      
+      // Guardar token y actualizar contexto (Ejemplo)
+      // localStorage.setItem('token', token);
+      // loginContext(usuario); 
+      
+      toast.success(`¡Bienvenido/a, ${usuario.nombre_completo}!`);
+      redirigirPorRol(usuario.rol, navigate);
+      return;
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al iniciar sesión");
+      return;
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
+    */
+
+    try {
+      const usuario = await login(signInEmail, signInPassword);
+      toast.success(`¡Bienvenido/a, ${usuario.nombre_completo}!`);
+      redirigirPorRol(usuario.rol, navigate);
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : "Error al iniciar sesión";
+      toast.error(mensaje);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  // ─── Manejador de registro ───────────────────────────────────
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!registerEmail.endsWith("@university.edu")) {
-      toast.error("Please use your institutional email (@university.edu)");
+    // Validar correo institucional
+    if (!registerEmail.endsWith("@uninorte.edu.co")) {
+      toast.error("Debes usar tu correo institucional (@uninorte.edu.co)");
       return;
     }
 
+    // Validar contraseñas
     if (registerPassword !== registerConfirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error("Las contraseñas no coinciden");
       return;
     }
 
     if (registerPassword.length < 8) {
-      toast.error("Password must be at least 8 characters");
+      toast.error("La contraseña debe tener al menos 8 caracteres");
       return;
     }
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      const newUser = {
-        id: String(mockUsers.length + 1),
-        name: registerName,
-        email: registerEmail,
-        role: registerRole,
-      };
-
-      mockUsers.push(newUser);
-      setCurrentUser(newUser);
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          nombre_completo: registerName, 
+          email: registerEmail, 
+          password: registerPassword 
+        })
+      });
       
-      toast.success("Account created successfully!");
+      if (!response.ok) throw new Error('Error en el registro');
       
-      if (newUser.role === 'Organizer') {
-        navigate("/organizer/dashboard");
-      } else {
-        navigate("/");
-      }
+      const { token, usuario } = await response.json();
       
+      toast.success("¡Cuenta creada exitosamente!");
+      redirigirPorRol(usuario.rol, navigate);
+      return;
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al registrarse");
+      return;
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
+    */
+
+    try {
+      const usuario = await register(registerName, registerEmail, registerPassword);
+      toast.success("¡Cuenta creada exitosamente! Revisa tu correo para verificar tu cuenta.");
+      redirigirPorRol(usuario.rol, navigate);
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : "Error al registrarse";
+      toast.error(mensaje);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showSearch={false} />
-      
+
       <div className="max-w-md mx-auto px-4 py-12">
         <div className="text-center mb-8">
-          <h1 className="text-3xl mb-2" style={{ fontWeight: 700 }}>Welcome to UniEventos</h1>
+          <h1 className="text-3xl mb-2" style={{ fontWeight: 700 }}>
+            Bienvenido a UniEventos
+          </h1>
           <p className="text-muted-foreground">
-            Sign in or create an account to get started
+            Inicia sesión o crea una cuenta para empezar
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Access your account</CardTitle>
+            <CardTitle>Accede a tu cuenta</CardTitle>
             <CardDescription>
-              Use your institutional email to access
+              Usa tu correo institucional Uninorte para acceder
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign in</TabsTrigger>
-                <TabsTrigger value="register">Create account</TabsTrigger>
+                <TabsTrigger value="signin">Iniciar sesión</TabsTrigger>
+                <TabsTrigger value="register">Crear cuenta</TabsTrigger>
               </TabsList>
 
+              {/* ── Pestaña: Iniciar Sesión ──────────────────── */}
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Institutional Email</Label>
+                    <Label htmlFor="signin-email">Correo institucional</Label>
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="you@university.edu"
+                      placeholder="tu.nombre@uninorte.edu.co"
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
                       required
@@ -138,51 +193,53 @@ export function LoginPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
+                    <Label htmlFor="signin-password">Contraseña</Label>
                     <Input
                       id="signin-password"
                       type="password"
+                      placeholder="••••••••"
                       value={signInPassword}
                       onChange={(e) => setSignInPassword(e.target.value)}
                       required
                       className="bg-white"
                     />
                   </div>
-                  <div className="text-right">
-                    <button
-                      type="button"
-                      className="text-sm text-accent hover:underline"
-                      onClick={() => toast.info("Password reset not implemented in demo")}
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
+
                   <Button
                     type="submit"
                     className="w-full bg-primary hover:bg-primary/90"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Signing in..." : "Sign in"}
+                    {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
                   </Button>
+
+                  {/* Cuentas de prueba — SOLO PARA DESARROLLO, borrar antes de producción */}
                   <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-                    <p className="mb-2" style={{ fontWeight: 600 }}>Demo Accounts:</p>
+                    <p className="mb-2" style={{ fontWeight: 600 }}>
+                      Cuentas de prueba (solo desarrollo):
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      Organizer: sarah.johnson@university.edu<br />
-                      Admin: admin@university.edu<br />
-                      (Any password works)
+                      Organizador: fatima@uninorte.edu.co
+                      <br />
+                      Admin: admin@uninorte.edu.co
+                      <br />
+                      Miembro: juan@uninorte.edu.co
+                      <br />
+                      (Cualquier contraseña funciona)
                     </p>
                   </div>
                 </form>
               </TabsContent>
 
+              {/* ── Pestaña: Registro ────────────────────────── */}
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="register-name">Full Name</Label>
+                    <Label htmlFor="register-name">Nombre completo</Label>
                     <Input
                       id="register-name"
                       type="text"
-                      placeholder="John Doe"
+                      placeholder="Ej. María Gómez"
                       value={registerName}
                       onChange={(e) => setRegisterName(e.target.value)}
                       required
@@ -190,37 +247,26 @@ export function LoginPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-email">Institutional Email</Label>
+                    <Label htmlFor="register-email">Correo institucional</Label>
                     <Input
                       id="register-email"
                       type="email"
-                      placeholder="you@university.edu"
+                      placeholder="tu.nombre@uninorte.edu.co"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
                       required
                       className="bg-white"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Must end with @university.edu
+                      Debe terminar en @uninorte.edu.co
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-role">Role</Label>
-                    <Select value={registerRole} onValueChange={(value) => setRegisterRole(value as UserRole)}>
-                      <SelectTrigger id="register-role" className="bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Attendee">Attendee</SelectItem>
-                        <SelectItem value="Organizer">Organizer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password">Password</Label>
+                    <Label htmlFor="register-password">Contraseña</Label>
                     <Input
                       id="register-password"
                       type="password"
+                      placeholder="Mínimo 8 caracteres"
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
                       required
@@ -229,12 +275,17 @@ export function LoginPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-confirm-password">Confirm Password</Label>
+                    <Label htmlFor="register-confirm-password">
+                      Confirmar contraseña
+                    </Label>
                     <Input
                       id="register-confirm-password"
                       type="password"
+                      placeholder="Repite tu contraseña"
                       value={registerConfirmPassword}
-                      onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                      onChange={(e) =>
+                        setRegisterConfirmPassword(e.target.value)
+                      }
                       required
                       minLength={8}
                       className="bg-white"
@@ -245,7 +296,7 @@ export function LoginPage() {
                     className="w-full bg-[#1D9E75] hover:bg-[#188c66]"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Creating account..." : "Create account"}
+                    {isLoading ? "Creando cuenta..." : "Crear cuenta"}
                   </Button>
                 </form>
               </TabsContent>
@@ -255,7 +306,7 @@ export function LoginPage() {
 
         <div className="text-center mt-6">
           <Link to="/" className="text-sm text-accent hover:underline">
-            Continue as guest
+            Continuar como invitado
           </Link>
         </div>
       </div>

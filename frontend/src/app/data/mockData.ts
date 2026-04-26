@@ -31,6 +31,7 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
+  isActive?: boolean;
 }
 
 // Mock current user (can be null for public view)
@@ -47,24 +48,28 @@ export const mockUsers: User[] = [
     name: 'Dr. Sarah Johnson',
     email: 'sarah.johnson@university.edu',
     role: 'Organizer',
+    isActive: true,
   },
   {
     id: '2',
     name: 'Prof. Michael Chen',
     email: 'michael.chen@university.edu',
     role: 'Organizer',
+    isActive: true,
   },
   {
     id: '3',
     name: 'Emma Rodriguez',
     email: 'emma.rodriguez@university.edu',
     role: 'Organizer',
+    isActive: true,
   },
   {
     id: '4',
     name: 'Admin User',
     email: 'admin@university.edu',
     role: 'Admin',
+    isActive: true,
   },
 ];
 
@@ -230,3 +235,28 @@ export const getApprovedEvents = () => mockEvents.filter(e => e.status === 'Appr
 export const getPendingEvents = () => mockEvents.filter(e => e.status === 'In review');
 export const getEventsByOrganizer = (organizerId: string) => 
   mockEvents.filter(e => e.organizer.id === organizerId);
+
+export const mockCategories = [
+  { id: '1', name: 'Cultural', description: 'Eventos culturales y artísticos', eventCount: 15, isActive: true },
+  { id: '2', name: 'Academic', description: 'Conferencias, charlas y seminarios', eventCount: 28, isActive: true },
+  { id: '3', name: 'Sports', description: 'Eventos deportivos y torneos', eventCount: 8, isActive: true },
+  { id: '4', name: 'Workshop', description: 'Talleres prácticos y de habilidades', eventCount: 12, isActive: true },
+  { id: '5', name: 'Other', description: 'Otros tipos de eventos', eventCount: 5, isActive: true },
+];
+
+// Simulador de eventos favoritos para el usuario actual
+export let mockFavoriteEvents = mockEvents.filter(e => ['1', '2'].includes(e.id));
+
+export const toggleFavorite = (eventId: string) => {
+  const event = mockEvents.find(e => e.id === eventId);
+  if (!event) return false;
+  
+  const index = mockFavoriteEvents.findIndex(e => e.id === eventId);
+  if (index > -1) {
+    mockFavoriteEvents.splice(index, 1);
+    return false;
+  } else {
+    mockFavoriteEvents.push(event);
+    return true;
+  }
+};
