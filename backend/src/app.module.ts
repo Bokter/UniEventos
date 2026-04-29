@@ -24,6 +24,9 @@ import { LugaresModule } from './lugares/lugares.module';
       synchronize: true,
     }),
     AuthModule,
+    EventosModule,
+    CategoriasModule,
+    LugaresModule
   ],
 })
 export class AppModule {}

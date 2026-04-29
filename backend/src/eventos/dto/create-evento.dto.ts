@@ -1,24 +1,34 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsDateString, IsNumber, IsString, Matches } from 'class-validator';
 
 export class CreateEventoDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'Feria de ciencias' })
+  @IsString()
   titulo: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Exposición de proyectos' })
+  @IsString()
   descripcion: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '2025-04-29' })
+  @IsDateString()
   fecha: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '09:00' })
+  @IsString()
+  @Matches(/^\d{2}:\d{2}$/)
   hora_inicio: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '18:00' })
+  @IsString()
+  @Matches(/^\d{2}:\d{2}$/)
   hora_fin: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
+  @IsNumber()
   categoria_id: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
+  @IsNumber()
   lugar_id: number;
 }
