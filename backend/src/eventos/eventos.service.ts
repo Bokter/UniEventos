@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { Evento, EstadoEvento } from '../entities/evento.entity';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
+import { Lugar } from '../entities/lugar.entity';
+import { EventoArDto } from './dto/evento-ar.dto';
+
 
 @Injectable()
 export class EventosService {
@@ -111,4 +114,31 @@ export class EventosService {
     evento.observacion_admin = observacion;
     return await this.eventoRepository.save(evento);
   }
+
+  async findEventosAR(): Promise<EventoArDto[]> {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const manana = new Date(hoy);
+  manana.setDate(manana.getDate() + 1);
+
+  const eventos = await this.eventoRepository
+    .createQueryBuilder('e')
+    .innerJoinAndSelect('e.lugar', 'l')
+    .where('e.fecha >= :hoy AND e.fecha < :manana', { hoy, manana })
+    .andWhere('e.estado = :estado', { estado: EstadoEvento.APROBADO })
+    .andWhere('l.latitud IS NOT NULL')
+    .getMany();
+
+  return eventos.map((e) => ({
+    id: e.id,
+    titulo: e.titulo,
+    descripcion: e.descripcion,
+    hora_inicio: e.hora_inicio,
+    hora_fin: e.hora_fin,
+    lugar_nombre: e.lugar.nombre,
+    latitud: Number(e.lugar.latitud),
+    longitud: Number(e.lugar.longitud),
+  }));
+}
+
 }

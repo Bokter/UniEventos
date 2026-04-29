@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { EventosService } from './eventos.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
+import { EventoArDto } from './dto/evento-ar.dto';
 
 @ApiTags('eventos')
 @Controller('eventos')
@@ -28,6 +29,12 @@ export class EventosController {
     // Luego se cambiará a req.user.id cuando el AuthGuard esté configurado
     const organizadorId = req.user?.id || 1; 
     return this.eventosService.findMisEventos(organizadorId);
+  }
+
+  @Get('ar')
+  @ApiOperation({ summary: 'Eventos de hoy aprobados con coordenadas para AR' })
+  async getEventosAR(): Promise<EventoArDto[]> {
+    return this.eventosService.findEventosAR();
   }
 
   @Get(':id')
