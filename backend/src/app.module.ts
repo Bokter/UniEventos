@@ -7,6 +7,7 @@ import { Evento } from './entities/evento.entity';
 import { Transmision } from './entities/transmision.entity';
 import { Favorito } from './entities/favorito.entity';
 import { AuthModule } from './auth/auth.module';
+import { EventosModule } from './eventos/eventos.module';
 import { CategoriasModule } from './categorias/categorias.module';
 import { LugaresModule } from './lugares/lugares.module';
 
@@ -23,8 +24,6 @@ import { LugaresModule } from './lugares/lugares.module';
       synchronize: true,
     }),
     AuthModule,
-    CategoriasModule,
-    LugaresModule,
   ],
 })
 export class AppModule {}
