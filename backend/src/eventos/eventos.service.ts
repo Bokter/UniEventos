@@ -47,6 +47,14 @@ export class EventosService {
     });
   }
 
+  async findMisEventos(organizadorId: number) {
+    return await this.eventoRepository.find({
+      where: { organizador: { id: organizadorId } },
+      relations: ['categoria', 'lugar'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
   async create(createEventoDto: CreateEventoDto, organizadorId: number) {
     const { categoria_id, lugar_id, ...rest } = createEventoDto;
     const nuevoEvento = this.eventoRepository.create({

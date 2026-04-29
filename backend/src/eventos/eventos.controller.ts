@@ -21,6 +21,15 @@ export class EventosController {
     return this.eventosService.findPendientes();
   }
 
+  @Get('mis-eventos')
+  @ApiOperation({ summary: 'Consultar estado de mis eventos (organizador)' })
+  findMisEventos(@Req() req: any) {
+    // Simulamos ID de organizador por ahora (asumiendo ID=1). 
+    // Luego se cambiará a req.user.id cuando el AuthGuard esté configurado
+    const organizadorId = req.user?.id || 1; 
+    return this.eventosService.findMisEventos(organizadorId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Detalle de un evento' })
   findOne(@Param('id') id: string) {
