@@ -7,6 +7,8 @@ import { Evento } from './entities/evento.entity';
 import { Transmision } from './entities/transmision.entity';
 import { Favorito } from './entities/favorito.entity';
 import { AuthModule } from './auth/auth.module';
+import { CategoriasModule } from './categorias/categorias.module';
+import { LugaresModule } from './lugares/lugares.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { AuthModule } from './auth/auth.module';
       synchronize: true,
     }),
     AuthModule,
+    CategoriasModule,
+    LugaresModule,
   ],
 })
 export class AppModule {}
