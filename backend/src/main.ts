@@ -6,7 +6,14 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  // ValidationPipe global — valida automáticamente todos los DTOs con class-validator
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,        // Elimina propiedades que no estén en el DTO
+    forbidNonWhitelisted: true, // Lanza error si envían propiedades desconocidas
+    transform: true,        // Transforma payloads a instancias del DTO
+  }));
+
+  // Habilitar CORS para el frontend
   app.enableCors();
 
   const config = new DocumentBuilder()

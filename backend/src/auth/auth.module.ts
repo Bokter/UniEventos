@@ -1,12 +1,20 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { Usuario } from '../entities/usuario.entity';
+import { UsuarioOrmEntity } from './infrastructure/entities/usuario.orm-entity';
+import { UsuarioTypeormRepository } from './infrastructure/repositories/usuario-typeorm.repository';
+import { AuthService } from './application/services/auth.service';
+import { AuthController } from './presentation/auth.controller';
+import { USUARIO_REPOSITORY } from './domain/repositories/usuario.repository.interface';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Usuario])],
-  providers: [AuthService],
+  imports: [TypeOrmModule.forFeature([UsuarioOrmEntity])],
   controllers: [AuthController],
+  providers: [
+    AuthService,
+    {
+      provide: USUARIO_REPOSITORY,
+      useClass: UsuarioTypeormRepository,
+    },
+  ],
 })
 export class AuthModule {}
