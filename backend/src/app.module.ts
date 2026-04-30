@@ -6,6 +6,8 @@ import { CategoriasModule } from './categorias/categorias.module';
 import { LugaresModule } from './lugares/lugares.module';
 import { FavoritosModule } from './favoritos/favoritos.module';
 import { TransmisionModule } from './transmision/transmision.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
+import { NotificacionesModule } from './notificaciones/notificaciones.module';
 
 // Importar entidades ORM desde la capa de infraestructura de cada módulo
 import { UsuarioOrmEntity } from './auth/infrastructure/entities/usuario.orm-entity';
@@ -40,6 +42,8 @@ import { TransmisionOrmEntity } from './transmision/infrastructure/entities/tran
     LugaresModule,
     FavoritosModule,
     TransmisionModule,
+    UsuariosModule,
+    NotificacionesModule,
   ],
 })
 export class AppModule {}

@@ -5,12 +5,16 @@ import { EVENTO_REPOSITORY } from '../../domain/repositories/evento.repository.i
 import { CreateEventoDto } from '../dto/create-evento.dto';
 import { UpdateEventoDto } from '../dto/update-evento.dto';
 import { EventoArDto } from '../dto/evento-ar.dto';
+import { NotificacionesService } from '../../../notificaciones/application/services/notificaciones.service';
+import { FavoritosService } from '../../../favoritos/application/services/favoritos.service';
 
 @Injectable()
 export class EventosService {
   constructor(
     @Inject(EVENTO_REPOSITORY)
     private readonly eventoRepository: IEventoRepository,
+    private readonly notificacionesService: NotificacionesService,
+    private readonly favoritosService: FavoritosService,
   ) {}
 
   async findAll(categoria?: number, fecha?: string) {
@@ -50,7 +54,15 @@ export class EventosService {
     }
 
     Object.assign(evento, updateEventoDto);
-    return this.eventoRepository.save(evento);
+    const actualizado = await this.eventoRepository.save(evento);
+
+    // RF-22: Notificar a interesados sobre la actualización
+    const interesados = await this.favoritosService.obtenerInteresados(id);
+    if (interesados.length > 0) {
+      await this.notificacionesService.notificarActualizacionAInteresados(interesados, actualizado.titulo);
+    }
+
+    return actualizado;
   }
 
   async enviarRevision(id: number) {
@@ -62,21 +74,52 @@ export class EventosService {
   async cancelar(id: number) {
     const evento = await this.findOne(id);
     evento.estado = EstadoEvento.CANCELADO;
-    return this.eventoRepository.save(evento);
+    const guardado = await this.eventoRepository.save(evento);
+
+    // RF-21: Notificar a interesados sobre la cancelación
+    const interesados = await this.favoritosService.obtenerInteresados(id);
+    if (interesados.length > 0) {
+      await this.notificacionesService.notificarCancelacionAInteresados(interesados, guardado.titulo);
+    }
+
+    return guardado;
   }
 
   async aprobar(id: number) {
     const evento = await this.findOne(id);
     evento.estado = EstadoEvento.APROBADO;
     evento.observacion_admin = null;
-    return this.eventoRepository.save(evento);
+    const guardado = await this.eventoRepository.save(evento);
+
+    // RF-20: Notificar al organizador
+    if (guardado.organizador?.email) {
+      await this.notificacionesService.notificarCambioEstadoEvento(
+        guardado.organizador.email,
+        guardado.titulo,
+        'APROBADO'
+      );
+    }
+
+    return guardado;
   }
 
   async rechazar(id: number, observacion: string) {
     const evento = await this.findOne(id);
     evento.estado = EstadoEvento.RECHAZADO;
     evento.observacion_admin = observacion;
-    return this.eventoRepository.save(evento);
+    const guardado = await this.eventoRepository.save(evento);
+
+    // RF-20: Notificar al organizador con la observación
+    if (guardado.organizador?.email) {
+      await this.notificacionesService.notificarCambioEstadoEvento(
+        guardado.organizador.email,
+        guardado.titulo,
+        'RECHAZADO',
+        observacion
+      );
+    }
+
+    return guardado;
   }
 
   async findEventosAR(): Promise<EventoArDto[]> {

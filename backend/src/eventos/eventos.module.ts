@@ -5,9 +5,10 @@ import { EventoTypeormRepository } from './infrastructure/repositories/evento-ty
 import { EventosService } from './application/services/eventos.service';
 import { EventosController } from './presentation/eventos.controller';
 import { EVENTO_REPOSITORY } from './domain/repositories/evento.repository.interface';
+import { FavoritosModule } from '../favoritos/favoritos.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([EventoOrmEntity])],
+  imports: [TypeOrmModule.forFeature([EventoOrmEntity]), FavoritosModule],
   controllers: [EventosController],
   providers: [
     EventosService,

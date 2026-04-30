@@ -42,4 +42,12 @@ export class FavoritoTypeormRepository implements IFavoritoRepository {
       evento: { id: eventoId },
     });
   }
+
+  async findEmailsByEventoId(eventoId: number): Promise<string[]> {
+    const favoritos = await this.repo.find({
+      where: { evento: { id: eventoId } },
+      relations: ['usuario'],
+    });
+    return favoritos.map(f => f.usuario.email);
+  }
 }

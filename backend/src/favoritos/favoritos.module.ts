@@ -16,5 +16,6 @@ import { FAVORITO_REPOSITORY } from './domain/repositories/favorito.repository.i
       useClass: FavoritoTypeormRepository,
     },
   ],
+  exports: [FavoritosService],
 })
 export class FavoritosModule {}

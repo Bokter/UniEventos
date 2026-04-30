@@ -31,4 +31,8 @@ export class FavoritosService {
     await this.favoritoRepository.remove(usuarioId, eventoId);
     return { mensaje: 'Evento eliminado de favoritos' };
   }
+
+  async obtenerInteresados(eventoId: number): Promise<string[]> {
+    return this.favoritoRepository.findEmailsByEventoId(eventoId);
+  }
 }
