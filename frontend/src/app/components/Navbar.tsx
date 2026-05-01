@@ -21,21 +21,21 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded bg-primary flex items-center justify-center">
-              <span className="text-white">U</span>
+              <span className="text-white">UN</span>
             </div>
             <span className="text-xl text-primary" style={{ fontWeight: 600 }}>
               UniEventos
             </span>
           </Link>
 
-          {/* Search bar */}
+          {/* Barra de búsqueda */}
           {showSearch && (
             <div className="flex-1 max-w-md hidden md:block">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search events..."
+                  placeholder="Buscar eventos..."
                   className="pl-9 bg-input-background border-0"
                   value={searchValue}
                   onChange={(e) => onSearchChange?.(e.target.value)}
