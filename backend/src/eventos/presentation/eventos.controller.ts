@@ -4,9 +4,9 @@ import { EventosService } from '../application/services/eventos.service';
 import { CreateEventoDto } from '../application/dto/create-evento.dto';
 import { UpdateEventoDto } from '../application/dto/update-evento.dto';
 import { EventoArDto } from '../application/dto/evento-ar.dto';
-import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../auth/infrastructure/guards/roles.guard';
-import { Roles } from '../../../auth/infrastructure/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/infrastructure/guards/roles.guard';
+import { Roles } from '../../auth/infrastructure/decorators/roles.decorator';
 
 
 class CreateEventoSwaggerDto {
