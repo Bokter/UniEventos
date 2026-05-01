@@ -34,7 +34,7 @@ import { TransmisionOrmEntity } from './transmision/infrastructure/entities/tran
         FavoritoOrmEntity,
         TransmisionOrmEntity,
       ],
-      synchronize: true,
+      synchronize: process.env.NODE_ENV !== 'production',
     }),
     AuthModule,
     EventosModule,

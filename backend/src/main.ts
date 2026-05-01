@@ -14,7 +14,11 @@ async function bootstrap() {
   }));
 
   // Habilitar CORS para el frontend
-  app.enableCors();
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('UniEventos API')
