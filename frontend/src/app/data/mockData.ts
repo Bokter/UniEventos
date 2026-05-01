@@ -23,6 +23,7 @@ export interface Event {
   status: EventStatus;
   submittedDate?: Date;
   rejectionReason?: string;
+  streamLink?: string;
 }
 
 export interface User {

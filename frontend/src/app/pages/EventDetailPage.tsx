@@ -6,7 +6,7 @@ import { Navbar } from "../components/Navbar";
 import { CategoryBadge } from "../components/CategoryBadge";
 import { Button } from "../components/ui/button";
 import { EventMap } from "../components/EventMap";
-// import { LiveStreamPlayer } from "../components/LiveStreamPlayer"; // Comentado - Implementar integración Mux
+import { LiveStreamPlayer } from "../components/LiveStreamPlayer";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -33,8 +33,9 @@ export function EventDetailPage() {
   const [streamData, setStreamData] = useState<StreamData | null>(null);
   const [isLoadingStream, setIsLoadingStream] = useState(false);
   const [showStreamDialog, setShowStreamDialog] = useState(false);
-
+  
   const event = mockEvents.find(e => e.id === id);
+  const [streamLink, setStreamLink] = useState(event?.streamLink || "");
 
   // Check if there's an active stream
   // COMENTADO - Implementar integración con Mux
@@ -92,62 +93,31 @@ export function EventDetailPage() {
       toast.error("Solo el organizador del evento puede iniciar una transmisión");
       return;
     }
+    
+    setShowStreamDialog(true);
+  };
 
-    setIsLoadingStream(true);
-    
-    // COMENTADO - Implementar integración con Mux
-    // Simulación de inicio de transmisión para UI
-    setTimeout(() => {
-      toast.info("⚙️ Función de transmisión en desarrollo. Configurar Mux API para activar.");
-      setIsLoadingStream(false);
-      setShowStreamDialog(true);
-    }, 1000);
-    
-    /*
+  const handleSaveStreamLink = () => {
+    if (!event) return;
+
+    /* 
+    // CONEXIÓN CON BACKEND
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-a05bd8dc/events/${id}/stream`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ organizerId: currentUser.id }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = 'Failed to create stream';
-        
-        try {
-          const error = JSON.parse(errorText);
-          errorMessage = error.error || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      setStreamData(data);
-      setShowStreamDialog(true);
-      
-      if (data.isMock) {
-        toast.success("¡Transmisión demo creada! (Modo demostración - configura Mux para transmisiones reales)");
-      } else {
-        toast.success("¡Transmisión creada exitosamente!");
-      }
+      const response = await fetch(`${API_URL}/eventos/${event.id}/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ streamLink })
+      });
+      if (!response.ok) throw new Error('Error al guardar');
     } catch (error) {
-      console.error("Error starting stream:", error);
-      const errorMessage = error instanceof Error ? error.message : "Error al crear la transmisión";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoadingStream(false);
+      toast.error("No se pudo guardar el enlace del stream");
+      return;
     }
     */
+
+    event.streamLink = streamLink;
+    toast.success("Enlace de transmisión guardado");
+    setShowStreamDialog(false);
   };
 
   const handleEndStream = async () => {
@@ -266,8 +236,7 @@ export function EventDetailPage() {
           {/* Main Content */}
           <div className="md:col-span-2">
             {/* Live Stream Player - Show if stream is active */}
-            {/* COMENTADO - Implementar integración con Mux */}
-            {streamData && (
+            {event.streamLink && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-xl" style={{ fontWeight: 600 }}>Live Stream</h2>
@@ -276,17 +245,7 @@ export function EventDetailPage() {
                     EN VIVO
                   </span>
                 </div>
-                {/* <LiveStreamPlayer playbackId={streamData.playbackId} status={streamData.status} /> */}
-                <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center text-white">
-                  <div className="text-center max-w-md px-4">
-                    <div className="mb-4 text-4xl">🎥</div>
-                    <p className="text-lg font-semibold mb-2">Transmisión en Vivo</p>
-                    <p className="text-sm text-gray-400">
-                      Implementar integración con Mux para transmisiones en vivo.
-                      Configurar MUX_TOKEN_ID y MUX_TOKEN_SECRET en Supabase.
-                    </p>
-                  </div>
-                </div>
+                <LiveStreamPlayer playbackId={event.streamLink} status="active" />
               </div>
             )}
 
@@ -444,53 +403,30 @@ export function EventDetailPage() {
         </div>
       </div>
 
-      {/* Stream Dialog */}
+      {/* Dialog para añadir el enlace del stream */}
       {showStreamDialog && (
         <Dialog open={showStreamDialog} onOpenChange={setShowStreamDialog}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Configuración de Transmisión</DialogTitle>
+              <DialogTitle>Enlace de Transmisión (Stream)</DialogTitle>
               <DialogDescription>
-                Esta es la interfaz donde se mostrará la configuración RTMP para OBS/Streamlabs cuando se integre Mux.
+                Añade el enlace de Mux (Playback ID o Stream URL) para la transmisión en vivo del evento "{event.title}".
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div className="p-6 bg-blue-50 border-2 border-blue-200 rounded-lg text-center">
-                <div className="text-4xl mb-3">🎥</div>
-                <p className="font-semibold text-blue-900 mb-2">
-                  Integración Mux Pendiente
-                </p>
-                <p className="text-sm text-blue-700">
-                  Para habilitar transmisiones en vivo:
-                </p>
-                <ol className="text-sm text-blue-700 text-left mt-3 space-y-1 list-decimal list-inside">
-                  <li>Crear cuenta en Mux.com</li>
-                  <li>Obtener MUX_TOKEN_ID y MUX_TOKEN_SECRET</li>
-                  <li>Configurar secretos en Supabase</li>
-                  <li>Descomentar código de integración en EventDetailPage.tsx</li>
-                  <li>Implementar endpoints de backend para Mux API</li>
-                </ol>
-              </div>
-
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <strong>Información que se mostrará:</strong>
-                  <br />
-                  • Stream URL (RTMP): rtmps://global-live.mux.com:443/app
-                  <br />
-                  • Stream Key: [Generado por Mux]
-                  <br />
-                  • Playback ID: [Generado por Mux]
-                </p>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="stream-link">Enlace o ID de Transmisión</Label>
+                <Input
+                  id="stream-link"
+                  placeholder="Ej. m3u8, Playback ID de Mux..."
+                  value={streamLink}
+                  onChange={(e) => setStreamLink(e.target.value)}
+                />
               </div>
             </div>
-            <DialogFooter className="flex gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowStreamDialog(false)}
-              >
-                Cerrar
-              </Button>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowStreamDialog(false)}>Cancelar</Button>
+              <Button onClick={handleSaveStreamLink} className="bg-primary text-white">Guardar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
