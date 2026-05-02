@@ -154,6 +154,13 @@ export function PublishEventPage() {
         toast.error("Please fill in all required fields");
         return;
       }
+      
+      const startDateTime = new Date(`${dateStart}T${timeStart}`);
+      const endDateTime = new Date(`${dateEnd}T${timeEnd}`);
+      if (endDateTime <= startDateTime) {
+        toast.error("La fecha y hora de finalización debe ser posterior a la de inicio");
+        return;
+      }
     }
     if (step === 2) {
       if (!locationCoords || !locationName) {
