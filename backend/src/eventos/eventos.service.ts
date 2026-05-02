@@ -13,7 +13,7 @@ export class EventosService {
   constructor(
     @InjectRepository(Evento)
     private readonly eventoRepository: Repository<Evento>,
-  ) {}
+  ) { }
 
   async findAll(categoria?: number, fecha?: string) {
     const query = this.eventoRepository.createQueryBuilder('evento')
@@ -75,7 +75,7 @@ export class EventosService {
     if (evento.estado !== EstadoEvento.BORRADOR && evento.estado !== EstadoEvento.RECHAZADO) {
       throw new BadRequestException('Solo se pueden editar eventos en borrador o rechazados');
     }
-    
+
     const { categoria_id, lugar_id, ...rest } = updateEventoDto;
 
     if (categoria_id) {
@@ -84,7 +84,7 @@ export class EventosService {
     if (lugar_id) {
       evento.lugar = { id: lugar_id } as any;
     }
-    
+
     Object.assign(evento, rest);
     return await this.eventoRepository.save(evento);
   }
@@ -116,29 +116,27 @@ export class EventosService {
   }
 
   async findEventosAR(): Promise<EventoArDto[]> {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const manana = new Date(hoy);
-  manana.setDate(manana.getDate() + 1);
+    const hoy = new Date().toISOString().split('T')[0]; // '2026-05-02' en formato simple
 
-  const eventos = await this.eventoRepository
-    .createQueryBuilder('e')
-    .innerJoinAndSelect('e.lugar', 'l')
-    .where('e.fecha >= :hoy AND e.fecha < :manana', { hoy, manana })
-    .andWhere('e.estado = :estado', { estado: EstadoEvento.APROBADO })
-    .andWhere('l.latitud IS NOT NULL')
-    .getMany();
+    const eventos = await this.eventoRepository
+      .createQueryBuilder('e')
+      .innerJoinAndSelect('e.lugar', 'l')
+      .where('CAST(e.fecha AS DATE) = CAST(:hoy AS DATE)', { hoy })
+      .andWhere('e.estado = :estado', { estado: EstadoEvento.APROBADO })
+      .andWhere('l.latitud IS NOT NULL')
+      .getMany();
 
-  return eventos.map((e) => ({
-    id: e.id,
-    titulo: e.titulo,
-    descripcion: e.descripcion,
-    hora_inicio: e.hora_inicio,
-    hora_fin: e.hora_fin,
-    lugar_nombre: e.lugar.nombre,
-    latitud: Number(e.lugar.latitud),
-    longitud: Number(e.lugar.longitud),
-  }));
-}
+    return eventos.map((e) => ({
+      id: e.id,
+      titulo: e.titulo,
+      descripcion: e.descripcion,
+      hora_inicio: e.hora_inicio,
+      hora_fin: e.hora_fin,
+      lugar_nombre: e.lugar.nombre,
+      latitud: Number(e.lugar.latitud),
+      longitud: Number(e.lugar.longitud),
+    }));
+
+  }
 
 }
