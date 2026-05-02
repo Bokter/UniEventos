@@ -116,12 +116,21 @@ export class EventosService {
   }
 
   async findEventosAR(): Promise<EventoArDto[]> {
-    const hoy = new Date().toISOString().split('T')[0]; // '2026-05-02' en formato simple
+    // Obtener fecha actual en Colombia (UTC-5) de forma confiable
+    const ahora = new Date();
+    const offsetColombia = -5 * 60; // UTC-5 en minutos
+    const offsetLocal = ahora.getTimezoneOffset(); // offset del servidor
+    const diffMinutos = offsetLocal + offsetColombia; // diferencia total
+
+    const fechaColombia = new Date(ahora.getTime() + diffMinutos * 60 * 1000);
+    const hoy = fechaColombia.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+
+    console.log(`Fecha Colombia: ${hoy}`); // para debug
 
     const eventos = await this.eventoRepository
       .createQueryBuilder('e')
       .innerJoinAndSelect('e.lugar', 'l')
-      .where('CAST(e.fecha AS DATE) = CAST(:hoy AS DATE)', { hoy })
+      .where('CAST(e.fecha AS DATE) = :hoy', { hoy })
       .andWhere('e.estado = :estado', { estado: EstadoEvento.APROBADO })
       .andWhere('l.latitud IS NOT NULL')
       .getMany();
@@ -136,7 +145,8 @@ export class EventosService {
       latitud: Number(e.lugar.latitud),
       longitud: Number(e.lugar.longitud),
     }));
-
   }
 
 }
+
+
