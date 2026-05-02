@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UniEventos AR</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <a-scene
+      vr-mode-ui="enabled: false"
+      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false"
+      renderer="antialias: true; alpha: true"
+    >
+      <a-camera gps-projected-camera rotation-reader></a-camera>
+    </a-scene>
+
+    <script>
+      const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
+
+      async function cargarEventos() {
+        try {
+          const res = await fetch(API_URL);
+          const eventos = await res.json();
+
+          const scene = document.querySelector('a-scene');
+
+          eventos.forEach(evento => {
+            const distancia = calcularDistancia(evento.latitud, evento.longitud);
+
+            // Contenedor del indicador
+            const entity = document.createElement('a-entity');
+            entity.setAttribute('gps-projected-entity-place', `latitude: ${evento.latitud}; longitude: ${evento.longitud}`);
+            entity.setAttribute('look-at', '[gps-projected-camera]');
+            entity.setAttribute('scale', '15 15 15');
+
+            // Fondo del indicador
+            const fondo = document.createElement('a-plane');
+            fondo.setAttribute('color', '#1a1a2e');
+            fondo.setAttribute('opacity', '0.85');
+            fondo.setAttribute('width', '3');
+            fondo.setAttribute('height', '1.5');
+            fondo.setAttribute('position', '0 0 0');
+
+            // Título del evento
+            const titulo = document.createElement('a-text');
+            titulo.setAttribute('value', evento.titulo);
+            titulo.setAttribute('color', '#ffffff');
+            titulo.setAttribute('align', 'center');
+            titulo.setAttribute('position', '0 0.4 0.01');
+            titulo.setAttribute('width', '2.5');
+            titulo.setAttribute('font', 'roboto');
+
+            // Nombre del lugar
+            const lugar = document.createElement('a-text');
+            lugar.setAttribute('value', evento.lugar_nombre);
+            lugar.setAttribute('color', '#a0a0ff');
+            lugar.setAttribute('align', 'center');
+            lugar.setAttribute('position', '0 0 0.01');
+            lugar.setAttribute('width', '2.5');
+            lugar.setAttribute('font', 'roboto');
+
+            // Distancia
+            const dist = document.createElement('a-text');
+            dist.setAttribute('value', distancia < 1000 ? `${Math.round(distancia)} m` : `${(distancia/1000).toFixed(1)} km`);
+            dist.setAttribute('color', '#ffcc00');
+            dist.setAttribute('align', 'center');
+            dist.setAttribute('position', '0 -0.4 0.01');
+            dist.setAttribute('width', '2.5');
+            dist.setAttribute('font', 'roboto');
+
+            entity.appendChild(fondo);
+            entity.appendChild(titulo);
+            entity.appendChild(lugar);
+            entity.appendChild(dist);
+            scene.appendChild(entity);
+          });
+
+        } catch (err) {
+          console.error('Error cargando eventos:', err);
+        }
+      }
+
+      function calcularDistancia(lat2, lng2) {
+        if (!navigator.geolocation) return 0;
+        // Usamos la última posición conocida del GPS de AR.js
+        const cam = document.querySelector('[gps-projected-camera]');
+        if (!cam) return 0;
+        const lat1 = parseFloat(cam.getAttribute('position')?.lat || 0);
+        const lng1 = parseFloat(cam.getAttribute('position')?.lng || 0);
+        const R = 6371000;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
+
+      // Esperar a que AR.js esté listo antes de cargar eventos
+      document.querySelector('a-scene').addEventListener('loaded', cargarEventos);
+    </script>
+  </body>
+</html>
