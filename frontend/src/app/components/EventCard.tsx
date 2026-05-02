@@ -43,10 +43,11 @@ export function EventCard({ event }: EventCardProps) {
         <CardFooter className="px-4 py-3 bg-gray-50 border-t border-gray-100">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">
-              {event.organizer.name.charAt(0)}
+              {event.organizers[0].name.charAt(0)}
             </div>
             <span className="text-sm text-muted-foreground line-clamp-1">
-              {event.organizer.name}
+              {event.organizers[0].name}
+              {event.organizers.length > 1 && ` +${event.organizers.length - 1}`}
             </span>
           </div>
         </CardFooter>

@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
-import { Calendar, Plus, Bell, User, FileText, LogOut, Pencil, X } from "lucide-react";
+import { Calendar, Plus, Bell, User, FileText, LogOut, Pencil, X, Video } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
 import { StatusBadge } from "../components/StatusBadge";
 import { CategoryBadge } from "../components/CategoryBadge";
 import { Button } from "../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import {
   getEventsByOrganizer,
   Event,
@@ -20,6 +23,9 @@ export function OrganizerDashboardPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SidebarTab>('events');
   const [refresh, setRefresh] = useState(0);
+  const [streamDialogOpen, setStreamDialogOpen] = useState(false);
+  const [selectedEventForStream, setSelectedEventForStream] = useState<Event | null>(null);
+  const [streamLink, setStreamLink] = useState("");
 
   const { usuario, isLoading, logout } = useAuth();
 
@@ -77,6 +83,46 @@ export function OrganizerDashboardPage() {
       event.status = 'Cancelled';
       toast.success("Evento cancelado exitosamente");
       setRefresh(prev => prev + 1); // Forzar re-render
+    }
+  };
+
+  const handleOpenStreamDialog = (event: Event) => {
+    setSelectedEventForStream(event);
+    const userStream = event.streams?.find(s => String(s.organizerId) === String(usuario?.id));
+    setStreamLink(userStream?.streamLink || "");
+    setStreamDialogOpen(true);
+  };
+
+  const handleSaveStreamLink = () => {
+    if (!selectedEventForStream) return;
+
+    /* 
+    // CONEXIÓN CON BACKEND
+    try {
+      const response = await fetch(`${API_URL}/eventos/${selectedEventForStream.id}/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ streamLink })
+      });
+      if (!response.ok) throw new Error('Error al guardar');
+    } catch (error) {
+      toast.error("No se pudo guardar el enlace del stream");
+      return;
+    }
+    */
+
+    const event = mockEvents.find(e => e.id === selectedEventForStream.id);
+    if (event) {
+      if (!event.streams) event.streams = [];
+      const streamIdx = event.streams.findIndex(s => String(s.organizerId) === String(usuario?.id));
+      if (streamIdx >= 0) {
+        event.streams[streamIdx].streamLink = streamLink;
+      } else if (usuario) {
+        event.streams.push({ organizerId: String(usuario.id), streamLink });
+      }
+      toast.success("Enlace de transmisión guardado");
+      setRefresh(prev => prev + 1);
+      setStreamDialogOpen(false);
     }
   };
 
@@ -165,6 +211,21 @@ export function OrganizerDashboardPage() {
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
+                              {/* Stream Link: solo para eventos aprobados */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleOpenStreamDialog(event)}
+                                disabled={event.status !== 'Approved'}
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title={
+                                  event.status === 'Approved'
+                                    ? 'Añadir enlace de transmisión'
+                                    : 'Solo eventos aprobados pueden tener transmisión'
+                                }
+                              >
+                                <Video className="h-4 w-4" />
+                              </Button>
                               {/* Cancelar: solo disponible en eventos aprobados */}
                               <Button
                                 size="sm"
@@ -249,6 +310,33 @@ export function OrganizerDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Dialog para añadir el enlace del stream */}
+      <Dialog open={streamDialogOpen} onOpenChange={setStreamDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Enlace de Transmisión (Stream)</DialogTitle>
+            <DialogDescription>
+              Añade el enlace de Mux (Playback ID o Stream URL) para la transmisión en vivo del evento "{selectedEventForStream?.title}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="stream-link">Enlace o ID de Transmisión</Label>
+              <Input
+                id="stream-link"
+                placeholder="Ej. m3u8, Playback ID de Mux..."
+                value={streamLink}
+                onChange={(e) => setStreamLink(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStreamDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveStreamLink} className="bg-primary text-white">Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

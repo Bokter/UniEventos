@@ -6,7 +6,7 @@ import { Navbar } from "../components/Navbar";
 import { CategoryBadge } from "../components/CategoryBadge";
 import { Button } from "../components/ui/button";
 import { EventMap } from "../components/EventMap";
-// import { LiveStreamPlayer } from "../components/LiveStreamPlayer"; // Comentado - Implementar integración Mux
+import { LiveStreamPlayer } from "../components/LiveStreamPlayer";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -27,14 +27,35 @@ interface StreamData {
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const usuario = obtenerUsuario();
   const [isFavorite, setIsFavorite] = useState(() => {
     return mockFavoriteEvents.some(e => e.id === id);
   });
   const [streamData, setStreamData] = useState<StreamData | null>(null);
   const [isLoadingStream, setIsLoadingStream] = useState(false);
   const [showStreamDialog, setShowStreamDialog] = useState(false);
-
+  
   const event = mockEvents.find(e => e.id === id);
+  const [activeStreamId, setActiveStreamId] = useState<string | null>(null);
+
+  // Initialize streamLink and activeStreamId
+  useEffect(() => {
+    if (event?.streams && event.streams.length > 0 && !activeStreamId) {
+      setActiveStreamId(event.streams[0].organizerId);
+    }
+  }, [event?.streams, activeStreamId]);
+
+  const [streamLink, setStreamLink] = useState("");
+  
+  // Update streamLink input when user is an organizer
+  useEffect(() => {
+    if (event && usuario) {
+      const userStream = event.streams?.find(s => String(s.organizerId) === String(usuario.id));
+      if (userStream) {
+        setStreamLink(userStream.streamLink);
+      }
+    }
+  }, [event, usuario?.id]);
 
   // Check if there's an active stream
   // COMENTADO - Implementar integración con Mux
@@ -82,72 +103,51 @@ export function EventDetailPage() {
     );
   }
 
-  const usuario = obtenerUsuario();
 
-  // Es organizador si el id del usuario actual coincide con el del organizador del evento
-  const isOrganizer = !!usuario && String(usuario.id) === String(event.organizer.id);
+  // Es organizador si el id del usuario actual coincide con el de alguno de los organizadores
+  const isOrganizer = !!usuario && event.organizers.some(o => String(o.id) === String(usuario.id));
 
   const handleStartStream = async () => {
     if (!usuario || !isOrganizer) {
       toast.error("Solo el organizador del evento puede iniciar una transmisión");
       return;
     }
+    
+    setShowStreamDialog(true);
+  };
 
-    setIsLoadingStream(true);
-    
-    // COMENTADO - Implementar integración con Mux
-    // Simulación de inicio de transmisión para UI
-    setTimeout(() => {
-      toast.info("⚙️ Función de transmisión en desarrollo. Configurar Mux API para activar.");
-      setIsLoadingStream(false);
-      setShowStreamDialog(true);
-    }, 1000);
-    
-    /*
+  const handleSaveStreamLink = () => {
+    if (!event) return;
+
+    /* 
+    // CONEXIÓN CON BACKEND
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-a05bd8dc/events/${id}/stream`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ organizerId: currentUser.id }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = 'Failed to create stream';
-        
-        try {
-          const error = JSON.parse(errorText);
-          errorMessage = error.error || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      setStreamData(data);
-      setShowStreamDialog(true);
-      
-      if (data.isMock) {
-        toast.success("¡Transmisión demo creada! (Modo demostración - configura Mux para transmisiones reales)");
-      } else {
-        toast.success("¡Transmisión creada exitosamente!");
-      }
+      const response = await fetch(`${API_URL}/eventos/${event.id}/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ streamLink })
+      });
+      if (!response.ok) throw new Error('Error al guardar');
     } catch (error) {
-      console.error("Error starting stream:", error);
-      const errorMessage = error instanceof Error ? error.message : "Error al crear la transmisión";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoadingStream(false);
+      toast.error("No se pudo guardar el enlace del stream");
+      return;
     }
     */
+
+    if (!event.streams) {
+      event.streams = [];
+    }
+    const existingStreamIndex = event.streams.findIndex(s => String(s.organizerId) === String(usuario?.id));
+    if (existingStreamIndex >= 0) {
+      event.streams[existingStreamIndex].streamLink = streamLink;
+    } else if (usuario) {
+      event.streams.push({ organizerId: String(usuario.id), streamLink });
+    }
+    if (!activeStreamId && usuario) {
+      setActiveStreamId(String(usuario.id));
+    }
+    toast.success("Enlace de transmisión guardado");
+    setShowStreamDialog(false);
   };
 
   const handleEndStream = async () => {
@@ -165,6 +165,12 @@ export function EventDetailPage() {
     // COMENTADO - Implementar integración con Mux
     setTimeout(() => {
       setStreamData(null);
+      if (event.streams && usuario) {
+        event.streams = event.streams.filter(s => String(s.organizerId) !== String(usuario.id));
+        if (activeStreamId === String(usuario.id)) {
+           setActiveStreamId(event.streams.length > 0 ? event.streams[0].organizerId : null);
+        }
+      }
       setShowStreamDialog(false);
       toast.success("Transmisión finalizada (Simulación)");
       setIsLoadingStream(false);
@@ -265,9 +271,8 @@ export function EventDetailPage() {
         <div className="grid md:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="md:col-span-2">
-            {/* Live Stream Player - Show if stream is active */}
-            {/* COMENTADO - Implementar integración con Mux */}
-            {streamData && (
+            {/* Live Stream Player - Show if streams are active */}
+            {event.streams && event.streams.length > 0 && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-xl" style={{ fontWeight: 600 }}>Live Stream</h2>
@@ -276,17 +281,34 @@ export function EventDetailPage() {
                     EN VIVO
                   </span>
                 </div>
-                {/* <LiveStreamPlayer playbackId={streamData.playbackId} status={streamData.status} /> */}
-                <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center text-white">
-                  <div className="text-center max-w-md px-4">
-                    <div className="mb-4 text-4xl">🎥</div>
-                    <p className="text-lg font-semibold mb-2">Transmisión en Vivo</p>
-                    <p className="text-sm text-gray-400">
-                      Implementar integración con Mux para transmisiones en vivo.
-                      Configurar MUX_TOKEN_ID y MUX_TOKEN_SECRET en Supabase.
-                    </p>
+                
+                {event.streams.length > 1 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {event.streams.map(stream => {
+                      const org = event.organizers.find(o => String(o.id) === String(stream.organizerId));
+                      return (
+                        <button
+                          key={stream.organizerId}
+                          onClick={() => setActiveStreamId(stream.organizerId)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            activeStreamId === stream.organizerId 
+                              ? 'bg-primary text-white' 
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                          }`}
+                        >
+                          Stream de {org?.name || 'Organizador'}
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
+                )}
+                
+                {activeStreamId && (
+                  <LiveStreamPlayer 
+                    playbackId={event.streams.find(s => s.organizerId === activeStreamId)?.streamLink || ""} 
+                    status="active" 
+                  />
+                )}
               </div>
             )}
 
@@ -324,7 +346,7 @@ export function EventDetailPage() {
                 <div>
                   <div style={{ fontWeight: 600 }}>Organized by</div>
                   <div className="text-sm text-muted-foreground">
-                    {event.organizer.name}
+                    {event.organizers.map(o => o.name).join(', ')}
                   </div>
                 </div>
               </div>
@@ -375,30 +397,32 @@ export function EventDetailPage() {
                 Share event
               </Button>
 
-              {/* Organizer Card */}
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <h3 className="text-sm mb-3" style={{ fontWeight: 600 }}>
-                  Organizer
+              {/* Organizer Cards */}
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
+                <h3 className="text-sm mb-1" style={{ fontWeight: 600 }}>
+                  Organizadores
                 </h3>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center">
-                    {event.organizer.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div style={{ fontWeight: 600 }} className="line-clamp-1">
-                      {event.organizer.name}
+                {event.organizers.map(org => (
+                  <div key={org.id} className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                      {org.name.charAt(0)}
                     </div>
-                    <div className="text-sm text-muted-foreground line-clamp-1">
-                      {event.organizer.email}
+                    <div className="flex-1 min-w-0">
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }} className="line-clamp-1">
+                        {org.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground line-clamp-1">
+                        {org.email}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
 
               {/* Stream Controls */}
               {isOrganizer && (
                 <div className="mt-4">
-                  {streamData ? (
+                  {(event.streams && event.streams.some(s => String(s.organizerId) === String(usuario?.id))) || streamData ? (
                     <div className="space-y-2">
                       <Button
                         variant="outline"
@@ -444,53 +468,30 @@ export function EventDetailPage() {
         </div>
       </div>
 
-      {/* Stream Dialog */}
+      {/* Dialog para añadir el enlace del stream */}
       {showStreamDialog && (
         <Dialog open={showStreamDialog} onOpenChange={setShowStreamDialog}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Configuración de Transmisión</DialogTitle>
+              <DialogTitle>Enlace de Transmisión (Stream)</DialogTitle>
               <DialogDescription>
-                Esta es la interfaz donde se mostrará la configuración RTMP para OBS/Streamlabs cuando se integre Mux.
+                Añade el enlace de Mux (Playback ID o Stream URL) para la transmisión en vivo del evento "{event.title}".
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div className="p-6 bg-blue-50 border-2 border-blue-200 rounded-lg text-center">
-                <div className="text-4xl mb-3">🎥</div>
-                <p className="font-semibold text-blue-900 mb-2">
-                  Integración Mux Pendiente
-                </p>
-                <p className="text-sm text-blue-700">
-                  Para habilitar transmisiones en vivo:
-                </p>
-                <ol className="text-sm text-blue-700 text-left mt-3 space-y-1 list-decimal list-inside">
-                  <li>Crear cuenta en Mux.com</li>
-                  <li>Obtener MUX_TOKEN_ID y MUX_TOKEN_SECRET</li>
-                  <li>Configurar secretos en Supabase</li>
-                  <li>Descomentar código de integración en EventDetailPage.tsx</li>
-                  <li>Implementar endpoints de backend para Mux API</li>
-                </ol>
-              </div>
-
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <strong>Información que se mostrará:</strong>
-                  <br />
-                  • Stream URL (RTMP): rtmps://global-live.mux.com:443/app
-                  <br />
-                  • Stream Key: [Generado por Mux]
-                  <br />
-                  • Playback ID: [Generado por Mux]
-                </p>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="stream-link">Enlace o ID de Transmisión</Label>
+                <Input
+                  id="stream-link"
+                  placeholder="Ej. m3u8, Playback ID de Mux..."
+                  value={streamLink}
+                  onChange={(e) => setStreamLink(e.target.value)}
+                />
               </div>
             </div>
-            <DialogFooter className="flex gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowStreamDialog(false)}
-              >
-                Cerrar
-              </Button>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowStreamDialog(false)}>Cancelar</Button>
+              <Button onClick={handleSaveStreamLink} className="bg-primary text-white">Guardar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
