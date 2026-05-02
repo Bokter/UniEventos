@@ -9,6 +9,7 @@
 // ============================================================
 
 const BASE_URL = 'http://localhost:3000';
+import { mockUsers } from '../data/mockData';
 
 // ── Tipos ────────────────────────────────────────────────────
 export type Rol = 'miembro' | 'organizador' | 'admin';
@@ -95,6 +96,20 @@ export const login = async (
       rol: 'miembro',
     },
   };
+
+  // Agregar dinámicamente los mockUsers para pruebas de desarrollo
+  mockUsers.forEach(mu => {
+    let mappedRol: Rol = 'miembro';
+    if (mu.role === 'Organizer') mappedRol = 'organizador';
+    if (mu.role === 'Admin') mappedRol = 'admin';
+
+    usuariosFake[mu.email] = {
+      id: parseInt(mu.id) || Math.floor(Math.random() * 1000) + 10,
+      nombre_completo: mu.name,
+      email: mu.email,
+      rol: mappedRol,
+    };
+  });
 
   const usuario = usuariosFake[email];
   if (!usuario) {

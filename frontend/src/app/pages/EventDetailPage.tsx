@@ -27,6 +27,7 @@ interface StreamData {
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const usuario = obtenerUsuario();
   const [isFavorite, setIsFavorite] = useState(() => {
     return mockFavoriteEvents.some(e => e.id === id);
   });
@@ -35,7 +36,26 @@ export function EventDetailPage() {
   const [showStreamDialog, setShowStreamDialog] = useState(false);
   
   const event = mockEvents.find(e => e.id === id);
-  const [streamLink, setStreamLink] = useState(event?.streamLink || "");
+  const [activeStreamId, setActiveStreamId] = useState<string | null>(null);
+
+  // Initialize streamLink and activeStreamId
+  useEffect(() => {
+    if (event?.streams && event.streams.length > 0 && !activeStreamId) {
+      setActiveStreamId(event.streams[0].organizerId);
+    }
+  }, [event?.streams, activeStreamId]);
+
+  const [streamLink, setStreamLink] = useState("");
+  
+  // Update streamLink input when user is an organizer
+  useEffect(() => {
+    if (event && usuario) {
+      const userStream = event.streams?.find(s => String(s.organizerId) === String(usuario.id));
+      if (userStream) {
+        setStreamLink(userStream.streamLink);
+      }
+    }
+  }, [event, usuario?.id]);
 
   // Check if there's an active stream
   // COMENTADO - Implementar integración con Mux
@@ -83,10 +103,9 @@ export function EventDetailPage() {
     );
   }
 
-  const usuario = obtenerUsuario();
 
-  // Es organizador si el id del usuario actual coincide con el del organizador del evento
-  const isOrganizer = !!usuario && String(usuario.id) === String(event.organizer.id);
+  // Es organizador si el id del usuario actual coincide con el de alguno de los organizadores
+  const isOrganizer = !!usuario && event.organizers.some(o => String(o.id) === String(usuario.id));
 
   const handleStartStream = async () => {
     if (!usuario || !isOrganizer) {
@@ -115,7 +134,18 @@ export function EventDetailPage() {
     }
     */
 
-    event.streamLink = streamLink;
+    if (!event.streams) {
+      event.streams = [];
+    }
+    const existingStreamIndex = event.streams.findIndex(s => String(s.organizerId) === String(usuario?.id));
+    if (existingStreamIndex >= 0) {
+      event.streams[existingStreamIndex].streamLink = streamLink;
+    } else if (usuario) {
+      event.streams.push({ organizerId: String(usuario.id), streamLink });
+    }
+    if (!activeStreamId && usuario) {
+      setActiveStreamId(String(usuario.id));
+    }
     toast.success("Enlace de transmisión guardado");
     setShowStreamDialog(false);
   };
@@ -135,6 +165,12 @@ export function EventDetailPage() {
     // COMENTADO - Implementar integración con Mux
     setTimeout(() => {
       setStreamData(null);
+      if (event.streams && usuario) {
+        event.streams = event.streams.filter(s => String(s.organizerId) !== String(usuario.id));
+        if (activeStreamId === String(usuario.id)) {
+           setActiveStreamId(event.streams.length > 0 ? event.streams[0].organizerId : null);
+        }
+      }
       setShowStreamDialog(false);
       toast.success("Transmisión finalizada (Simulación)");
       setIsLoadingStream(false);
@@ -235,8 +271,8 @@ export function EventDetailPage() {
         <div className="grid md:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="md:col-span-2">
-            {/* Live Stream Player - Show if stream is active */}
-            {event.streamLink && (
+            {/* Live Stream Player - Show if streams are active */}
+            {event.streams && event.streams.length > 0 && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-xl" style={{ fontWeight: 600 }}>Live Stream</h2>
@@ -245,7 +281,34 @@ export function EventDetailPage() {
                     EN VIVO
                   </span>
                 </div>
-                <LiveStreamPlayer playbackId={event.streamLink} status="active" />
+                
+                {event.streams.length > 1 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {event.streams.map(stream => {
+                      const org = event.organizers.find(o => String(o.id) === String(stream.organizerId));
+                      return (
+                        <button
+                          key={stream.organizerId}
+                          onClick={() => setActiveStreamId(stream.organizerId)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            activeStreamId === stream.organizerId 
+                              ? 'bg-primary text-white' 
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                          }`}
+                        >
+                          Stream de {org?.name || 'Organizador'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {activeStreamId && (
+                  <LiveStreamPlayer 
+                    playbackId={event.streams.find(s => s.organizerId === activeStreamId)?.streamLink || ""} 
+                    status="active" 
+                  />
+                )}
               </div>
             )}
 
@@ -283,7 +346,7 @@ export function EventDetailPage() {
                 <div>
                   <div style={{ fontWeight: 600 }}>Organized by</div>
                   <div className="text-sm text-muted-foreground">
-                    {event.organizer.name}
+                    {event.organizers.map(o => o.name).join(', ')}
                   </div>
                 </div>
               </div>
@@ -334,30 +397,32 @@ export function EventDetailPage() {
                 Share event
               </Button>
 
-              {/* Organizer Card */}
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <h3 className="text-sm mb-3" style={{ fontWeight: 600 }}>
-                  Organizer
+              {/* Organizer Cards */}
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
+                <h3 className="text-sm mb-1" style={{ fontWeight: 600 }}>
+                  Organizadores
                 </h3>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center">
-                    {event.organizer.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div style={{ fontWeight: 600 }} className="line-clamp-1">
-                      {event.organizer.name}
+                {event.organizers.map(org => (
+                  <div key={org.id} className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                      {org.name.charAt(0)}
                     </div>
-                    <div className="text-sm text-muted-foreground line-clamp-1">
-                      {event.organizer.email}
+                    <div className="flex-1 min-w-0">
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }} className="line-clamp-1">
+                        {org.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground line-clamp-1">
+                        {org.email}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
 
               {/* Stream Controls */}
               {isOrganizer && (
                 <div className="mt-4">
-                  {streamData ? (
+                  {(event.streams && event.streams.some(s => String(s.organizerId) === String(usuario?.id))) || streamData ? (
                     <div className="space-y-2">
                       <Button
                         variant="outline"

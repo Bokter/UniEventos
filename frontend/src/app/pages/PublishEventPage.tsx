@@ -10,9 +10,10 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { CategoryBadge } from "../components/CategoryBadge";
-import { EventCategory, mockEvents } from "../data/mockData";
+import { EventCategory, mockEvents, mockUsers, User } from "../data/mockData";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
+import { X as CloseIcon } from "lucide-react";
 
 // Fix for default marker icon
 // TODO: Manejar error si Leaflet no puede cargar iconos desde unpkg.com
@@ -111,6 +112,7 @@ export function PublishEventPage() {
   const [coverImage, setCoverImage] = useState("");
   const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
+  const [selectedCoOrganizers, setSelectedCoOrganizers] = useState<User[]>([]);
 
   const { usuario, isLoading } = useAuth();
 
@@ -128,9 +130,18 @@ export function PublishEventPage() {
         setLocationName(eventToEdit.location.name);
         setLocationCoords([eventToEdit.location.lat, eventToEdit.location.lng]);
         setCoverImage(eventToEdit.coverImage);
+        
+        // Populate co-organizers (excluding the current user)
+        if (usuario && eventToEdit.organizers) {
+          const coOrgs = eventToEdit.organizers
+            .filter(o => String(o.id) !== String(usuario.id))
+            .map(o => mockUsers.find(u => u.id === o.id))
+            .filter(Boolean) as User[];
+          setSelectedCoOrganizers(coOrgs);
+        }
       }
     }
-  }, [editId]);
+  }, [editId, usuario]);
 
   if (isLoading) return null;
   if (!usuario || usuario.rol !== 'organizador') {
@@ -205,6 +216,12 @@ export function PublishEventPage() {
     }
     */
 
+    // Preparar lista de organizadores
+    const allOrganizers = [
+      { id: String(usuario.id), name: usuario.nombre_completo, email: usuario.email },
+      ...selectedCoOrganizers.map(o => ({ id: o.id, name: o.name, email: o.email }))
+    ];
+
     if (editId) {
       const eventToEdit = mockEvents.find(e => e.id === editId);
       if (eventToEdit) {
@@ -219,6 +236,8 @@ export function PublishEventPage() {
           lng: locationCoords[1],
         };
         eventToEdit.coverImage = coverImage || eventToEdit.coverImage;
+        eventToEdit.organizers = allOrganizers;
+        
         // Si estaba rechazado o en borrador, lo pasamos al estado indicado
         eventToEdit.status = targetStatus;
         if (targetStatus === 'In review') {
@@ -241,16 +260,12 @@ export function PublishEventPage() {
           lng: locationCoords[1],
         },
         coverImage: coverImage || 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-        organizer: {
-          id: String(usuario.id),
-          name: usuario.nombre_completo,
-          email: usuario.email,
-        },
+        organizers: allOrganizers,
         status: targetStatus,
         submittedDate: targetStatus === 'In review' ? new Date() : undefined,
       };
 
-      mockEvents.push(newEvent);
+      mockEvents.push(newEvent as any); // using any for simplicity since Event type might have streams optional
       toast.success(targetStatus === 'Draft' ? "¡Guardado como borrador!" : "¡Evento enviado a revisión!");
       navigate("/organizer/dashboard");
     }
@@ -353,6 +368,48 @@ export function PublishEventPage() {
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Co-organizadores Select */}
+              <div>
+                <Label>Co-organizadores</Label>
+                <p className="text-xs text-muted-foreground mb-2">Tú serás asignado como organizador automáticamente. Selecciona co-organizadores adicionales si es necesario.</p>
+                <Select 
+                  onValueChange={(userId) => {
+                    if (!userId) return;
+                    const user = mockUsers.find(u => u.id === userId);
+                    if (user && !selectedCoOrganizers.some(u => u.id === user.id)) {
+                      setSelectedCoOrganizers([...selectedCoOrganizers, user]);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Buscar un co-organizador..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockUsers
+                      .filter(u => u.role === 'Organizer' && String(u.id) !== String(usuario?.id) && !selectedCoOrganizers.some(so => so.id === u.id))
+                      .map(u => (
+                        <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {selectedCoOrganizers.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {selectedCoOrganizers.map(coOrg => (
+                      <div key={coOrg.id} className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-200">
+                        {coOrg.name}
+                        <button 
+                          onClick={() => setSelectedCoOrganizers(selectedCoOrganizers.filter(u => u.id !== coOrg.id))}
+                          className="ml-1 hover:text-blue-900 focus:outline-none"
+                        >
+                          <CloseIcon className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -523,8 +580,11 @@ export function PublishEventPage() {
                   <p style={{ fontWeight: 600 }}>{locationName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Organizador</p>
-                  <p style={{ fontWeight: 600 }}>{usuario.nombre_completo}</p>
+                  <p className="text-sm text-muted-foreground">Organizadores</p>
+                  <p style={{ fontWeight: 600 }}>
+                    {usuario.nombre_completo}
+                    {selectedCoOrganizers.length > 0 && `, ${selectedCoOrganizers.map(o => o.name).join(', ')}`}
+                  </p>
                 </div>
               </div>
 

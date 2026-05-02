@@ -88,7 +88,8 @@ export function OrganizerDashboardPage() {
 
   const handleOpenStreamDialog = (event: Event) => {
     setSelectedEventForStream(event);
-    setStreamLink(event.streamLink || "");
+    const userStream = event.streams?.find(s => String(s.organizerId) === String(usuario?.id));
+    setStreamLink(userStream?.streamLink || "");
     setStreamDialogOpen(true);
   };
 
@@ -112,7 +113,13 @@ export function OrganizerDashboardPage() {
 
     const event = mockEvents.find(e => e.id === selectedEventForStream.id);
     if (event) {
-      event.streamLink = streamLink;
+      if (!event.streams) event.streams = [];
+      const streamIdx = event.streams.findIndex(s => String(s.organizerId) === String(usuario?.id));
+      if (streamIdx >= 0) {
+        event.streams[streamIdx].streamLink = streamLink;
+      } else if (usuario) {
+        event.streams.push({ organizerId: String(usuario.id), streamLink });
+      }
       toast.success("Enlace de transmisión guardado");
       setRefresh(prev => prev + 1);
       setStreamDialogOpen(false);

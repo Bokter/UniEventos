@@ -15,15 +15,15 @@ export interface Event {
     lng: number;
   };
   coverImage: string;
-  organizer: {
+  organizers: {
     id: string;
     name: string;
     email: string;
-  };
+  }[];
   status: EventStatus;
   submittedDate?: Date;
   rejectionReason?: string;
-  streamLink?: string;
+  streams?: { organizerId: string; streamLink: string; }[];
 }
 
 export interface User {
@@ -47,29 +47,64 @@ export const mockUsers: User[] = [
   {
     id: '1',
     name: 'Dr. Sarah Johnson',
-    email: 'sarah.johnson@university.edu',
+    email: 'sarah.johnson@uninorte.edu.co',
     role: 'Organizer',
     isActive: true,
   },
   {
     id: '2',
     name: 'Prof. Michael Chen',
-    email: 'michael.chen@university.edu',
+    email: 'michael.chen@uninorte.edu.co',
     role: 'Organizer',
     isActive: true,
   },
   {
     id: '3',
     name: 'Emma Rodriguez',
-    email: 'emma.rodriguez@university.edu',
+    email: 'emma.rodriguez@uninorte.edu.co',
     role: 'Organizer',
     isActive: true,
   },
   {
     id: '4',
     name: 'Admin User',
-    email: 'admin@university.edu',
+    email: 'admin@uninorte.edu.co',
     role: 'Admin',
+    isActive: true,
+  },
+  {
+    id: '5',
+    name: 'David Kim',
+    email: 'david.kim@uninorte.edu.co',
+    role: 'Organizer',
+    isActive: true,
+  },
+  {
+    id: '6',
+    name: 'Dr. Maria Garcia',
+    email: 'maria.garcia@uninorte.edu.co',
+    role: 'Organizer',
+    isActive: true,
+  },
+  {
+    id: '7',
+    name: 'James Wilson',
+    email: 'james.wilson@uninorte.edu.co',
+    role: 'Organizer',
+    isActive: true,
+  },
+  {
+    id: '8',
+    name: 'Prof. Robert Taylor',
+    email: 'robert.taylor@uninorte.edu.co',
+    role: 'Organizer',
+    isActive: true,
+  },
+  {
+    id: '9',
+    name: 'Linda Martinez',
+    email: 'linda.martinez@uninorte.edu.co',
+    role: 'Organizer',
     isActive: true,
   },
 ];
@@ -89,9 +124,12 @@ export const mockEvents: Event[] = [
       lng: -73.9855,
     },
     coverImage: 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0], mockUsers[1]],
     status: 'Approved',
     submittedDate: new Date('2026-03-10'),
+    streams: [
+      { organizerId: mockUsers[0].id, streamLink: 'mock-stream-1' }
+    ]
   },
   {
     id: '2',
@@ -106,7 +144,7 @@ export const mockEvents: Event[] = [
       lng: -73.9845,
     },
     coverImage: 'https://images.unsplash.com/photo-1738667289162-9e55132e18a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGNvbmNlcnQlMjBzdGFnZXxlbnwxfHx8fDE3NzU0MDA5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[1],
+    organizers: [mockUsers[1]],
     status: 'Approved',
     submittedDate: new Date('2026-03-12'),
   },
@@ -123,7 +161,7 @@ export const mockEvents: Event[] = [
       lng: -73.9860,
     },
     coverImage: 'https://images.unsplash.com/photo-1753164725369-23a8c8190922?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b3Jrc2hvcCUyMHBlb3BsZSUyMGxlYXJuaW5nfGVufDF8fHx8MTc3NTQxNDg3MHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[2],
+    organizers: [mockUsers[2]],
     status: 'Approved',
     submittedDate: new Date('2026-03-15'),
   },
@@ -140,7 +178,7 @@ export const mockEvents: Event[] = [
       lng: -73.9870,
     },
     coverImage: 'https://images.unsplash.com/photo-1772653519333-c1927e38f791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcG9ydHMlMjBldmVudCUyMGNvbGxlZ2V8ZW58MXx8fHwxNzc1NDE0ODY5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0]],
     status: 'Approved',
     submittedDate: new Date('2026-03-08'),
   },
@@ -157,7 +195,7 @@ export const mockEvents: Event[] = [
       lng: -73.9850,
     },
     coverImage: 'https://images.unsplash.com/photo-1620829813947-ef4246827355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMHN0dWR5aW5nJTIwZ3JvdXB8ZW58MXx8fHwxNzc1Mzg1Njk2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[1],
+    organizers: [mockUsers[1]],
     status: 'Approved',
     submittedDate: new Date('2026-03-05'),
   },
@@ -174,7 +212,7 @@ export const mockEvents: Event[] = [
       lng: -73.9865,
     },
     coverImage: 'https://images.unsplash.com/photo-1606761568499-6d2451b23c66?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwbGVjdHVyZSUyMGhhbGx8ZW58MXx8fHwxNzc1NDE0ODY5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[2],
+    organizers: [mockUsers[2]],
     status: 'Approved',
     submittedDate: new Date('2026-03-18'),
   },
@@ -192,7 +230,7 @@ export const mockEvents: Event[] = [
       lng: -73.9880,
     },
     coverImage: 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0]],
     status: 'In review',
     submittedDate: new Date('2026-04-01'),
   },
@@ -209,7 +247,7 @@ export const mockEvents: Event[] = [
       lng: -73.9875,
     },
     coverImage: 'https://images.unsplash.com/photo-1620829813947-ef4246827355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMHN0dWR5aW5nJTIwZ3JvdXB8ZW58MXx8fHwxNzc1Mzg1Njk2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0]],
     status: 'Draft',
   },
   {
@@ -225,7 +263,7 @@ export const mockEvents: Event[] = [
       lng: -73.9855,
     },
     coverImage: 'https://images.unsplash.com/photo-1738667289162-9e55132e18a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGNvbmNlcnQlMjBzdGFnZXxlbnwxfHx8fDE3NzU0MDA5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0]],
     status: 'Rejected',
     submittedDate: new Date('2026-03-28'),
     rejectionReason: 'This event does not have proper authorization and violates university policy regarding after-hours events.',
@@ -235,7 +273,7 @@ export const mockEvents: Event[] = [
 export const getApprovedEvents = () => mockEvents.filter(e => e.status === 'Approved');
 export const getPendingEvents = () => mockEvents.filter(e => e.status === 'In review');
 export const getEventsByOrganizer = (organizerId: string) => 
-  mockEvents.filter(e => e.organizer.id === organizerId);
+  mockEvents.filter(e => e.organizers.some(o => o.id === organizerId));
 
 export const mockCategories = [
   { id: '1', name: 'Cultural', description: 'Eventos culturales y artísticos', eventCount: 15, isActive: true },
