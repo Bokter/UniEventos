@@ -93,12 +93,17 @@
           distText.setAttribute('value', formatDistancia(dist));
         }
 
-        // Ocultar indicador si estás muy cerca
-        if (dist !== null && dist < 20) {
+        if (dist !== null && dist < 50) {
+          // Muy cerca — GPS impreciso, mostrar mensaje de llegada
           entity.setAttribute('visible', 'false');
           document.getElementById('status').textContent = `✅ Ya llegaste a: ${evento.titulo}`;
+        } else if (dist !== null && dist > 200) {
+          // Muy lejos — ocultar indicador
+          entity.setAttribute('visible', 'false');
         } else {
+          // Rango ideal entre 50 y 200 metros
           entity.setAttribute('visible', 'true');
+          document.getElementById('status').textContent = `${eventosData.length} evento(s) encontrado(s)`;
         }
       });
     }
