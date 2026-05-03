@@ -83,7 +83,11 @@
       return `${(metros / 1000).toFixed(1)} km`;
     }
 
+
     function actualizarDistancias() {
+      let algunoCerca = false;
+      let nombreCerca = '';
+
       eventosEntidades.forEach((entity, i) => {
         const evento = eventosData[i];
         const dist = calcularDistancia(evento.latitud, evento.longitud);
@@ -93,19 +97,23 @@
           distText.setAttribute('value', formatDistancia(dist));
         }
 
-        if (dist !== null && dist < 50) {
-          // Muy cerca — GPS impreciso, mostrar mensaje de llegada
+        if (dist !== null && dist < 20) {
           entity.setAttribute('visible', 'false');
-          document.getElementById('status').textContent = `✅ Ya llegaste a: ${evento.titulo}`;
+          algunoCerca = true;
+          nombreCerca = evento.titulo;
         } else if (dist !== null && dist > 200) {
-          // Muy lejos — ocultar indicador
           entity.setAttribute('visible', 'false');
         } else {
-          // Rango ideal entre 50 y 200 metros
           entity.setAttribute('visible', 'true');
-          document.getElementById('status').textContent = `${eventosData.length} evento(s) encontrado(s)`;
         }
       });
+
+      // Mostrar mensaje si llegaste a algún evento
+      if (algunoCerca) {
+        document.getElementById('status').textContent = `✅ ¡Llegaste a: ${nombreCerca}!`;
+      } else {
+        document.getElementById('status').textContent = `${eventosData.length} evento(s) encontrado(s)`;
+      }
     }
 
     async function cargarEventos() {
