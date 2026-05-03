@@ -104,12 +104,6 @@
           distText.setAttribute('value', formatDistancia(dist));
         }
 
-        // Hacer que el indicador siempre mire a la cámara
-        const cam = document.querySelector('[gps-projected-camera]');
-        if (cam) {
-          entity.setAttribute('look-at', '#camera');
-        }
-
         if (dist === null) {
           entity.setAttribute('scale', '0 0 0');
         } else if (dist < DISTANCIA_MINIMA) {
@@ -147,6 +141,7 @@
           entity.setAttribute('gps-projected-entity-place',
             `latitude: ${evento.latitud}; longitude: ${evento.longitud}`);
           entity.setAttribute('scale', '0 0 0');
+          entity.setAttribute('billboard', '');
 
           // Fondo
           const fondo = document.createElement('a-plane');
