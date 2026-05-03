@@ -97,20 +97,15 @@
           distText.setAttribute('value', formatDistancia(dist));
         }
 
-        if (dist !== null && dist < 10) {
-          // Ocultar con scale en vez de visible
+        if (dist !== null && dist < 20) {
+          // Muy cerca — ocultar y mostrar mensaje
           entity.setAttribute('scale', '0 0 0');
           algunoCerca = true;
           nombreCerca = evento.titulo;
-        } else if (dist !== null && dist > 200) {
-          entity.setAttribute('scale', '0 0 0');
         } else {
-          // Escala basada en distancia — más lejos = más pequeño
-          const escala = Math.max(10, 20 - (dist / 20));
-          // Altura basada en distancia — eventos más lejos aparecen más arriba
-          const alturaY = 2 + (dist / 50);
+          // Visible a cualquier distancia mayor a 20m
+          const escala = 20;
           entity.setAttribute('scale', `${escala} ${escala} ${escala}`);
-          entity.setAttribute('position', `0 ${alturaY} 0`);
         }
       });
 
