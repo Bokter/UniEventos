@@ -1,221 +1,241 @@
 <!DOCTYPE html>
 <html>
-<script>
-  AFRAME.registerComponent('billboard', {
-    tick: function () {
-      const camera = document.querySelector('[gps-projected-camera]');
-      if (!camera) return;
-      this.el.object3D.lookAt(camera.object3D.position);
-    }
-  });
-</script>
-
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>UniEventos AR</title>
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: black;
-    }
-
-    #ui-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      padding: 12px 16px;
-      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
-      z-index: 999;
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      font-size: 14px;
-    }
-  </style>
-</head>
-
-<body>
-  <div id="ui-overlay">
-    <div style="font-weight: bold; font-size: 16px;">🎯 UniEventos AR</div>
-    <div id="status">Iniciando GPS...</div>
-  </div>
-
-  <a-scene vr-mode-ui="enabled: false" arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false"
-    renderer="antialias: true; alpha: true">
-    <a-camera gps-projected-camera rotation-reader></a-camera>
-  </a-scene>
-
-  <script>
-    const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
-    const DISTANCIA_MINIMA = 20;    // ocultar si estás muy cerca
-    const DISTANCIA_MAXIMA = 500;   // ocultar si estás muy lejos
-
-    let miLatitud = null;
-    let miLongitud = null;
-    let eventosEntidades = [];
-    let eventosData = [];
-
-    navigator.geolocation.watchPosition(pos => {
-      miLatitud = pos.coords.latitude;
-      miLongitud = pos.coords.longitude;
-      document.getElementById('status').textContent = `GPS listo · ${pos.coords.accuracy.toFixed(0)}m precisión`;
-      actualizarIndicadores();
-    }, err => {
-      document.getElementById('status').textContent = 'Error GPS: ' + err.message;
-    }, {
-      enableHighAccuracy: true,
-      maximumAge: 1000,
-      timeout: 10000
-    });
-
-    function calcularDistancia(lat2, lng2) {
-      if (miLatitud === null) return null;
-      const R = 6371000;
-      const dLat = (lat2 - miLatitud) * Math.PI / 180;
-      const dLng = (lng2 - miLongitud) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(miLatitud * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLng / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    function formatDistancia(metros) {
-      if (metros === null) return '...';
-      if (metros < 1000) return `${Math.round(metros)} m`;
-      return `${(metros / 1000).toFixed(1)} km`;
-    }
-
-    function actualizarIndicadores() {
-      let algunoCerca = false;
-      let nombreCerca = '';
-
-      eventosEntidades.forEach((entity, i) => {
-        const evento = eventosData[i];
-        const dist = calcularDistancia(evento.latitud, evento.longitud);
-
-        // Actualizar texto de distancia
-        const distText = entity.querySelector('.dist-text');
-        if (distText) {
-          distText.setAttribute('value', formatDistancia(dist));
-        }
-
-        if (dist === null) {
-          entity.setAttribute('scale', '0 0 0');
-        } else if (dist < DISTANCIA_MINIMA) {
-          entity.setAttribute('scale', '0 0 0');
-          algunoCerca = true;
-          nombreCerca = evento.titulo;
-        } else if (dist > DISTANCIA_MAXIMA) {
-          entity.setAttribute('scale', '0 0 0');
-        } else {
-          entity.setAttribute('scale', '20 20 20');
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UniEventos AR</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script>
+      AFRAME.registerComponent('billboard', {
+        tick: function () {
+          const camera = document.querySelector('[gps-projected-camera]');
+          if (!camera) return;
+          this.el.object3D.lookAt(camera.object3D.position);
         }
       });
-
-      if (algunoCerca) {
-        document.getElementById('status').textContent = `✅ ¡Llegaste a: ${nombreCerca}!`;
-      } else {
-        document.getElementById('status').textContent = `${eventosData.length} evento(s) encontrado(s)`;
+    </script>
+    <style>
+      body { margin: 0; overflow: hidden; background: black; }
+      #ui-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        padding: 12px 16px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+        z-index: 999;
+        color: white;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 14px;
       }
-    }
+      #debug {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0,0,0,0.8);
+        color: lime;
+        font-family: monospace;
+        font-size: 11px;
+        padding: 8px;
+        z-index: 9999;
+        max-height: 35vh;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ui-overlay">
+      <div style="font-weight: bold; font-size: 16px;">🎯 UniEventos AR</div>
+      <div id="status">Iniciando GPS...</div>
+    </div>
 
-    async function cargarEventos() {
-      try {
-        document.getElementById('status').textContent = 'Cargando eventos...';
-        const res = await fetch(API_URL);
-        const eventos = await res.json();
-        const scene = document.querySelector('a-scene');
+    <div id="debug"></div>
 
-        if (eventos.length === 0) {
-          document.getElementById('status').textContent = 'No hay eventos hoy';
-          return;
-        }
+    <a-scene
+      vr-mode-ui="enabled: false"
+      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false"
+      renderer="antialias: true; alpha: true"
+    >
+      <a-camera gps-projected-camera rotation-reader></a-camera>
+    </a-scene>
 
-        eventos.forEach(evento => {
-          const entity = document.createElement('a-entity');
-          entity.setAttribute('gps-projected-entity-place',
-            `latitude: ${evento.latitud}; longitude: ${evento.longitud}`);
-          entity.setAttribute('scale', '0 0 0');
-          entity.setAttribute('billboard', '');
+    <script>
+      const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
+      const DISTANCIA_MINIMA = 20;
+      const DISTANCIA_MAXIMA = 500;
 
-          // Fondo
-          const fondo = document.createElement('a-plane');
-          fondo.setAttribute('color', '#0f0f2e');
-          fondo.setAttribute('opacity', '0.9');
-          fondo.setAttribute('width', '3.2');
-          fondo.setAttribute('height', '1.8');
-          fondo.setAttribute('side', 'double');
+      let miLatitud = null;
+      let miLongitud = null;
+      let eventosEntidades = [];
+      let eventosData = [];
 
-          // Línea superior
-          const linea = document.createElement('a-plane');
-          linea.setAttribute('color', '#6c63ff');
-          linea.setAttribute('width', '3.2');
-          linea.setAttribute('height', '0.08');
-          linea.setAttribute('position', '0 0.86 0.01');
-          linea.setAttribute('side', 'double');
+      function log(msg) {
+        const d = document.getElementById('debug');
+        d.innerHTML += msg + '<br>';
+        d.scrollTop = d.scrollHeight;
+        console.log(msg);
+      }
 
-          // Título
-          const titulo = document.createElement('a-text');
-          titulo.setAttribute('value', evento.titulo);
-          titulo.setAttribute('color', '#ffffff');
-          titulo.setAttribute('align', 'center');
-          titulo.setAttribute('position', '0 0.55 0.01');
-          titulo.setAttribute('width', '3');
-          titulo.setAttribute('wrap-count', '25');
+      navigator.geolocation.watchPosition(pos => {
+        miLatitud = pos.coords.latitude;
+        miLongitud = pos.coords.longitude;
+        log(`GPS: ${miLatitud.toFixed(5)}, ${miLongitud.toFixed(5)} ±${pos.coords.accuracy.toFixed(0)}m`);
+        document.getElementById('status').textContent = `GPS listo · ±${pos.coords.accuracy.toFixed(0)}m precisión`;
+        actualizarIndicadores();
+      }, err => {
+        log(`ERROR GPS: ${err.code} - ${err.message}`);
+        document.getElementById('status').textContent = 'Error GPS: ' + err.message;
+      }, {
+        enableHighAccuracy: true,
+        maximumAge: 1000,
+        timeout: 10000
+      });
 
-          // Lugar
-          const lugar = document.createElement('a-text');
-          lugar.setAttribute('value', `📍 ${evento.lugar_nombre}`);
-          lugar.setAttribute('color', '#a0a0ff');
-          lugar.setAttribute('align', 'center');
-          lugar.setAttribute('position', '0 0.05 0.01');
-          lugar.setAttribute('width', '2.8');
+      function calcularDistancia(lat2, lng2) {
+        if (miLatitud === null) return null;
+        const R = 6371000;
+        const dLat = (lat2 - miLatitud) * Math.PI / 180;
+        const dLng = (lng2 - miLongitud) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 +
+                  Math.cos(miLatitud * Math.PI/180) *
+                  Math.cos(lat2 * Math.PI/180) *
+                  Math.sin(dLng/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
 
-          // Hora
-          const hora = document.createElement('a-text');
-          hora.setAttribute('value', `🕐 ${evento.hora_inicio.slice(0, 5)} - ${evento.hora_fin.slice(0, 5)}`);
-          hora.setAttribute('color', '#80ffcc');
-          hora.setAttribute('align', 'center');
-          hora.setAttribute('position', '0 -0.35 0.01');
-          hora.setAttribute('width', '2.8');
+      function formatDistancia(metros) {
+        if (metros === null) return '...';
+        if (metros < 1000) return `${Math.round(metros)} m`;
+        return `${(metros / 1000).toFixed(1)} km`;
+      }
 
-          // Distancia
-          const dist = document.createElement('a-text');
-          dist.setAttribute('value', '...');
-          dist.setAttribute('color', '#ffcc00');
-          dist.setAttribute('align', 'center');
-          dist.setAttribute('position', '0 -0.7 0.01');
-          dist.setAttribute('width', '2.8');
-          dist.classList.add('dist-text');
+      function actualizarIndicadores() {
+        let algunoCerca = false;
+        let nombreCerca = '';
 
-          entity.appendChild(fondo);
-          entity.appendChild(linea);
-          entity.appendChild(titulo);
-          entity.appendChild(lugar);
-          entity.appendChild(hora);
-          entity.appendChild(dist);
-          scene.appendChild(entity);
+        eventosEntidades.forEach((entity, i) => {
+          const evento = eventosData[i];
+          const dist = calcularDistancia(evento.latitud, evento.longitud);
 
-          eventosEntidades.push(entity);
-          eventosData.push(evento);
+          log(`Dist a ${evento.titulo}: ${dist ? dist.toFixed(0) : 'null'}m`);
+
+          const distText = entity.querySelector('.dist-text');
+          if (distText) {
+            distText.setAttribute('value', formatDistancia(dist));
+          }
+
+          if (dist === null) {
+            entity.setAttribute('scale', '0 0 0');
+          } else if (dist < DISTANCIA_MINIMA) {
+            entity.setAttribute('scale', '0 0 0');
+            algunoCerca = true;
+            nombreCerca = evento.titulo;
+          } else if (dist > DISTANCIA_MAXIMA) {
+            entity.setAttribute('scale', '0 0 0');
+          } else {
+            entity.setAttribute('scale', '20 20 20');
+          }
         });
 
-        document.getElementById('status').textContent = `${eventos.length} evento(s) encontrado(s)`;
-        actualizarIndicadores();
-
-      } catch (err) {
-        console.error('Error:', err);
-        document.getElementById('status').textContent = 'Error cargando eventos';
+        if (algunoCerca) {
+          document.getElementById('status').textContent = `✅ ¡Llegaste a: ${nombreCerca}!`;
+        } else {
+          document.getElementById('status').textContent = `${eventosData.length} evento(s) encontrado(s)`;
+        }
       }
-    }
 
-    document.querySelector('a-scene').addEventListener('loaded', cargarEventos);
-  </script>
-</body>
+      async function cargarEventos() {
+        try {
+          log('Fetching API...');
+          document.getElementById('status').textContent = 'Cargando eventos...';
+          const res = await fetch(API_URL);
+          const eventos = await res.json();
+          log(`Eventos recibidos: ${eventos.length}`);
+          eventos.forEach(e => log(`Evento: ${e.titulo} → lat:${e.latitud} lng:${e.longitud}`));
 
+          const scene = document.querySelector('a-scene');
+
+          if (eventos.length === 0) {
+            document.getElementById('status').textContent = 'No hay eventos hoy';
+            return;
+          }
+
+          eventos.forEach(evento => {
+            const entity = document.createElement('a-entity');
+            entity.setAttribute('gps-projected-entity-place',
+              `latitude: ${evento.latitud}; longitude: ${evento.longitud}`);
+            entity.setAttribute('scale', '0 0 0');
+            entity.setAttribute('billboard', '');
+
+            const fondo = document.createElement('a-plane');
+            fondo.setAttribute('color', '#0f0f2e');
+            fondo.setAttribute('opacity', '0.9');
+            fondo.setAttribute('width', '3.2');
+            fondo.setAttribute('height', '1.8');
+            fondo.setAttribute('side', 'double');
+
+            const linea = document.createElement('a-plane');
+            linea.setAttribute('color', '#6c63ff');
+            linea.setAttribute('width', '3.2');
+            linea.setAttribute('height', '0.08');
+            linea.setAttribute('position', '0 0.86 0.01');
+            linea.setAttribute('side', 'double');
+
+            const titulo = document.createElement('a-text');
+            titulo.setAttribute('value', evento.titulo);
+            titulo.setAttribute('color', '#ffffff');
+            titulo.setAttribute('align', 'center');
+            titulo.setAttribute('position', '0 0.55 0.01');
+            titulo.setAttribute('width', '3');
+            titulo.setAttribute('wrap-count', '25');
+
+            const lugar = document.createElement('a-text');
+            lugar.setAttribute('value', `📍 ${evento.lugar_nombre}`);
+            lugar.setAttribute('color', '#a0a0ff');
+            lugar.setAttribute('align', 'center');
+            lugar.setAttribute('position', '0 0.05 0.01');
+            lugar.setAttribute('width', '2.8');
+
+            const hora = document.createElement('a-text');
+            hora.setAttribute('value', `🕐 ${evento.hora_inicio.slice(0,5)} - ${evento.hora_fin.slice(0,5)}`);
+            hora.setAttribute('color', '#80ffcc');
+            hora.setAttribute('align', 'center');
+            hora.setAttribute('position', '0 -0.35 0.01');
+            hora.setAttribute('width', '2.8');
+
+            const dist = document.createElement('a-text');
+            dist.setAttribute('value', '...');
+            dist.setAttribute('color', '#ffcc00');
+            dist.setAttribute('align', 'center');
+            dist.setAttribute('position', '0 -0.7 0.01');
+            dist.setAttribute('width', '2.8');
+            dist.classList.add('dist-text');
+
+            entity.appendChild(fondo);
+            entity.appendChild(linea);
+            entity.appendChild(titulo);
+            entity.appendChild(lugar);
+            entity.appendChild(hora);
+            entity.appendChild(dist);
+            scene.appendChild(entity);
+
+            eventosEntidades.push(entity);
+            eventosData.push(evento);
+          });
+
+          document.getElementById('status').textContent = `${eventos.length} evento(s) encontrado(s)`;
+          actualizarIndicadores();
+
+        } catch (err) {
+          log(`ERROR: ${err.message}`);
+          document.getElementById('status').textContent = 'Error cargando eventos';
+        }
+      }
+
+      document.querySelector('a-scene').addEventListener('loaded', () => {
+        log('Escena AR lista');
+        cargarEventos();
+      });
+    </script>
+  </body>
 </html>
