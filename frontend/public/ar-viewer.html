@@ -97,18 +97,23 @@
           distText.setAttribute('value', formatDistancia(dist));
         }
 
-        if (dist !== null && dist < 20) {
-          entity.setAttribute('visible', 'false');
+        if (dist !== null && dist < 50) {
+          // Ocultar con scale en vez de visible
+          entity.setAttribute('scale', '0 0 0');
           algunoCerca = true;
           nombreCerca = evento.titulo;
         } else if (dist !== null && dist > 200) {
-          entity.setAttribute('visible', 'false');
+          entity.setAttribute('scale', '0 0 0');
         } else {
-          entity.setAttribute('visible', 'true');
+          // Escala basada en distancia — más lejos = más pequeño
+          const escala = Math.max(10, 20 - (dist / 20));
+          // Altura basada en distancia — eventos más lejos aparecen más arriba
+          const alturaY = 2 + (dist / 50);
+          entity.setAttribute('scale', `${escala} ${escala} ${escala}`);
+          entity.setAttribute('position', `0 ${alturaY} 0`);
         }
       });
 
-      // Mostrar mensaje si llegaste a algún evento
       if (algunoCerca) {
         document.getElementById('status').textContent = `✅ ¡Llegaste a: ${nombreCerca}!`;
       } else {
