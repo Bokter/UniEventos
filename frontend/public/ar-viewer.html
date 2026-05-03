@@ -124,24 +124,27 @@
 
         eventos.forEach(evento => {
           const entity = document.createElement('a-entity');
-          entity.setAttribute('gps-projected-entity-place', `latitude: ${evento.latitud}; longitude: ${evento.longitud}`);
-          entity.setAttribute('look-at', '[gps-projected-camera]');
+          entity.setAttribute('gps-projected-entity-place',
+            `latitude: ${evento.latitud}; longitude: ${evento.longitud}`);
           entity.setAttribute('scale', '20 20 20');
+          entity.setAttribute('rotation', '0 0 0');
 
-          // Fondo con bordes redondeados
-          const fondo = document.createElement('a-rounded');
+          // Fondo
+          const fondo = document.createElement('a-plane');
           fondo.setAttribute('color', '#0f0f2e');
           fondo.setAttribute('opacity', '0.9');
           fondo.setAttribute('width', '3.2');
           fondo.setAttribute('height', '1.8');
           fondo.setAttribute('position', '0 0 0');
+          fondo.setAttribute('side', 'double');
 
-          // Línea superior de color
+          // Línea superior
           const linea = document.createElement('a-plane');
           linea.setAttribute('color', '#6c63ff');
           linea.setAttribute('width', '3.2');
           linea.setAttribute('height', '0.08');
           linea.setAttribute('position', '0 0.86 0.01');
+          linea.setAttribute('side', 'double');
 
           // Título
           const titulo = document.createElement('a-text');
@@ -150,25 +153,15 @@
           titulo.setAttribute('align', 'center');
           titulo.setAttribute('position', '0 0.55 0.01');
           titulo.setAttribute('width', '3');
-          titulo.setAttribute('font', 'roboto');
           titulo.setAttribute('wrap-count', '25');
 
-          // Separador
-          const sep = document.createElement('a-plane');
-          sep.setAttribute('color', '#ffffff');
-          sep.setAttribute('opacity', '0.15');
-          sep.setAttribute('width', '2.8');
-          sep.setAttribute('height', '0.02');
-          sep.setAttribute('position', '0 0.2 0.01');
-
-          // Ícono lugar
+          // Lugar
           const lugar = document.createElement('a-text');
           lugar.setAttribute('value', `📍 ${evento.lugar_nombre}`);
           lugar.setAttribute('color', '#a0a0ff');
           lugar.setAttribute('align', 'center');
-          lugar.setAttribute('position', '0 0 0.01');
+          lugar.setAttribute('position', '0 0.05 0.01');
           lugar.setAttribute('width', '2.8');
-          lugar.setAttribute('font', 'roboto');
 
           // Hora
           const hora = document.createElement('a-text');
@@ -177,7 +170,6 @@
           hora.setAttribute('align', 'center');
           hora.setAttribute('position', '0 -0.35 0.01');
           hora.setAttribute('width', '2.8');
-          hora.setAttribute('font', 'roboto');
 
           // Distancia
           const dist = document.createElement('a-text');
@@ -186,13 +178,11 @@
           dist.setAttribute('align', 'center');
           dist.setAttribute('position', '0 -0.7 0.01');
           dist.setAttribute('width', '2.8');
-          dist.setAttribute('font', 'roboto');
           dist.classList.add('dist-text');
 
           entity.appendChild(fondo);
           entity.appendChild(linea);
           entity.appendChild(titulo);
-          entity.appendChild(sep);
           entity.appendChild(lugar);
           entity.appendChild(hora);
           entity.appendChild(dist);
