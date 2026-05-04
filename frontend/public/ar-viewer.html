@@ -53,8 +53,8 @@
 
     <a-scene
       vr-mode-ui="enabled: false"
-      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false"
-      renderer="antialias: true; alpha: true"
+      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false; trackingMethod: best"
+      renderer="antialias: true; alpha: true; logarithmicDepthBuffer: true"
     >
       <a-camera gps-projected-camera rotation-reader></a-camera>
     </a-scene>
@@ -76,20 +76,37 @@
         console.log(msg);
       }
 
-      navigator.geolocation.watchPosition(pos => {
-        miLatitud = pos.coords.latitude;
-        miLongitud = pos.coords.longitude;
-        log(`GPS: ${miLatitud.toFixed(5)}, ${miLongitud.toFixed(5)} ±${pos.coords.accuracy.toFixed(0)}m`);
-        document.getElementById('status').textContent = `GPS listo · ±${pos.coords.accuracy.toFixed(0)}m precisión`;
-        actualizarIndicadores();
-      }, err => {
-        log(`ERROR GPS: ${err.code} - ${err.message}`);
-        document.getElementById('status').textContent = 'Error GPS: ' + err.message;
-      }, {
-        enableHighAccuracy: true,
-        maximumAge: 1000,
-        timeout: 10000
-      });
+      function iniciarGPS() {
+        navigator.geolocation.watchPosition(pos => {
+          miLatitud = pos.coords.latitude;
+          miLongitud = pos.coords.longitude;
+          log(`GPS: ${miLatitud.toFixed(5)}, ${miLongitud.toFixed(5)} ±${pos.coords.accuracy.toFixed(0)}m`);
+          document.getElementById('status').textContent = `GPS listo · ±${pos.coords.accuracy.toFixed(0)}m precisión`;
+          actualizarIndicadores();
+        }, err => {
+          log(`ERROR GPS: ${err.code} - ${err.message}`);
+          document.getElementById('status').textContent = 'GPS timeout, intentando baja precisión...';
+          // Fallback con baja precisión
+          navigator.geolocation.getCurrentPosition(pos => {
+            miLatitud = pos.coords.latitude;
+            miLongitud = pos.coords.longitude;
+            log(`GPS fallback: ${miLatitud.toFixed(5)}, ${miLongitud.toFixed(5)} ±${pos.coords.accuracy.toFixed(0)}m`);
+            document.getElementById('status').textContent = `GPS (baja precisión) · ±${pos.coords.accuracy.toFixed(0)}m`;
+            actualizarIndicadores();
+          }, err2 => {
+            log(`ERROR GPS fallback: ${err2.message}`);
+            document.getElementById('status').textContent = 'No se pudo obtener ubicación';
+          }, {
+            enableHighAccuracy: false,
+            timeout: 30000,
+            maximumAge: 60000
+          });
+        }, {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+          timeout: 30000
+        });
+      }
 
       function calcularDistancia(lat2, lng2) {
         if (miLatitud === null) return null;
@@ -139,7 +156,7 @@
 
         if (algunoCerca) {
           document.getElementById('status').textContent = `✅ ¡Llegaste a: ${nombreCerca}!`;
-        } else {
+        } else if (miLatitud !== null) {
           document.getElementById('status').textContent = `${eventosData.length} evento(s) encontrado(s)`;
         }
       }
@@ -234,6 +251,7 @@
 
       document.querySelector('a-scene').addEventListener('loaded', () => {
         log('Escena AR lista');
+        iniciarGPS();
         cargarEventos();
       });
     </script>
