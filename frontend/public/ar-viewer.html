@@ -9,14 +9,28 @@
     <script>
       AFRAME.registerComponent('billboard', {
         tick: function () {
-          const camera = document.querySelector('[gps-projected-camera]');
+          const camera = document.querySelector('a-camera');
           if (!camera) return;
-          this.el.object3D.lookAt(camera.object3D.position);
+          const cameraRotation = camera.getAttribute('rotation');
+          if (!cameraRotation) return;
+          this.el.setAttribute('rotation', {
+            x: 0,
+            y: cameraRotation.y + 180,
+            z: 0
+          });
         }
       });
     </script>
     <style>
-      body { margin: 0; overflow: hidden; background: black; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { overflow: hidden; background: black; }
+      a-scene {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
       #ui-overlay {
         position: fixed;
         top: 0; left: 0; right: 0;
@@ -26,6 +40,7 @@
         color: white;
         font-family: 'Segoe UI', sans-serif;
         font-size: 14px;
+        pointer-events: none;
       }
       #debug {
         position: fixed;
@@ -46,23 +61,24 @@
   <body>
     <div id="ui-overlay">
       <div style="font-weight: bold; font-size: 16px;">🎯 UniEventos AR</div>
-      <div id="status">Iniciando GPS...</div>
+      <div id="status">Iniciando...</div>
     </div>
 
     <div id="debug"></div>
 
     <a-scene
       vr-mode-ui="enabled: false"
-      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false; trackingMethod: best"
-      renderer="antialias: true; alpha: true; logarithmicDepthBuffer: true"
+      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false; facingMode: environment"
+      renderer="antialias: true; alpha: true"
+      embedded
     >
       <a-camera gps-projected-camera rotation-reader></a-camera>
     </a-scene>
 
     <script>
       const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
-      const DISTANCIA_MINIMA = 20;
-      const DISTANCIA_MAXIMA = 500;
+      const DISTANCIA_MINIMA = 10;
+      const DISTANCIA_MAXIMA = 200;
 
       let miLatitud = null;
       let miLongitud = null;
@@ -77,21 +93,21 @@
       }
 
       function iniciarGPS() {
+        log('Iniciando GPS...');
         navigator.geolocation.watchPosition(pos => {
           miLatitud = pos.coords.latitude;
           miLongitud = pos.coords.longitude;
-          log(`GPS: ${miLatitud.toFixed(5)}, ${miLongitud.toFixed(5)} ±${pos.coords.accuracy.toFixed(0)}m`);
-          document.getElementById('status').textContent = `GPS listo · ±${pos.coords.accuracy.toFixed(0)}m precisión`;
+          log(`GPS OK: ${miLatitud.toFixed(5)}, ${miLongitud.toFixed(5)} ±${pos.coords.accuracy.toFixed(0)}m`);
+          document.getElementById('status').textContent = `GPS ±${pos.coords.accuracy.toFixed(0)}m`;
           actualizarIndicadores();
         }, err => {
-          log(`ERROR GPS: ${err.code} - ${err.message}`);
-          document.getElementById('status').textContent = 'GPS timeout, intentando baja precisión...';
-          // Fallback con baja precisión
+          log(`ERROR GPS alta precisión: ${err.code} - ${err.message}`);
+          log('Intentando GPS baja precisión...');
           navigator.geolocation.getCurrentPosition(pos => {
             miLatitud = pos.coords.latitude;
             miLongitud = pos.coords.longitude;
-            log(`GPS fallback: ${miLatitud.toFixed(5)}, ${miLongitud.toFixed(5)} ±${pos.coords.accuracy.toFixed(0)}m`);
-            document.getElementById('status').textContent = `GPS (baja precisión) · ±${pos.coords.accuracy.toFixed(0)}m`;
+            log(`GPS fallback OK: ${miLatitud.toFixed(5)}, ${miLongitud.toFixed(5)} ±${pos.coords.accuracy.toFixed(0)}m`);
+            document.getElementById('status').textContent = `GPS baja precisión ±${pos.coords.accuracy.toFixed(0)}m`;
             actualizarIndicadores();
           }, err2 => {
             log(`ERROR GPS fallback: ${err2.message}`);
@@ -163,12 +179,11 @@
 
       async function cargarEventos() {
         try {
-          log('Fetching API...');
-          document.getElementById('status').textContent = 'Cargando eventos...';
+          log('Cargando eventos desde API...');
           const res = await fetch(API_URL);
           const eventos = await res.json();
           log(`Eventos recibidos: ${eventos.length}`);
-          eventos.forEach(e => log(`Evento: ${e.titulo} → lat:${e.latitud} lng:${e.longitud}`));
+          eventos.forEach(e => log(`→ ${e.titulo} lat:${e.latitud} lng:${e.longitud}`));
 
           const scene = document.querySelector('a-scene');
 
@@ -240,17 +255,16 @@
             eventosData.push(evento);
           });
 
-          document.getElementById('status').textContent = `${eventos.length} evento(s) encontrado(s)`;
           actualizarIndicadores();
 
         } catch (err) {
-          log(`ERROR: ${err.message}`);
+          log(`ERROR API: ${err.message}`);
           document.getElementById('status').textContent = 'Error cargando eventos';
         }
       }
 
       document.querySelector('a-scene').addEventListener('loaded', () => {
-        log('Escena AR lista');
+        log('Escena AR cargada');
         iniciarGPS();
         cargarEventos();
       });
