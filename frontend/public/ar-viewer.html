@@ -2,117 +2,52 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <title>UniEventos AR</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
-    <script>
-      AFRAME.registerComponent('billboard', {
-        tick: function () {
-          const camera = document.querySelector('a-camera');
-          if (!camera) return;
-          const cameraRotation = camera.getAttribute('rotation');
-          if (!cameraRotation) return;
-          this.el.setAttribute('rotation', {
-            x: 0,
-            y: cameraRotation.y,
-            z: 0
-          });
-        }
-      });
-    </script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { overflow: hidden; background: black; }
-      a-scene {
+      #video {
         position: fixed;
         top: 0; left: 0;
         width: 100%; height: 100%;
+        object-fit: cover;
+        z-index: 0;
       }
-      #ui-overlay {
+      #canvas {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: 1;
+        pointer-events: none;
+      }
+      #ui {
         position: fixed;
         top: 0; left: 0; right: 0;
         padding: 12px 16px;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
-        z-index: 999;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent);
+        z-index: 10;
         color: white;
         font-family: 'Segoe UI', sans-serif;
         pointer-events: none;
       }
-      #eventos-overlay {
+      #llegada {
         position: fixed;
-        bottom: 80px;
-        left: 16px;
-        right: 16px;
-        z-index: 999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        pointer-events: none;
-      }
-      .evento-card {
-        background: rgba(15, 15, 46, 0.92);
-        border: 1px solid #6c63ff;
-        border-radius: 12px;
-        padding: 12px 16px;
-        color: white;
-        font-family: 'Segoe UI', sans-serif;
-        transition: all 0.3s ease;
-      }
-      .evento-card.cerca {
-        border-color: #00ff88;
-        background: rgba(0, 255, 136, 0.15);
-      }
-      .evento-card.lejos {
-        opacity: 0.6;
-        transform: scale(0.85);
-      }
-      .evento-titulo {
-        font-size: 16px;
-        font-weight: bold;
-        margin-bottom: 4px;
-      }
-      .evento-lugar {
-        font-size: 13px;
-        color: #a0a0ff;
-        margin-bottom: 4px;
-      }
-      .evento-hora {
-        font-size: 13px;
-        color: #80ffcc;
-        margin-bottom: 6px;
-      }
-      .evento-distancia {
-        font-size: 14px;
-        font-weight: bold;
-        color: #ffcc00;
-      }
-      .evento-llegaste {
-        font-size: 14px;
-        font-weight: bold;
-        color: #00ff88;
-      }
-      #brujula {
-        position: fixed;
-        bottom: 16px;
+        top: 50%;
         left: 50%;
-        transform: translateX(-50%);
-        z-index: 999;
-        display: flex;
-        gap: 8px;
+        transform: translate(-50%, -50%);
+        background: rgba(0,255,136,0.15);
+        border: 2px solid #00ff88;
+        border-radius: 16px;
+        padding: 20px 32px;
+        color: #00ff88;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 22px;
+        font-weight: bold;
+        text-align: center;
+        z-index: 10;
+        display: none;
         pointer-events: none;
-      }
-      .flecha-evento {
-        background: rgba(108, 99, 255, 0.9);
-        border-radius: 50%;
-        width: 48px;
-        height: 48px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        color: white;
       }
       #debug {
         position: fixed;
@@ -122,40 +57,38 @@
         font-family: monospace;
         font-size: 10px;
         padding: 6px;
-        z-index: 9999;
-        max-height: 25vh;
+        z-index: 99;
+        max-height: 20vh;
         overflow-y: auto;
       }
     </style>
   </head>
   <body>
-    <div id="ui-overlay">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+
+    <div id="ui">
       <div style="font-weight:bold; font-size:18px;">🎯 UniEventos AR</div>
       <div id="status" style="font-size:13px; opacity:0.8;">Iniciando...</div>
     </div>
 
-    <div id="eventos-overlay"></div>
-    <div id="brujula"></div>
+    <div id="llegada"></div>
     <div id="debug"></div>
 
-    <a-scene
-      vr-mode-ui="enabled: false"
-      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false; facingMode: environment"
-      renderer="antialias: true; alpha: true"
-      embedded
-    >
-      <a-camera gps-projected-camera rotation-reader></a-camera>
-    </a-scene>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
       const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
-      const DISTANCIA_LLEGADA = 30;
-      const DISTANCIA_MAXIMA = 200;
+      const DIST_LLEGADA = 30;
+      const DIST_MAXIMA = 500;
+      const DIST_ESCALA_MAX = 50;
+      const DIST_ESCALA_MIN = 200;
 
-      let miLatitud = null;
-      let miLongitud = null;
-      let miHeading = 0;
+      let miLat = null, miLng = null;
+      let heading = 0;
+      let pitch = 0;
       let eventosData = [];
+      let renderer, scene, camera;
+      let indicadores = [];
 
       function log(msg) {
         const d = document.getElementById('debug');
@@ -163,132 +96,250 @@
         d.scrollTop = d.scrollHeight;
       }
 
-      function iniciarBrujula() {
-        if (window.DeviceOrientationEvent) {
-          window.addEventListener('deviceorientationabsolute', e => {
-            if (e.alpha !== null) miHeading = e.alpha;
-          }, true);
-          window.addEventListener('deviceorientation', e => {
-            if (e.webkitCompassHeading !== undefined) {
-              miHeading = e.webkitCompassHeading;
-            } else if (e.alpha !== null) {
-              miHeading = 360 - e.alpha;
-            }
-          }, true);
+      // ── Cámara trasera ──
+      async function iniciarCamara() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false
+          });
+          document.getElementById('video').srcObject = stream;
+          log('Cámara OK');
+        } catch (e) {
+          log('ERROR cámara: ' + e.message);
+          // fallback sin exact
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+            document.getElementById('video').srcObject = stream;
+            log('Cámara fallback OK');
+          } catch (e2) {
+            log('ERROR cámara fallback: ' + e2.message);
+          }
         }
       }
 
+      // ── GPS ──
       function iniciarGPS() {
-        log('Iniciando GPS...');
         navigator.geolocation.watchPosition(pos => {
-          miLatitud = pos.coords.latitude;
-          miLongitud = pos.coords.longitude;
-          log(`GPS ±${pos.coords.accuracy.toFixed(0)}m`);
-          document.getElementById('status').textContent = `GPS ±${pos.coords.accuracy.toFixed(0)}m precisión`;
-          actualizarUI();
+          miLat = pos.coords.latitude;
+          miLng = pos.coords.longitude;
+          document.getElementById('status').textContent = `GPS ±${pos.coords.accuracy.toFixed(0)}m`;
+          log(`GPS: ${miLat.toFixed(5)}, ${miLng.toFixed(5)} ±${pos.coords.accuracy.toFixed(0)}m`);
+          actualizarPosiciones();
         }, err => {
-          log(`ERROR GPS: ${err.message}`);
+          log('ERROR GPS: ' + err.message);
           navigator.geolocation.getCurrentPosition(pos => {
-            miLatitud = pos.coords.latitude;
-            miLongitud = pos.coords.longitude;
-            actualizarUI();
-          }, err2 => {
-            document.getElementById('status').textContent = 'No se pudo obtener ubicación';
-          }, { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 });
+            miLat = pos.coords.latitude;
+            miLng = pos.coords.longitude;
+            actualizarPosiciones();
+          }, () => {}, { enableHighAccuracy: false, timeout: 30000 });
         }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
       }
 
+      // ── Orientación del dispositivo ──
+      function iniciarOrientacion() {
+        const handler = (e) => {
+          if (e.webkitCompassHeading !== undefined) {
+            heading = e.webkitCompassHeading;
+          } else if (e.absolute && e.alpha !== null) {
+            heading = (360 - e.alpha) % 360;
+          } else if (e.alpha !== null) {
+            heading = (360 - e.alpha) % 360;
+          }
+          pitch = e.beta || 0;
+        };
+
+        if (typeof DeviceOrientationEvent !== 'undefined' &&
+            typeof DeviceOrientationEvent.requestPermission === 'function') {
+          // iOS 13+
+          DeviceOrientationEvent.requestPermission().then(state => {
+            if (state === 'granted') {
+              window.addEventListener('deviceorientation', handler, true);
+              log('Orientación iOS OK');
+            }
+          }).catch(log);
+        } else {
+          window.addEventListener('deviceorientationabsolute', handler, true);
+          window.addEventListener('deviceorientation', handler, true);
+          log('Orientación Android OK');
+        }
+      }
+
+      // ── Three.js ──
+      function iniciarThree() {
+        const canvas = document.getElementById('canvas');
+        renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0);
+
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+        scene.add(camera);
+
+        window.addEventListener('resize', () => {
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+        });
+
+        log('Three.js OK');
+        animar();
+      }
+
+      // ── Cálculos GPS ──
       function calcularDistancia(lat2, lng2) {
-        if (miLatitud === null) return null;
+        if (miLat === null) return null;
         const R = 6371000;
-        const dLat = (lat2 - miLatitud) * Math.PI / 180;
-        const dLng = (lng2 - miLongitud) * Math.PI / 180;
+        const dLat = (lat2 - miLat) * Math.PI / 180;
+        const dLng = (lng2 - miLng) * Math.PI / 180;
         const a = Math.sin(dLat/2)**2 +
-                  Math.cos(miLatitud * Math.PI/180) *
-                  Math.cos(lat2 * Math.PI/180) *
+                  Math.cos(miLat * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
                   Math.sin(dLng/2)**2;
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       }
 
-      function calcularAngulo(lat2, lng2) {
-        if (miLatitud === null) return 0;
-        const dLng = (lng2 - miLongitud) * Math.PI / 180;
-        const lat1 = miLatitud * Math.PI / 180;
+      function calcularBearing(lat2, lng2) {
+        const dLng = (lng2 - miLng) * Math.PI / 180;
+        const lat1 = miLat * Math.PI / 180;
         const lat2r = lat2 * Math.PI / 180;
         const y = Math.sin(dLng) * Math.cos(lat2r);
         const x = Math.cos(lat1) * Math.sin(lat2r) - Math.sin(lat1) * Math.cos(lat2r) * Math.cos(dLng);
-        const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-        return (bearing - miHeading + 360) % 360;
+        return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
       }
 
-      function formatDistancia(metros) {
-        if (metros === null) return '...';
-        if (metros < 1000) return `${Math.round(metros)} m`;
-        return `${(metros / 1000).toFixed(1)} km`;
+      // ── Crear indicador 3D con canvas texture ──
+      function crearIndicador(evento) {
+        const group = new THREE.Group();
+
+        // Crear textura con canvas 2D
+        const canvasTex = document.createElement('canvas');
+        canvasTex.width = 512;
+        canvasTex.height = 256;
+        const ctx = canvasTex.getContext('2d');
+
+        function dibujarCard(dist) {
+          ctx.clearRect(0, 0, 512, 256);
+
+          // Fondo
+          ctx.fillStyle = 'rgba(15, 15, 46, 0.92)';
+          ctx.beginPath();
+          ctx.roundRect(4, 4, 504, 248, 20);
+          ctx.fill();
+
+          // Borde
+          ctx.strokeStyle = dist !== null && dist < 50 ? '#00ff88' : '#6c63ff';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.roundRect(4, 4, 504, 248, 20);
+          ctx.stroke();
+
+          // Línea superior
+          ctx.fillStyle = dist !== null && dist < 50 ? '#00ff88' : '#6c63ff';
+          ctx.fillRect(4, 4, 504, 8);
+
+          // Título
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 36px Segoe UI, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(evento.titulo, 256, 70);
+
+          // Lugar
+          ctx.fillStyle = '#a0a0ff';
+          ctx.font = '26px Segoe UI, sans-serif';
+          ctx.fillText(`📍 ${evento.lugar_nombre}`, 256, 115);
+
+          // Hora
+          ctx.fillStyle = '#80ffcc';
+          ctx.font = '24px Segoe UI, sans-serif';
+          ctx.fillText(`🕐 ${evento.hora_inicio.slice(0,5)} - ${evento.hora_fin.slice(0,5)}`, 256, 155);
+
+          // Distancia
+          if (dist !== null && dist < DIST_LLEGADA) {
+            ctx.fillStyle = '#00ff88';
+            ctx.font = 'bold 28px Segoe UI, sans-serif';
+            ctx.fillText('✅ ¡Ya llegaste!', 256, 210);
+          } else {
+            ctx.fillStyle = '#ffcc00';
+            ctx.font = 'bold 28px Segoe UI, sans-serif';
+            const distTexto = dist !== null
+              ? (dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`)
+              : '...';
+            ctx.fillText(distTexto, 256, 210);
+          }
+        }
+
+        dibujarCard(null);
+
+        const texture = new THREE.CanvasTexture(canvasTex);
+        const geo = new THREE.PlaneGeometry(4, 2);
+        const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+        const mesh = new THREE.Mesh(geo, mat);
+        group.add(mesh);
+
+        group.userData = { evento, canvasTex, ctx, texture, dibujarCard };
+        scene.add(group);
+        return group;
       }
 
-      function obtenerFlecha(angulo) {
-        if (angulo > 337.5 || angulo <= 22.5) return '⬆️';
-        if (angulo <= 67.5) return '↗️';
-        if (angulo <= 112.5) return '➡️';
-        if (angulo <= 157.5) return '↘️';
-        if (angulo <= 202.5) return '⬇️';
-        if (angulo <= 247.5) return '↙️';
-        if (angulo <= 292.5) return '⬅️';
-        return '↖️';
-      }
+      // ── Actualizar posiciones según GPS y orientación ──
+      function actualizarPosiciones() {
+        if (miLat === null || eventosData.length === 0) return;
 
-      function actualizarUI() {
-        if (miLatitud === null || eventosData.length === 0) return;
-
-        const overlay = document.getElementById('eventos-overlay');
-        const brujula = document.getElementById('brujula');
-        overlay.innerHTML = '';
-        brujula.innerHTML = '';
-
-        eventosData.forEach(evento => {
+        indicadores.forEach(({ group, evento }) => {
           const dist = calcularDistancia(evento.latitud, evento.longitud);
-          const angulo = calcularAngulo(evento.latitud, evento.longitud);
-          const flecha = obtenerFlecha(angulo);
+          const bearing = calcularBearing(evento.latitud, evento.longitud);
 
-          // Tamaño dinámico según distancia
-          let tamanoTitulo = '16px';
-          let tamanoTexto = '13px';
-          let cardClass = 'evento-card';
+          // Actualizar card texture
+          const { dibujarCard, texture } = group.userData;
+          dibujarCard(dist);
+          texture.needsUpdate = true;
 
-          if (dist !== null) {
-            if (dist < 50) {
-              tamanoTitulo = '20px';
-              tamanoTexto = '15px';
-              cardClass = 'evento-card cerca';
-            } else if (dist < 100) {
-              tamanoTitulo = '17px';
-              tamanoTexto = '14px';
-            } else {
-              cardClass = 'evento-card lejos';
-            }
+          // Ocultar si está fuera de rango
+          if (dist === null || dist > DIST_MAXIMA) {
+            group.visible = false;
+            return;
           }
 
-          const card = document.createElement('div');
-          card.className = cardClass;
-          card.innerHTML = `
-            <div class="evento-titulo" style="font-size:${tamanoTitulo}">${evento.titulo}</div>
-            <div class="evento-lugar" style="font-size:${tamanoTexto}">📍 ${evento.lugar_nombre}</div>
-            <div class="evento-hora" style="font-size:${tamanoTexto}">🕐 ${evento.hora_inicio.slice(0,5)} - ${evento.hora_fin.slice(0,5)}</div>
-            ${dist !== null && dist < DISTANCIA_LLEGADA
-              ? `<div class="evento-llegaste">✅ ¡Ya llegaste!</div>`
-              : `<div class="evento-distancia">${flecha} ${formatDistancia(dist)}</div>`
-            }
-          `;
-          overlay.appendChild(card);
+          if (dist < DIST_LLEGADA) {
+            group.visible = false;
+            document.getElementById('llegada').style.display = 'block';
+            document.getElementById('llegada').textContent = `✅ ¡Llegaste a\n${evento.titulo}!`;
+            return;
+          }
 
-          const flechaDiv = document.createElement('div');
-          flechaDiv.className = 'flecha-evento';
-          flechaDiv.innerHTML = `<span>${flecha}</span>`;
-          brujula.appendChild(flechaDiv);
+          group.visible = true;
+          document.getElementById('llegada').style.display = 'none';
+
+          // Calcular ángulo relativo al heading del usuario
+          const anguloRelativo = (bearing - heading + 360) % 360;
+          const anguloRad = (anguloRelativo - 90) * Math.PI / 180;
+
+          const radio = 8; // distancia fija en el espacio 3D
+          const x = Math.cos(anguloRad) * radio;
+          const z = Math.sin(anguloRad) * radio;
+          const y = 0;
+
+          group.position.set(x, y, z);
+
+          // Escala según distancia
+          const t = Math.max(0, Math.min(1, (dist - DIST_ESCALA_MAX) / (DIST_ESCALA_MIN - DIST_ESCALA_MAX)));
+          const escala = 1.5 - t * 1.0; // entre 1.5 (cerca) y 0.5 (lejos)
+          group.scale.setScalar(escala);
+
+          // Siempre mirar al centro (donde está la cámara)
+          group.lookAt(0, 0, 0);
         });
       }
 
+      // ── Loop de animación ──
+      function animar() {
+        requestAnimationFrame(animar);
+        actualizarPosiciones();
+        renderer.render(scene, camera);
+      }
+
+      // ── Cargar eventos ──
       async function cargarEventos() {
         try {
           log('Cargando eventos...');
@@ -302,22 +353,30 @@
             return;
           }
 
+          eventos.forEach(evento => {
+            const group = crearIndicador(evento);
+            group.visible = false;
+            indicadores.push({ group, evento });
+          });
+
           document.getElementById('status').textContent = `${eventos.length} evento(s) encontrado(s)`;
-          actualizarUI();
-          setInterval(actualizarUI, 1000);
 
         } catch (err) {
-          log(`ERROR: ${err.message}`);
+          log('ERROR API: ' + err.message);
           document.getElementById('status').textContent = 'Error cargando eventos';
         }
       }
 
-      document.querySelector('a-scene').addEventListener('loaded', () => {
-        log('Escena lista');
-        iniciarBrujula();
+      // ── Init ──
+      async function init() {
+        await iniciarCamara();
         iniciarGPS();
-        cargarEventos();
-      });
+        iniciarOrientacion();
+        iniciarThree();
+        await cargarEventos();
+      }
+
+      init();
     </script>
   </body>
 </html>
