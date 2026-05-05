@@ -1,7 +1,7 @@
 export interface ITransmisionRepository {
   findByEventoId(eventoId: number): Promise<any | null>;
-  create(eventoId: number, urlEnlace: string): Promise<any>;
-  update(eventoId: number, urlEnlace: string): Promise<any>;
+  create(eventoId: number, data: { stream_id: string; stream_key: string; playback_id: string }): Promise<any>;
+  update(eventoId: number, data: { stream_id: string; stream_key: string; playback_id: string }): Promise<any>;
   remove(eventoId: number): Promise<void>;
 }
 
