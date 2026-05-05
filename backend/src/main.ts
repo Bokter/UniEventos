@@ -6,8 +6,19 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  app.enableCors();
+  // ValidationPipe global — valida automáticamente todos los DTOs con class-validator
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,        // Elimina propiedades que no estén en el DTO
+    forbidNonWhitelisted: true, // Lanza error si envían propiedades desconocidas
+    transform: true,        // Transforma payloads a instancias del DTO
+  }));
+
+  // Habilitar CORS para el frontend
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('UniEventos API')
