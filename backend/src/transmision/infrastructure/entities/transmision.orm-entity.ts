@@ -11,8 +11,14 @@ export class TransmisionOrmEntity {
   @JoinColumn({ name: 'evento_id' })
   evento: EventoOrmEntity;
 
-  @Column()
-  url_enlace: string;
+  @Column({ nullable: true })
+  stream_id: string;
+
+  @Column({ nullable: true })
+  stream_key: string;
+
+  @Column({ nullable: true })
+  playback_id: string;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
   updated_at: Date;
