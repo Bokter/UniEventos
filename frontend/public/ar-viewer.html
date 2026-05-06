@@ -7,7 +7,6 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { overflow: hidden; background: black; font-family: 'Segoe UI', sans-serif; }
-      
       #video {
         position: fixed;
         top: 0; left: 0;
@@ -15,7 +14,6 @@
         object-fit: cover;
         z-index: 0;
       }
-      
       #canvas {
         position: fixed;
         top: 0; left: 0;
@@ -23,7 +21,6 @@
         z-index: 1;
         pointer-events: none;
       }
-      
       #ui {
         position: fixed;
         top: 0; left: 0; right: 0;
@@ -33,7 +30,6 @@
         color: white;
         pointer-events: none;
       }
-
       #btn-permisos {
         position: fixed;
         top: 50%; left: 50%;
@@ -49,7 +45,6 @@
         cursor: pointer;
         display: none;
       }
-
       #llegada {
         position: fixed;
         top: 50%; left: 50%;
@@ -66,7 +61,6 @@
         display: none;
         pointer-events: none;
       }
-
       #debug {
         position: fixed;
         bottom: 0; left: 0; right: 0;
@@ -102,10 +96,11 @@
 
       let miLat = null, miLng = null;
       let heading = 0;
+      let pitch = 0;
       let eventosData = [];
       let renderer, scene, camera;
       let indicadores = [];
-      let orientacionActiva = false;
+      let llegadaMostrada = {};
 
       function log(msg) {
         const d = document.getElementById('debug');
@@ -123,7 +118,6 @@
           document.getElementById('video').srcObject = stream;
           log('Cámara OK');
         } catch (e) {
-          log('Intentando cámara sin exact...');
           try {
             const stream = await navigator.mediaDevices.getUserMedia({
               video: { facingMode: 'environment' },
@@ -162,17 +156,16 @@
           } else if (e.alpha !== null) {
             heading = (360 - e.alpha) % 360;
           }
+          pitch = e.beta || 0;
         };
         window.addEventListener('deviceorientationabsolute', handler, true);
         window.addEventListener('deviceorientation', handler, true);
-        orientacionActiva = true;
-        log('Orientación activa, heading: ' + heading.toFixed(1));
+        log('Orientación activa');
       }
 
       async function iniciarOrientacion() {
         if (typeof DeviceOrientationEvent !== 'undefined' &&
             typeof DeviceOrientationEvent.requestPermission === 'function') {
-          // iOS — necesita gesto
           document.getElementById('btn-permisos').style.display = 'block';
           document.getElementById('btn-permisos').addEventListener('click', async () => {
             try {
@@ -180,14 +173,12 @@
               if (estado === 'granted') {
                 registrarOrientacion();
                 document.getElementById('btn-permisos').style.display = 'none';
-                log('Orientación iOS concedida');
               }
             } catch (e) {
               log('ERROR orientación iOS: ' + e.message);
             }
           });
         } else {
-          // Android — no necesita gesto
           registrarOrientacion();
         }
       }
@@ -214,67 +205,62 @@
         log('Three.js OK');
       }
 
-      // ── Crear textura del indicador ──
-      function crearTextura(evento, dist) {
-        const c = document.createElement('canvas');
-        c.width = 512;
-        c.height = 280;
-        const ctx = c.getContext('2d');
+      // ── Textura del indicador ──
+      function dibujarTextura(ctx, evento, dist) {
+        const w = 512, h = 280;
+        ctx.clearRect(0, 0, w, h);
 
-        // Fondo
+        const cerca = dist !== null && dist < 60;
+
         ctx.fillStyle = 'rgba(15,15,46,0.93)';
         ctx.beginPath();
-        ctx.roundRect(4, 4, 504, 272, 20);
+        ctx.roundRect(4, 4, w - 8, h - 8, 20);
         ctx.fill();
 
-        // Borde
-        const cerca = dist !== null && dist < 60;
         ctx.strokeStyle = cerca ? '#00ff88' : '#6c63ff';
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.roundRect(4, 4, 504, 272, 20);
+        ctx.roundRect(4, 4, w - 8, h - 8, 20);
         ctx.stroke();
 
-        // Barra superior
         ctx.fillStyle = cerca ? '#00ff88' : '#6c63ff';
-        ctx.fillRect(4, 4, 504, 10);
+        ctx.fillRect(4, 4, w - 8, 10);
 
-        // Título
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 38px sans-serif';
+        ctx.font = 'bold 36px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(evento.titulo, 256, 75);
+        ctx.fillText(evento.titulo, w/2, 72);
 
-        // Lugar
         ctx.fillStyle = '#a0a0ff';
-        ctx.font = '26px sans-serif';
-        ctx.fillText(`📍 ${evento.lugar_nombre}`, 256, 120);
-
-        // Hora
-        ctx.fillStyle = '#80ffcc';
         ctx.font = '24px sans-serif';
-        ctx.fillText(`🕐 ${evento.hora_inicio.slice(0,5)} - ${evento.hora_fin.slice(0,5)}`, 256, 162);
+        ctx.fillText(`📍 ${evento.lugar_nombre}`, w/2, 115);
 
-        // Distancia
+        ctx.fillStyle = '#80ffcc';
+        ctx.font = '22px sans-serif';
+        ctx.fillText(`🕐 ${evento.hora_inicio.slice(0,5)} - ${evento.hora_fin.slice(0,5)}`, w/2, 155);
+
         if (dist !== null && dist < DIST_LLEGADA) {
           ctx.fillStyle = '#00ff88';
-          ctx.font = 'bold 30px sans-serif';
-          ctx.fillText('✅ ¡Ya llegaste!', 256, 225);
+          ctx.font = 'bold 28px sans-serif';
+          ctx.fillText('✅ ¡Ya llegaste!', w/2, 220);
         } else {
           ctx.fillStyle = '#ffcc00';
-          ctx.font = 'bold 30px sans-serif';
+          ctx.font = 'bold 28px sans-serif';
           const txt = dist !== null
             ? (dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`)
             : '...';
-          ctx.fillText(txt, 256, 225);
+          ctx.fillText(txt, w/2, 220);
         }
-
-        return c;
       }
 
-      // ── Crear indicador 3D ──
+      // ── Crear indicador ──
       function crearIndicador(evento) {
-        const canvasTex = crearTextura(evento, null);
+        const canvasTex = document.createElement('canvas');
+        canvasTex.width = 512;
+        canvasTex.height = 280;
+        const ctx = canvasTex.getContext('2d');
+        dibujarTextura(ctx, evento, null);
+
         const texture = new THREE.CanvasTexture(canvasTex);
         const geo = new THREE.PlaneGeometry(3, 1.6);
         const mat = new THREE.MeshBasicMaterial({
@@ -284,12 +270,12 @@
           depthWrite: false
         });
         const mesh = new THREE.Mesh(geo, mat);
-        mesh.userData = { evento, texture, canvasTex };
+        mesh.userData = { evento, texture, canvasTex, ctx };
         scene.add(mesh);
         return mesh;
       }
 
-      // ── Cálculos ──
+      // ── Cálculos GPS ──
       function calcularDistancia(lat2, lng2) {
         if (miLat === null) return null;
         const R = 6371000;
@@ -311,27 +297,21 @@
       }
 
       // ── Loop principal ──
-      let llegadaMostrada = {};
-
       function animar() {
         requestAnimationFrame(animar);
 
         indicadores.forEach(mesh => {
-          const { evento, texture, canvasTex } = mesh.userData;
+          const { evento, texture, canvasTex, ctx } = mesh.userData;
           const dist = calcularDistancia(evento.latitud, evento.longitud);
           const bearing = miLat !== null ? calcularBearing(evento.latitud, evento.longitud) : 0;
 
           // Actualizar textura
-          const ctx = canvasTex.getContext('2d');
-          ctx.clearRect(0, 0, canvasTex.width, canvasTex.height);
-          const nuevoCanvas = crearTextura(evento, dist);
-          ctx.drawImage(nuevoCanvas, 0, 0);
+          dibujarTextura(ctx, evento, dist);
           texture.needsUpdate = true;
 
           // Ocultar fuera de rango
           if (dist === null || dist > DIST_MAXIMA || dist < DIST_LLEGADA) {
             mesh.visible = false;
-
             if (dist !== null && dist < DIST_LLEGADA && !llegadaMostrada[evento.id]) {
               llegadaMostrada[evento.id] = true;
               const div = document.getElementById('llegada');
@@ -344,17 +324,21 @@
 
           mesh.visible = true;
 
-          // Posición según bearing relativo al heading
+          // Posición según bearing y pitch
           const anguloRel = (bearing - heading + 360) % 360;
           const anguloRad = anguloRel * Math.PI / 180;
           const radio = 5;
+
           const x = Math.sin(anguloRad) * radio;
           const z = -Math.cos(anguloRad) * radio;
-          mesh.position.set(x, 0, z);
+          const pitchRad = pitch * Math.PI / 180;
+          const y = Math.sin(pitchRad) * radio * -1;
 
-          // Escala según distancia — cambio notorio
+          mesh.position.set(x, y, z);
+
+          // Escala según distancia — notoria
           const t = Math.max(0, Math.min(1, (dist - 30) / (DIST_MAXIMA - 30)));
-          const escala = 2.5 - t * 1.8; // 2.5 cerca, 0.7 lejos
+          const escala = 0.8 - t * 0.6; // 0.8 cerca, 0.2 lejos
           mesh.scale.setScalar(escala);
 
           // Siempre mirar a la cámara
