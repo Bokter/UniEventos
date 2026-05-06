@@ -35,7 +35,7 @@ export function EventDetailPage() {
   const [streamData, setStreamData] = useState<StreamData | null>(null);
   const [isLoadingStream, setIsLoadingStream] = useState(false);
   const [showStreamDialog, setShowStreamDialog] = useState(false);
-  
+
   const event = mockEvents.find(e => e.id === id);
   const [activeStreamId, setActiveStreamId] = useState<string | null>(null);
 
@@ -47,7 +47,7 @@ export function EventDetailPage() {
   }, [event?.streams, activeStreamId]);
 
   const [streamLink, setStreamLink] = useState("");
-  
+
   // Update streamLink input when user is an organizer
   useEffect(() => {
     if (event && usuario) {
@@ -117,13 +117,6 @@ export function EventDetailPage() {
     setIsLoadingStream(true);
 
     // COMENTADO - Implementar integración con Mux
-    // Simulación de inicio de transmisión para UI
-    setTimeout(() => {
-      toast.info("⚙️ Función de transmisión en desarrollo. Configurar Mux API para activar.");
-      setIsLoadingStream(false);
-      setShowStreamDialog(true);
-    }, 1000);
-
     /*
     try {
       const response = await fetch(
@@ -137,7 +130,10 @@ export function EventDetailPage() {
           body: JSON.stringify({ organizerId: currentUser.id }),
         }
       );
-    
+    } catch(e) {}
+    */
+
+    setIsLoadingStream(false);
     setShowStreamDialog(true);
   };
 
@@ -193,7 +189,7 @@ export function EventDetailPage() {
       if (event.streams && usuario) {
         event.streams = event.streams.filter(s => String(s.organizerId) !== String(usuario.id));
         if (activeStreamId === String(usuario.id)) {
-           setActiveStreamId(event.streams.length > 0 ? event.streams[0].organizerId : null);
+          setActiveStreamId(event.streams.length > 0 ? event.streams[0].organizerId : null);
         }
       }
       setShowStreamDialog(false);
@@ -306,7 +302,7 @@ export function EventDetailPage() {
                     EN VIVO
                   </span>
                 </div>
-                
+
                 {event.streams.length > 1 && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {event.streams.map(stream => {
@@ -315,11 +311,10 @@ export function EventDetailPage() {
                         <button
                           key={stream.organizerId}
                           onClick={() => setActiveStreamId(stream.organizerId)}
-                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                            activeStreamId === stream.organizerId 
-                              ? 'bg-primary text-white' 
-                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                          }`}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeStreamId === stream.organizerId
+                            ? 'bg-primary text-white'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                            }`}
                         >
                           Stream de {org?.name || 'Organizador'}
                         </button>
@@ -327,11 +322,11 @@ export function EventDetailPage() {
                     })}
                   </div>
                 )}
-                
+
                 {activeStreamId && (
-                  <LiveStreamPlayer 
-                    playbackId={event.streams.find(s => s.organizerId === activeStreamId)?.streamLink || ""} 
-                    status="active" 
+                  <LiveStreamPlayer
+                    playbackId={event.streams.find(s => s.organizerId === activeStreamId)?.streamLink || ""}
+                    status="active"
                   />
                 )}
               </div>
@@ -521,101 +516,6 @@ export function EventDetailPage() {
           </DialogContent>
         </Dialog>
       )}
-
-      {/* COMENTADO - Dialog original con configuración de stream */}
-      {/* 
-      {showStreamDialog && streamData && (
-        <Dialog open={showStreamDialog} onOpenChange={setShowStreamDialog}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Stream Configuration</DialogTitle>
-              <DialogDescription>
-                Use esta información para configurar tu software de transmisión (OBS, Streamlabs, etc.)
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div>
-                <Label htmlFor="stream-url">Stream URL (RTMP)</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="stream-url"
-                    value="rtmps://global-live.mux.com:443/app"
-                    readOnly
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => copyToClipboard("rtmps://global-live.mux.com:443/app")}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="stream-key">Stream Key</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="stream-key"
-                    value={streamData.streamKey || ""}
-                    readOnly
-                    className="flex-1 font-mono text-sm"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => copyToClipboard(streamData.streamKey || "")}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-900">
-                  <strong>Instrucciones:</strong>
-                  <br />
-                  1. Abre tu software de transmisión (OBS, Streamlabs, etc.)
-                  <br />
-                  2. Configura el servidor/URL RTMP con la Stream URL
-                  <br />
-                  3. Ingresa el Stream Key en tu software
-                  <br />
-                  4. Inicia la transmisión desde tu software
-                </p>
-              </div>
-
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-900">
-                  <strong>⚠️ Importante:</strong> No compartas tu Stream Key con nadie. Cualquiera con esta clave puede transmitir a tu evento.
-                </p>
-              </div>
-            </div>
-            <DialogFooter className="flex gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowStreamDialog(false)}
-              >
-                Cerrar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleEndStream}
-                disabled={isLoadingStream}
-              >
-                {isLoadingStream ? (
-                  <VideoOff className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <VideoOff className="h-4 w-4 mr-2" />
-                )}
-                Finalizar Transmisión
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-      */}
     </div>
   );
 }

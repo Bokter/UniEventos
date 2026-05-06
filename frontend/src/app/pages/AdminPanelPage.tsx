@@ -61,7 +61,7 @@ export function AdminPanelPage() {
     const event = mockEvents.find(e => e.id === eventId);
     if (event) {
       event.status = 'Approved';
-      toast.success(`Event "${event.title}" approved!`);
+      toast.success(`Evento "${event.title}" aprobado!`);
       setRefresh(prev => prev + 1);
     }
   };
@@ -73,7 +73,7 @@ export function AdminPanelPage() {
 
   const handleRejectConfirm = async () => {
     if (!selectedEvent || !rejectionReason.trim()) {
-      toast.error("Please provide a rejection reason");
+      toast.error("Por favor ingresa un motivo de rechazo");
       return;
     }
 
@@ -95,7 +95,7 @@ export function AdminPanelPage() {
 
     selectedEvent.status = 'Rejected';
     selectedEvent.rejectionReason = rejectionReason;
-    toast.success(`Event "${selectedEvent.title}" rejected`);
+    toast.success(`Evento "${selectedEvent.title}" rechazado`);
 
     setRejectDialogOpen(false);
     setSelectedEvent(null);
@@ -301,9 +301,9 @@ export function AdminPanelPage() {
           {activeTab === 'pending' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Pending Review</h1>
+                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Eventos Pendientes</h1>
                 <p className="text-muted-foreground">
-                  Review and approve or reject submitted events
+                  Revisa y aprueba o rechaza los eventos enviados
                 </p>
               </div>
 
@@ -312,11 +312,11 @@ export function AdminPanelPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Organizer</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Submitted</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>Título</TableHead>
+                        <TableHead>Organizador</TableHead>
+                        <TableHead>Categoría</TableHead>
+                        <TableHead>Enviado</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -346,7 +346,7 @@ export function AdminPanelPage() {
                                 className="bg-[#1D9E75] hover:bg-[#188c66] text-white"
                               >
                                 <Check className="h-4 w-4 mr-1" />
-                                Approve
+                                Aprobar
                               </Button>
                               <Button
                                 size="sm"
@@ -355,7 +355,7 @@ export function AdminPanelPage() {
                                 className="border-destructive text-destructive hover:bg-destructive/10"
                               >
                                 <X className="h-4 w-4 mr-1" />
-                                Reject
+                                Rechazar
                               </Button>
                             </div>
                           </TableCell>
@@ -368,10 +368,10 @@ export function AdminPanelPage() {
                 <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg mb-2" style={{ fontWeight: 600 }}>
-                    No pending events
+                    Sin eventos pendientes
                   </h3>
                   <p className="text-muted-foreground">
-                    All events have been reviewed
+                    Todos los eventos han sido revisados
                   </p>
                 </div>
               )}
@@ -381,9 +381,9 @@ export function AdminPanelPage() {
           {activeTab === 'all' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>All Events</h1>
+                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Todos los Eventos</h1>
                 <p className="text-muted-foreground">
-                  View and manage all events in the system
+                  Visualiza y gestiona todos los eventos del sistema
                 </p>
               </div>
 
@@ -391,11 +391,11 @@ export function AdminPanelPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Organizer</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Organizador</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -457,7 +457,7 @@ export function AdminPanelPage() {
                               user.role === 'Organizer' ? 'bg-blue-100 text-blue-700' :
                                 'bg-gray-100 text-gray-700'
                             }`}>
-                            {user.role}
+                            {user.role === 'Admin' ? 'Administrador' : user.role === 'Organizer' ? 'Organizador' : 'Asistente'}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -541,14 +541,14 @@ export function AdminPanelPage() {
           {activeTab === 'reports' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Reports</h1>
+                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Reportes</h1>
                 <p className="text-muted-foreground">
-                  View reported content
+                  Ver contenido reportado
                 </p>
               </div>
               <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                 <Flag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-muted-foreground">No reports at this time</p>
+                <p className="text-muted-foreground">Sin reportes por el momento</p>
               </div>
             </>
           )}
@@ -559,25 +559,25 @@ export function AdminPanelPage() {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject Event</DialogTitle>
+            <DialogTitle>Rechazar Evento</DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting this event. The organizer will see this message.
+              Por favor indica el motivo del rechazo. El organizador verá este mensaje.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {selectedEvent && (
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm" style={{ fontWeight: 600 }}>{selectedEvent.title}</p>
-                <p className="text-xs text-muted-foreground">by {selectedEvent.organizers.map(o => o.name).join(', ')}</p>
+                <p className="text-xs text-muted-foreground">por {selectedEvent.organizers.map(o => o.name).join(', ')}</p>
               </div>
             )}
             <div>
-              <Label htmlFor="rejection-reason">Rejection Reason *</Label>
+              <Label htmlFor="rejection-reason">Motivo de rechazo *</Label>
               <Textarea
                 id="rejection-reason"
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Explain why this event cannot be approved..."
+                placeholder="Explica por qué este evento no puede ser aprobado..."
                 className="mt-2 min-h-24"
                 required
               />
@@ -591,13 +591,13 @@ export function AdminPanelPage() {
                 setRejectionReason("");
               }}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               onClick={handleRejectConfirm}
               className="bg-destructive hover:bg-destructive/90 text-white"
             >
-              Confirm Rejection
+              Confirmar Rechazo
             </Button>
           </DialogFooter>
         </DialogContent>

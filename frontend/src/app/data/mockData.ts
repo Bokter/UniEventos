@@ -281,7 +281,7 @@ export const mockEvents: Event[] = [
       lng: -73.9855,
     },
     coverImage: 'https://images.unsplash.com/photo-1738667289162-9e55132e18a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGNvbmNlcnQlMjBzdGFnZXxlbnwxfHx8fDE3NzU0MDA5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0]],
     status: 'Approved',
     submittedDate: new Date('2026-03-28'),
     rejectionReason: 'This event does not have proper authorization and violates university policy regarding after-hours events.',
@@ -290,15 +290,15 @@ export const mockEvents: Event[] = [
 
 export const getApprovedEvents = () => mockEvents.filter(e => e.status === 'Approved');
 export const getPendingEvents = () => mockEvents.filter(e => e.status === 'In review');
-export const getEventsByOrganizer = (organizerId: string) => 
+export const getEventsByOrganizer = (organizerId: string) =>
   mockEvents.filter(e => e.organizers.some(o => o.id === organizerId));
 
 export const mockCategories = [
-  { id: '1', name: 'Cultural', description: 'Eventos culturales y artísticos', eventCount: 15, isActive: true },
-  { id: '2', name: 'Academic', description: 'Conferencias, charlas y seminarios', eventCount: 28, isActive: true },
-  { id: '3', name: 'Sports', description: 'Eventos deportivos y torneos', eventCount: 8, isActive: true },
-  { id: '4', name: 'Workshop', description: 'Talleres prácticos y de habilidades', eventCount: 12, isActive: true },
-  { id: '5', name: 'Other', description: 'Otros tipos de eventos', eventCount: 5, isActive: true },
+  { id: '1', name: 'Cultural', description: 'Cultural and artistic events', eventCount: 15, isActive: true },
+  { id: '2', name: 'Academic', description: 'Conferences, talks, and seminars', eventCount: 28, isActive: true },
+  { id: '3', name: 'Sports', description: 'Sports events and tournaments', eventCount: 8, isActive: true },
+  { id: '4', name: 'Workshop', description: 'Practical and skills workshops', eventCount: 12, isActive: true },
+  { id: '5', name: 'Other', description: 'Other types of events', eventCount: 5, isActive: true },
 ];
 
 // Simulador de eventos favoritos para el usuario actual

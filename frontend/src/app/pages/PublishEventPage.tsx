@@ -45,7 +45,7 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
     try {
       // Initialize map
       const map = L.map(mapContainerRef.current).setView([40.7580, -73.9855], 15);
-      
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
@@ -130,7 +130,7 @@ export function PublishEventPage() {
         setLocationName(eventToEdit.location.name);
         setLocationCoords([eventToEdit.location.lat, eventToEdit.location.lng]);
         setCoverImage(eventToEdit.coverImage);
-        
+
         // Populate co-organizers (excluding the current user)
         if (usuario && eventToEdit.organizers) {
           const coOrgs = eventToEdit.organizers
@@ -151,10 +151,10 @@ export function PublishEventPage() {
   const handleNext = () => {
     if (step === 1) {
       if (!title || !description || !category || !dateStart || !timeStart || !dateEnd || !timeEnd) {
-        toast.error("Please fill in all required fields");
+        toast.error("Por favor, rellene todos los campos obligatorios.");
         return;
       }
-      
+
       const startDateTime = new Date(`${dateStart}T${timeStart}`);
       const endDateTime = new Date(`${dateEnd}T${timeEnd}`);
       if (endDateTime <= startDateTime) {
@@ -164,7 +164,7 @@ export function PublishEventPage() {
     }
     if (step === 2) {
       if (!locationCoords || !locationName) {
-        toast.error("Please select a location on the map and provide a location name");
+        toast.error("Seleccione una ubicación en el mapa e indique el nombre de la ubicación.");
         return;
       }
     }
@@ -244,7 +244,7 @@ export function PublishEventPage() {
         };
         eventToEdit.coverImage = coverImage || eventToEdit.coverImage;
         eventToEdit.organizers = allOrganizers;
-        
+
         // Si estaba rechazado o en borrador, lo pasamos al estado indicado
         eventToEdit.status = targetStatus;
         if (targetStatus === 'In review') {
@@ -293,7 +293,7 @@ export function PublishEventPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showSearch={false} />
-      
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Button
           variant="ghost"
@@ -301,7 +301,7 @@ export function PublishEventPage() {
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          Dashboard
         </Button>
 
         <h1 className="text-3xl mb-2" style={{ fontWeight: 700 }}>{editId ? "Editar Evento" : "Publicar Nuevo Evento"}</h1>
@@ -314,18 +314,17 @@ export function PublishEventPage() {
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center">
               <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
-                  s <= step
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-gray-300 bg-white text-gray-400'
-                }`}
+                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${s <= step
+                  ? 'border-primary bg-primary text-white'
+                  : 'border-gray-300 bg-white text-gray-400'
+                  }`}
               >
                 {s < step ? <Check className="h-5 w-5" /> : s}
               </div>
               <div className="flex flex-col ml-3 mr-8">
-                <span className="text-xs text-muted-foreground">Step {s}</span>
+                <span className="text-xs text-muted-foreground">Paso {s}</span>
                 <span className="text-sm" style={{ fontWeight: 600 }}>
-                  {s === 1 ? 'Basic info' : s === 2 ? 'Location' : 'Review'}
+                  {s === 1 ? 'Información básica' : s === 2 ? 'Ubicación' : 'Revisión'}
                 </span>
               </div>
               {s < 3 && <div className="w-12 h-0.5 bg-gray-300 mr-8" />}
@@ -338,41 +337,41 @@ export function PublishEventPage() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <Label htmlFor="title">Event Title *</Label>
+                <Label htmlFor="title">Titulo del evento *</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Annual Science Fair"
+                  placeholder="e.g. Feria anual de ciencias"
                   className="mt-2"
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description">Descripción *</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Provide a detailed description of your event..."
+                  placeholder="Proporciona una descripción detallada de tu evento..."
                   className="mt-2 min-h-32"
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="category">Category *</Label>
+                <Label htmlFor="category">Categoria *</Label>
                 <Select value={category} onValueChange={(v) => setCategory(v as EventCategory)}>
                   <SelectTrigger id="category" className="mt-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Cultural">Cultural</SelectItem>
-                    <SelectItem value="Academic">Academic</SelectItem>
-                    <SelectItem value="Sports">Sports</SelectItem>
-                    <SelectItem value="Workshop">Workshop</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Academic">Académico</SelectItem>
+                    <SelectItem value="Sports">Deportivo</SelectItem>
+                    <SelectItem value="Workshop">Taller</SelectItem>
+                    <SelectItem value="Other">Otro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -381,7 +380,7 @@ export function PublishEventPage() {
               <div>
                 <Label>Co-organizadores</Label>
                 <p className="text-xs text-muted-foreground mb-2">Tú serás asignado como organizador automáticamente. Selecciona co-organizadores adicionales si es necesario.</p>
-                <Select 
+                <Select
                   onValueChange={(userId) => {
                     if (!userId) return;
                     const user = mockUsers.find(u => u.id === userId);
@@ -398,7 +397,7 @@ export function PublishEventPage() {
                       .filter(u => u.role === 'Organizer' && String(u.id) !== String(usuario?.id) && !selectedCoOrganizers.some(so => so.id === u.id))
                       .map(u => (
                         <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
-                    ))}
+                      ))}
                   </SelectContent>
                 </Select>
 
@@ -407,7 +406,7 @@ export function PublishEventPage() {
                     {selectedCoOrganizers.map(coOrg => (
                       <div key={coOrg.id} className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-200">
                         {coOrg.name}
-                        <button 
+                        <button
                           onClick={() => setSelectedCoOrganizers(selectedCoOrganizers.filter(u => u.id !== coOrg.id))}
                           className="ml-1 hover:text-blue-900 focus:outline-none"
                         >
@@ -421,7 +420,7 @@ export function PublishEventPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="date-start">Start Date *</Label>
+                  <Label htmlFor="date-start">Fecha de inicio *</Label>
                   <Input
                     id="date-start"
                     type="date"
@@ -432,7 +431,7 @@ export function PublishEventPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="time-start">Start Time *</Label>
+                  <Label htmlFor="time-start">Hora de inicio *</Label>
                   <Input
                     id="time-start"
                     type="time"
@@ -446,7 +445,7 @@ export function PublishEventPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="date-end">End Date *</Label>
+                  <Label htmlFor="date-end">Fecha de finalización *</Label>
                   <Input
                     id="date-end"
                     type="date"
@@ -457,7 +456,7 @@ export function PublishEventPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="time-end">End Time *</Label>
+                  <Label htmlFor="time-end">Hora de finalización *</Label>
                   <Input
                     id="time-end"
                     type="time"
@@ -470,7 +469,7 @@ export function PublishEventPage() {
               </div>
 
               <div>
-                <Label htmlFor="cover-image">Cover Image</Label>
+                <Label htmlFor="cover-image">Imagen de portada *</Label>
                 <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors">
                   {coverImage ? (
                     <div className="relative">
@@ -488,10 +487,10 @@ export function PublishEventPage() {
                     <label htmlFor="cover-image" className="cursor-pointer">
                       <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        Click to upload or drag and drop
+                        Haz click para subir o arrastra y suelta
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        PNG, JPG up to 10MB
+                        PNG, JPG hasta 10MB
                       </p>
                       <input
                         id="cover-image"
@@ -511,9 +510,9 @@ export function PublishEventPage() {
           {step === 2 && (
             <div className="space-y-6">
               <div>
-                <Label>Event Location *</Label>
+                <Label>Ubicación del evento *</Label>
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
-                  Click on the map to select the event location
+                  Haz click en el mapa para seleccionar la ubicación del evento
                 </p>
                 <div className="h-96 rounded-lg overflow-hidden border border-gray-300">
                   <LocationMap
@@ -533,12 +532,12 @@ export function PublishEventPage() {
               )}
 
               <div>
-                <Label htmlFor="location-name">Location Name *</Label>
+                <Label htmlFor="location-name">Nombre de la ubicación *</Label>
                 <Input
                   id="location-name"
                   value={locationName}
                   onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="e.g. Main Campus Hall, Room 205"
+                  placeholder="e.g. Sala principal del campus, Sala 205"
                   className="mt-2"
                   required
                 />
@@ -550,9 +549,9 @@ export function PublishEventPage() {
           {step === 3 && locationCoords && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl mb-4" style={{ fontWeight: 600 }}>Review Your Event</h2>
+                <h2 className="text-xl mb-4" style={{ fontWeight: 600 }}>Revisa tu evento</h2>
                 <p className="text-muted-foreground mb-6">
-                  Please review all information before submitting for approval
+                  Por favor, revisa toda la información antes de enviar para su aprobación
                 </p>
               </div>
 
@@ -571,19 +570,19 @@ export function PublishEventPage() {
 
               <div className="grid md:grid-cols-2 gap-4 py-4 border-y border-gray-200">
                 <div>
-                  <p className="text-sm text-muted-foreground">Start</p>
+                  <p className="text-sm text-muted-foreground">Fecha de inicio</p>
                   <p style={{ fontWeight: 600 }}>
                     {format(new Date(`${dateStart}T${timeStart}`), 'MMM d, yyyy • h:mm a')}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">End</p>
+                  <p className="text-sm text-muted-foreground">Fecha de finalización</p>
                   <p style={{ fontWeight: 600 }}>
                     {format(new Date(`${dateEnd}T${timeEnd}`), 'MMM d, yyyy • h:mm a')}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Location</p>
+                  <p className="text-sm text-muted-foreground">Ubicación</p>
                   <p style={{ fontWeight: 600 }}>{locationName}</p>
                 </div>
                 <div>
@@ -596,14 +595,14 @@ export function PublishEventPage() {
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-2">Description</p>
+                <p className="text-sm text-muted-foreground mb-2">Descripción</p>
                 <p className="text-muted-foreground whitespace-pre-wrap">{description}</p>
               </div>
 
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-sm">
-                  <span style={{ fontWeight: 600 }}>Note:</span> Your event will be submitted for review 
-                  by the administration. You will be notified once it's approved or if any changes are needed.
+                  <span style={{ fontWeight: 600 }}>Nota:</span> Tu evento será enviado para revisión
+                  por la administración. Serás notificado una vez aprobado o si se necesitan cambios.
                 </p>
               </div>
             </div>
@@ -614,15 +613,15 @@ export function PublishEventPage() {
             {step > 1 ? (
               <Button variant="outline" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
+                Atrás
               </Button>
             ) : (
               <div />
             )}
-            
+
             {step < 3 ? (
               <Button onClick={handleNext} className="bg-primary hover:bg-primary/90">
-                Next
+                Siguiente
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
@@ -631,7 +630,7 @@ export function PublishEventPage() {
                   Guardar como borrador
                 </Button>
                 <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66]">
-                  Submit for Review
+                  Enviar para revisión
                 </Button>
               </div>
             )}
