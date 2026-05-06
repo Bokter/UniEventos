@@ -363,10 +363,9 @@
 
                 const t = Math.max(0, Math.min(1, (dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA)));
                 const radio = 3 + t * 8;
-                const anguloRel = (bearing - heading + 360) % 360;
-                const anguloRad = anguloRel * Math.PI / 180;
-                const x = Math.sin(anguloRad) * radio;
-                const z = -Math.cos(anguloRad) * radio;
+                const bearingRad = bearing * Math.PI / 180;
+                const x = Math.sin(bearingRad) * radio;
+                const z = -Math.cos(bearingRad) * radio;
                 const pitchCorregido = pitch - 90;
                 const pitchRad = pitchCorregido * Math.PI / 180;
                 const y = -Math.sin(pitchRad) * radio;
