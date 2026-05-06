@@ -118,7 +118,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
-    const DIST_LLEGADA = 20;
+    const DIST_LLEGADA = 5;
     const DIST_MAXIMA = 500;
 
     let miLat = null, miLng = null;
@@ -337,30 +337,21 @@
 
         mesh.visible = true;
 
-        // Calcular Y según orientación del celular
-        // beta=90 → celular vertical apuntando al frente → Y=0
-        // beta=0  → celular horizontal apuntando al techo → Y positivo
-        const radio = 5;
         const anguloRel = (bearing - heading + 360) % 360;
         const anguloRad = anguloRel * Math.PI / 180;
 
+        // Radio variable — lejos = más alejado de la cámara = se ve más pequeño
+        const t = Math.max(0, Math.min(1, (dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA)));
+        const radio = 3 + t * 20; // 3 cerca, 23 lejos
+
         const x = Math.sin(anguloRad) * radio;
         const z = -Math.cos(anguloRad) * radio;
-
-        // Corregir pitch: restar 90 para que vertical = centro de pantalla
         const pitchCorregido = pitch - 90;
         const pitchRad = pitchCorregido * Math.PI / 180;
         const y = -Math.sin(pitchRad) * radio;
 
         mesh.position.set(x, y, z);
-
-        // Log para debug
-        log(`${evento.titulo}: ${dist ? dist.toFixed(0) : '?'}m | pitch:${pitch.toFixed(0)} gamma:${gamma.toFixed(0)} heading:${heading.toFixed(0)}`);
-
-        // Escala según distancia
-        const t = Math.max(0, Math.min(1, (dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA)));
-        const escala = 0.5 - t * 0.4; // 0.5 cerca, 0.1 lejos
-        mesh.scale.setScalar(escala);
+        mesh.scale.setScalar(1); // escala fija, el tamaño lo controla la distancia 
 
         mesh.lookAt(camera.position);
       });
