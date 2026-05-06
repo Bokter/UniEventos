@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { Calendar, MapPin, Heart, Share2, ArrowLeft, User, Star, Video, VideoOff, Copy } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { CategoryBadge } from "../components/CategoryBadge";
@@ -96,8 +97,8 @@ export function EventDetailPage() {
       <div className="min-h-screen bg-white">
         <Navbar showSearch={false} />
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl mb-4">Event not found</h1>
-          <Button onClick={() => navigate("/")}>Back to Home</Button>
+          <h1 className="text-2xl mb-4">Evento no encontrado</h1>
+          <Button onClick={() => navigate("/")}>Volver al Inicio</Button>
         </div>
       </div>
     );
@@ -112,6 +113,30 @@ export function EventDetailPage() {
       toast.error("Solo el organizador del evento puede iniciar una transmisión");
       return;
     }
+
+    setIsLoadingStream(true);
+
+    // COMENTADO - Implementar integración con Mux
+    // Simulación de inicio de transmisión para UI
+    setTimeout(() => {
+      toast.info("⚙️ Función de transmisión en desarrollo. Configurar Mux API para activar.");
+      setIsLoadingStream(false);
+      setShowStreamDialog(true);
+    }, 1000);
+
+    /*
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-a05bd8dc/events/${id}/stream`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ organizerId: currentUser.id }),
+        }
+      );
     
     setShowStreamDialog(true);
   };
@@ -161,7 +186,7 @@ export function EventDetailPage() {
     }
 
     setIsLoadingStream(true);
-    
+
     // COMENTADO - Implementar integración con Mux
     setTimeout(() => {
       setStreamData(null);
@@ -175,7 +200,7 @@ export function EventDetailPage() {
       toast.success("Transmisión finalizada (Simulación)");
       setIsLoadingStream(false);
     }, 1000);
-    
+
     /*
     try {
       const response = await fetch(
@@ -218,11 +243,11 @@ export function EventDetailPage() {
     if (!id) return;
     const isNowFavorite = toggleFavorite(id);
     setIsFavorite(isNowFavorite);
-    
+
     if (isNowFavorite) {
-      toast.success("Event added to favorites!");
+      toast.success("Evento agregado a favoritos");
     } else {
-      toast.success("Event removed from favorites");
+      toast.success("Evento eliminado de favoritos");
     }
   };
 
@@ -240,14 +265,14 @@ export function EventDetailPage() {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
+      toast.success("Enlace copiado al portapapeles");
     }
   };
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar showSearch={false} />
-      
+
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
         <Button
@@ -256,7 +281,7 @@ export function EventDetailPage() {
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Events
+          Volver a Eventos
         </Button>
 
         {/* Cover Image */}
@@ -324,11 +349,11 @@ export function EventDetailPage() {
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <div style={{ fontWeight: 600 }}>
-                    {format(event.dateStart, 'EEEE, MMMM d, yyyy')}
+                  <div style={{ fontWeight: 600 }} className="capitalize">
+                    {format(event.dateStart, "EEEE, d 'de' MMMM, yyyy", { locale: es })}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {format(event.dateStart, 'h:mm a')} - {format(event.dateEnd, 'h:mm a')}
+                    {format(event.dateStart, 'h:mm a', { locale: es })} - {format(event.dateEnd, 'h:mm a', { locale: es })}
                   </div>
                 </div>
               </div>
@@ -337,14 +362,14 @@ export function EventDetailPage() {
                 <div>
                   <div style={{ fontWeight: 600 }}>{event.location.name}</div>
                   <div className="text-sm text-muted-foreground">
-                    Campus location
+                    Ubicación del evento en el campus
                   </div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <User className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <div style={{ fontWeight: 600 }}>Organized by</div>
+                  <div style={{ fontWeight: 600 }}>Organizado por</div>
                   <div className="text-sm text-muted-foreground">
                     {event.organizers.map(o => o.name).join(', ')}
                   </div>
@@ -354,7 +379,7 @@ export function EventDetailPage() {
 
             {/* Description */}
             <div className="mb-6">
-              <h2 className="text-xl mb-3" style={{ fontWeight: 600 }}>About this event</h2>
+              <h2 className="text-xl mb-3" style={{ fontWeight: 600 }}>Sobre este evento</h2>
               <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {event.description}
               </div>
@@ -362,7 +387,7 @@ export function EventDetailPage() {
 
             {/* Map */}
             <div className="mb-6">
-              <h2 className="text-xl mb-3" style={{ fontWeight: 600 }}>Location</h2>
+              <h2 className="text-xl mb-3" style={{ fontWeight: 600 }}>Ubicación</h2>
               <EventMap
                 lat={event.location.lat}
                 lng={event.location.lng}
@@ -385,7 +410,7 @@ export function EventDetailPage() {
                 ) : (
                   <Star className="h-4 w-4 mr-2" />
                 )}
-                {isFavorite ? "Remove from favorites" : "Add to favorites"}
+                {isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
               </Button>
 
               <Button
@@ -394,7 +419,7 @@ export function EventDetailPage() {
                 onClick={handleShare}
               >
                 <Share2 className="h-4 w-4 mr-2" />
-                Share event
+                Compartir evento
               </Button>
 
               {/* Organizer Cards */}
@@ -496,7 +521,7 @@ export function EventDetailPage() {
           </DialogContent>
         </Dialog>
       )}
-      
+
       {/* COMENTADO - Dialog original con configuración de stream */}
       {/* 
       {showStreamDialog && streamData && (
