@@ -331,7 +331,7 @@ export function AdminPanelPage() {
                               {event.title}
                             </Link>
                           </TableCell>
-                          <TableCell>{event.organizer.name}</TableCell>
+                          <TableCell>{event.organizers.map(o => o.name).join(', ')}</TableCell>
                           <TableCell>
                             <CategoryBadge category={event.category} />
                           </TableCell>
@@ -410,7 +410,7 @@ export function AdminPanelPage() {
                             {event.title}
                           </Link>
                         </TableCell>
-                        <TableCell>{event.organizer.name}</TableCell>
+                        <TableCell>{event.organizers.map(o => o.name).join(', ')}</TableCell>
                         <TableCell>
                           <CategoryBadge category={event.category} />
                         </TableCell>
@@ -568,7 +568,7 @@ export function AdminPanelPage() {
             {selectedEvent && (
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm" style={{ fontWeight: 600 }}>{selectedEvent.title}</p>
-                <p className="text-xs text-muted-foreground">by {selectedEvent.organizer.name}</p>
+                <p className="text-xs text-muted-foreground">by {selectedEvent.organizers.map(o => o.name).join(', ')}</p>
               </div>
             )}
             <div>
