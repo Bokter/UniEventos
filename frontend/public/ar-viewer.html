@@ -14,51 +14,13 @@
         object-fit: cover;
         z-index: 0;
       }
-      #canvas {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        z-index: 1;
-        pointer-events: none;
-      }
       #ui {
         position: fixed;
         top: 0; left: 0; right: 0;
-        padding: 12px 16px;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent);
+        padding: 14px 16px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
         z-index: 10;
         color: white;
-        pointer-events: none;
-      }
-      #btn-permisos {
-        position: fixed;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        background: #6c63ff;
-        color: white;
-        border: none;
-        border-radius: 12px;
-        padding: 16px 32px;
-        font-size: 18px;
-        font-weight: bold;
-        z-index: 20;
-        cursor: pointer;
-        display: none;
-      }
-      #llegada {
-        position: fixed;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0,255,136,0.15);
-        border: 2px solid #00ff88;
-        border-radius: 16px;
-        padding: 20px 32px;
-        color: #00ff88;
-        font-size: 22px;
-        font-weight: bold;
-        text-align: center;
-        z-index: 10;
-        display: none;
         pointer-events: none;
       }
       #debug {
@@ -70,38 +32,74 @@
         font-size: 10px;
         padding: 6px;
         z-index: 99;
-        max-height: 25vh;
+        max-height: 20vh;
         overflow-y: auto;
       }
+      #llegada {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,255,136,0.15);
+        border: 2px solid #00ff88;
+        border-radius: 20px;
+        padding: 24px 36px;
+        color: #00ff88;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        z-index: 20;
+        display: none;
+        backdrop-filter: blur(8px);
+        animation: pulsar 0.5s ease-in-out infinite alternate;
+      }
+      @keyframes pulsar {
+        from { box-shadow: 0 0 10px #00ff88; }
+        to { box-shadow: 0 0 30px #00ff88; }
+      }
+
+      /* AR.js scene oculta por defecto */
+      #arjs-container { display: none; }
+      a-scene { width: 100vw; height: 100vh; }
     </style>
   </head>
   <body>
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="canvas"></canvas>
-
     <div id="ui">
       <div style="font-weight:bold; font-size:18px;">🎯 UniEventos AR</div>
       <div id="status" style="font-size:13px; opacity:0.8;">Iniciando...</div>
     </div>
 
-    <button id="btn-permisos">📱 Activar orientación</button>
+    <!-- Cámara para WebXR (Android) -->
+    <video id="video" autoplay playsinline muted></video>
+
+    <!-- Contenedor AR.js (iOS) -->
+    <div id="arjs-container">
+      <a-scene
+        id="arjs-scene"
+        vr-mode-ui="enabled: false"
+        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false; facingMode: environment"
+        renderer="antialias: true; alpha: true"
+        embedded
+      >
+        <a-camera gps-projected-camera rotation-reader></a-camera>
+      </a-scene>
+    </div>
+
     <div id="llegada"></div>
     <div id="debug"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
       const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
       const DIST_LLEGADA = 5;
       const DIST_MAXIMA = 500;
 
       let miLat = null, miLng = null;
-      let heading = 0;
-      let pitch = 0;
-      let gamma = 0;
       let eventosData = [];
-      let renderer, scene, camera;
-      let indicadores = [];
       let llegadaMostrada = {};
+
+      // ── Detectar dispositivo ──
+      const ua = navigator.userAgent;
+      const esIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      const esAndroid = /Android/.test(ua);
 
       function log(msg) {
         const d = document.getElementById('debug');
@@ -109,7 +107,96 @@
         d.scrollTop = d.scrollHeight;
       }
 
-      async function iniciarCamara() {
+      function mostrarLlegada(titulo) {
+        if (llegadaMostrada[titulo]) return;
+        llegadaMostrada[titulo] = true;
+        const div = document.getElementById('llegada');
+        div.innerHTML = `✅ ¡Llegaste!<br><span style="font-size:18px">${titulo}</span>`;
+        div.style.display = 'block';
+        setTimeout(() => {
+          div.style.display = 'none';
+          delete llegadaMostrada[titulo];
+        }, 4000);
+      }
+
+      // ── GPS ──
+      function iniciarGPS(callback) {
+        if (!navigator.geolocation) {
+          log('GPS no soportado');
+          return;
+        }
+        log('Iniciando GPS...');
+        navigator.geolocation.watchPosition(pos => {
+          miLat = pos.coords.latitude;
+          miLng = pos.coords.longitude;
+          document.getElementById('status').textContent = `GPS ±${pos.coords.accuracy.toFixed(0)}m`;
+          log(`GPS: ±${pos.coords.accuracy.toFixed(0)}m`);
+          if (callback) callback();
+        }, err => {
+          log(`ERROR GPS ${err.code}: ${err.message}`);
+          if (err.code === 1) document.getElementById('status').textContent = 'Permiso GPS denegado';
+          else if (err.code === 2) document.getElementById('status').textContent = 'GPS no disponible';
+          else {
+            navigator.geolocation.getCurrentPosition(pos => {
+              miLat = pos.coords.latitude;
+              miLng = pos.coords.longitude;
+              if (callback) callback();
+            }, () => {}, { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 });
+          }
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+      }
+
+      // ── Cálculos GPS ──
+      function calcularDistancia(lat2, lng2) {
+        if (miLat === null) return null;
+        const R = 6371000;
+        const dLat = (lat2 - miLat) * Math.PI / 180;
+        const dLng = (lng2 - miLng) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 +
+                  Math.cos(miLat * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+                  Math.sin(dLng/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
+
+      function calcularBearing(lat2, lng2) {
+        if (miLat === null) return 0;
+        const dLng = (lng2 - miLng) * Math.PI / 180;
+        const lat1r = miLat * Math.PI / 180;
+        const lat2r = lat2 * Math.PI / 180;
+        const y = Math.sin(dLng) * Math.cos(lat2r);
+        const x = Math.cos(lat1r) * Math.sin(lat2r) - Math.sin(lat1r) * Math.cos(lat2r) * Math.cos(dLng);
+        return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+      }
+
+      function formatDist(d) {
+        if (d === null) return '...';
+        if (d < 1000) return `${Math.round(d)} m`;
+        return `${(d/1000).toFixed(1)} km`;
+      }
+
+      // ── Cargar eventos ──
+      async function cargarEventos() {
+        try {
+          log('Cargando eventos...');
+          const res = await fetch(API_URL);
+          eventosData = await res.json();
+          log(`${eventosData.length} eventos recibidos`);
+          if (eventosData.length === 0) {
+            document.getElementById('status').textContent = 'No hay eventos hoy';
+          }
+        } catch (err) {
+          log('ERROR API: ' + err.message);
+        }
+      }
+
+      // ════════════════════════════════════════
+      // ── ANDROID: WebXR ──
+      // ════════════════════════════════════════
+      async function iniciarAndroid() {
+        log('Modo Android — WebXR');
+        document.getElementById('video').style.display = 'block';
+
+        // Iniciar cámara
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: { exact: 'environment' } }, audio: false
@@ -122,106 +209,249 @@
               video: { facingMode: 'environment' }, audio: false
             });
             document.getElementById('video').srcObject = stream;
-            log('Cámara fallback OK');
           } catch (e2) { log('ERROR cámara: ' + e2.message); }
         }
-      }
 
-      function iniciarGPS() {
-        navigator.geolocation.watchPosition(pos => {
-          miLat = pos.coords.latitude;
-          miLng = pos.coords.longitude;
-          document.getElementById('status').textContent = `GPS ±${pos.coords.accuracy.toFixed(0)}m`;
-          log(`GPS actualizado: ±${pos.coords.accuracy.toFixed(0)}m`);
-        }, err => {
-          log('ERROR GPS: ' + err.message);
-          navigator.geolocation.getCurrentPosition(pos => {
-            miLat = pos.coords.latitude;
-            miLng = pos.coords.longitude;
-            log('GPS fallback OK');
-          }, () => {}, { enableHighAccuracy: false, timeout: 30000 });
-        }, {
-          enableHighAccuracy: true,
-          maximumAge: 0,       // siempre posición fresca
-          timeout: 30000
-        });
-      }
-
-      function registrarOrientacion() {
-        const handler = (e) => {
-          if (e.webkitCompassHeading !== undefined) {
-            heading = e.webkitCompassHeading;
-          } else if (e.alpha !== null) {
-            heading = (360 - e.alpha) % 360;
-          }
-          pitch = e.beta || 0;
-          gamma = e.gamma || 0;
-        };
-        window.addEventListener('deviceorientationabsolute', handler, true);
-        window.addEventListener('deviceorientation', handler, true);
-        log('Orientación OK');
-      }
-
-      async function iniciarOrientacion() {
-        if (typeof DeviceOrientationEvent !== 'undefined' &&
-            typeof DeviceOrientationEvent.requestPermission === 'function') {
-          document.getElementById('btn-permisos').style.display = 'block';
-          document.getElementById('btn-permisos').addEventListener('click', async () => {
-            try {
-              const estado = await DeviceOrientationEvent.requestPermission();
-              if (estado === 'granted') {
-                registrarOrientacion();
-                document.getElementById('btn-permisos').style.display = 'none';
-              }
-            } catch (e) { log('ERROR orientación: ' + e.message); }
-          });
+        // Verificar soporte WebXR
+        if (navigator.xr && await navigator.xr.isSessionSupported('immersive-ar')) {
+          log('WebXR soportado — iniciando sesión AR');
+          iniciarWebXR();
         } else {
-          registrarOrientacion();
+          log('WebXR no soportado — usando Three.js fallback');
+          iniciarThreeJS();
         }
       }
 
-      function iniciarThree() {
-        const canvas = document.getElementById('canvas');
-        renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0x000000, 0);
+      // WebXR puro
+      async function iniciarWebXR() {
+        const canvas = document.createElement('canvas');
+        canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;';
+        document.body.appendChild(canvas);
 
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 0);
-        scene.add(camera);
+        const gl = canvas.getContext('webgl', { xrCompatible: true });
 
-        window.addEventListener('resize', () => {
-          renderer.setSize(window.innerWidth, window.innerHeight);
-          camera.aspect = window.innerWidth / window.innerHeight;
-          camera.updateProjectionMatrix();
+        const session = await navigator.xr.requestSession('immersive-ar', {
+          requiredFeatures: ['local'],
+          optionalFeatures: ['dom-overlay'],
+          domOverlay: { root: document.body }
         });
 
-        log('Three.js OK');
+        session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
+        const refSpace = await session.requestReferenceSpace('local');
+
+        // Importar Three.js para renderizado
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+        script.onload = () => {
+          const renderer = new THREE.WebGLRenderer({ canvas, context: gl, alpha: true });
+          renderer.xr.enabled = true;
+          renderer.xr.setReferenceSpaceType('local');
+          renderer.xr.setSession(session);
+
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera();
+          scene.add(camera);
+
+          const indicadores = crearIndicadoresThree(scene);
+
+          renderer.setAnimationLoop((timestamp, frame) => {
+            if (frame) {
+              actualizarIndicadoresThree(indicadores, scene, camera);
+            }
+            renderer.render(scene, camera);
+          });
+        };
+        document.head.appendChild(script);
       }
 
-      function dibujarTextura(ctx, evento, dist) {
+      // Three.js fallback para Android sin WebXR
+      function iniciarThreeJS() {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+        script.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;';
+          document.body.appendChild(canvas);
+
+          const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+          renderer.setPixelRatio(window.devicePixelRatio);
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.setClearColor(0x000000, 0);
+
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+          scene.add(camera);
+
+          let heading = 0;
+          let headingBuffer = [];
+
+          const handler = (e) => {
+            let raw = e.webkitCompassHeading !== undefined
+              ? e.webkitCompassHeading
+              : (360 - (e.alpha || 0)) % 360;
+            headingBuffer.push(raw);
+            if (headingBuffer.length > 8) headingBuffer.shift();
+            let s = 0, c = 0;
+            headingBuffer.forEach(h => { s += Math.sin(h * Math.PI/180); c += Math.cos(h * Math.PI/180); });
+            heading = (Math.atan2(s, c) * 180 / Math.PI + 360) % 360;
+          };
+          window.addEventListener('deviceorientationabsolute', handler, true);
+          window.addEventListener('deviceorientation', handler, true);
+
+          const indicadores = crearIndicadoresThree(scene);
+
+          function animar() {
+            requestAnimationFrame(animar);
+            actualizarIndicadoresThreeConHeading(indicadores, camera, heading);
+            renderer.render(scene, camera);
+          }
+          animar();
+        };
+        document.head.appendChild(script);
+      }
+
+      function crearIndicadoresThree(scene) {
+        return eventosData.map(evento => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 512; canvas.height = 280;
+          const ctx = canvas.getContext('2d');
+          dibujarCard(ctx, evento, null);
+
+          const texture = new THREE.CanvasTexture(canvas);
+          const mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(3, 1.6),
+            new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, depthWrite: false })
+          );
+          mesh.userData = { evento, texture, canvas, ctx };
+          mesh.visible = false;
+          scene.add(mesh);
+          return mesh;
+        });
+      }
+
+      function actualizarIndicadoresThreeConHeading(indicadores, camera, heading) {
+        indicadores.forEach(mesh => {
+          const { evento, texture, canvas, ctx } = mesh.userData;
+          const dist = calcularDistancia(evento.latitud, evento.longitud);
+          const bearing = calcularBearing(evento.latitud, evento.longitud);
+
+          dibujarCard(ctx, evento, dist);
+          texture.needsUpdate = true;
+
+          if (dist === null || dist > DIST_MAXIMA) { mesh.visible = false; return; }
+          if (dist < DIST_LLEGADA) { mesh.visible = false; mostrarLlegada(evento.titulo); return; }
+
+          mesh.visible = true;
+          const t = Math.max(0, Math.min(1, (dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA)));
+          const radio = 3 + t * 8;
+          const anguloRel = (bearing - heading + 360) % 360;
+          const anguloRad = anguloRel * Math.PI / 180;
+          mesh.position.set(Math.sin(anguloRad) * radio, 0, -Math.cos(anguloRad) * radio);
+          mesh.lookAt(camera.position);
+        });
+      }
+
+      // ════════════════════════════════════════
+      // ── iOS: AR.js ──
+      // ════════════════════════════════════════
+      async function iniciarIOS() {
+        log('Modo iOS — AR.js');
+        document.getElementById('video').style.display = 'none';
+        document.getElementById('arjs-container').style.display = 'block';
+
+        // Cargar AR.js y A-Frame
+        await cargarScript('https://aframe.io/releases/1.4.0/aframe.min.js');
+        await cargarScript('https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js');
+
+        // Pedir permiso brújula iOS
+        if (typeof DeviceOrientationEvent !== 'undefined' &&
+            typeof DeviceOrientationEvent.requestPermission === 'function') {
+          const btn = document.createElement('button');
+          btn.textContent = '📱 Activar AR';
+          btn.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#6c63ff;color:white;border:none;border-radius:12px;padding:16px 32px;font-size:18px;font-weight:bold;z-index:20;cursor:pointer;';
+          document.body.appendChild(btn);
+          btn.addEventListener('click', async () => {
+            await DeviceOrientationEvent.requestPermission();
+            btn.remove();
+            montarIndicadoresARJS();
+          });
+        } else {
+          montarIndicadoresARJS();
+        }
+      }
+
+      function montarIndicadoresARJS() {
+        const scene = document.querySelector('a-scene');
+
+        scene.addEventListener('loaded', () => {
+          log('AR.js escena lista');
+          eventosData.forEach(evento => {
+            const entity = document.createElement('a-entity');
+            entity.setAttribute('gps-projected-entity-place',
+              `latitude: ${evento.latitud}; longitude: ${evento.longitud}`);
+            entity.setAttribute('scale', '20 20 20');
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 280;
+            dibujarCard(canvas.getContext('2d'), evento, null);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const plane = document.createElement('a-plane');
+            plane.setAttribute('color', '#0f0f2e');
+            plane.setAttribute('width', '3');
+            plane.setAttribute('height', '1.6');
+            plane.setAttribute('side', 'double');
+
+            const text = document.createElement('a-text');
+            text.setAttribute('value', evento.titulo);
+            text.setAttribute('color', '#ffffff');
+            text.setAttribute('align', 'center');
+            text.setAttribute('position', '0 0.3 0.01');
+            text.setAttribute('width', '2.8');
+
+            const distText = document.createElement('a-text');
+            distText.setAttribute('value', '...');
+            distText.setAttribute('color', '#ffcc00');
+            distText.setAttribute('align', 'center');
+            distText.setAttribute('position', '0 -0.3 0.01');
+            distText.setAttribute('width', '2.8');
+
+            entity.appendChild(plane);
+            entity.appendChild(text);
+            entity.appendChild(distText);
+            scene.appendChild(entity);
+
+            // Actualizar distancia cada segundo
+            setInterval(() => {
+              const dist = calcularDistancia(evento.latitud, evento.longitud);
+              distText.setAttribute('value', formatDist(dist));
+              if (dist !== null && dist < DIST_LLEGADA) mostrarLlegada(evento.titulo);
+            }, 1000);
+          });
+        });
+      }
+
+      // ── Dibujar card en canvas ──
+      function dibujarCard(ctx, evento, dist) {
         const w = 512, h = 280;
         ctx.clearRect(0, 0, w, h);
-
         const cerca = dist !== null && dist < 60;
 
         ctx.fillStyle = 'rgba(15,15,46,0.93)';
         ctx.beginPath();
-        ctx.roundRect(4, 4, w - 8, h - 8, 20);
+        ctx.roundRect(4, 4, w-8, h-8, 20);
         ctx.fill();
 
         ctx.strokeStyle = cerca ? '#00ff88' : '#6c63ff';
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.roundRect(4, 4, w - 8, h - 8, 20);
+        ctx.roundRect(4, 4, w-8, h-8, 20);
         ctx.stroke();
 
         ctx.fillStyle = cerca ? '#00ff88' : '#6c63ff';
-        ctx.fillRect(4, 4, w - 8, 10);
+        ctx.fillRect(4, 4, w-8, 10);
 
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#fff';
         ctx.font = 'bold 36px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(evento.titulo, w/2, 72);
@@ -236,149 +466,31 @@
 
         ctx.fillStyle = '#ffcc00';
         ctx.font = 'bold 28px sans-serif';
-        const txt = dist !== null
-          ? (dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`)
-          : '...';
-        ctx.fillText(txt, w/2, 210);
+        ctx.fillText(formatDist(dist), w/2, 210);
       }
 
-      function crearIndicador(evento) {
-        const canvasTex = document.createElement('canvas');
-        canvasTex.width = 512;
-        canvasTex.height = 280;
-        const ctx = canvasTex.getContext('2d');
-        dibujarTextura(ctx, evento, null);
-
-        const texture = new THREE.CanvasTexture(canvasTex);
-        const geo = new THREE.PlaneGeometry(3, 1.6);
-        const mat = new THREE.MeshBasicMaterial({
-          map: texture, transparent: true,
-          side: THREE.DoubleSide, depthWrite: false
+      // ── Utilidad: cargar script ──
+      function cargarScript(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.onload = resolve;
+          s.onerror = reject;
+          document.head.appendChild(s);
         });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.userData = { evento, texture, canvasTex, ctx };
-        scene.add(mesh);
-        return mesh;
       }
 
-      function calcularDistancia(lat2, lng2) {
-        if (miLat === null) return null;
-        const R = 6371000;
-        const dLat = (lat2 - miLat) * Math.PI / 180;
-        const dLng = (lng2 - miLng) * Math.PI / 180;
-        const a = Math.sin(dLat/2)**2 +
-                  Math.cos(miLat * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-                  Math.sin(dLng/2)**2;
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      }
-
-      function calcularBearing(lat2, lng2) {
-        const dLng = (lng2 - miLng) * Math.PI / 180;
-        const lat1r = miLat * Math.PI / 180;
-        const lat2r = lat2 * Math.PI / 180;
-        const y = Math.sin(dLng) * Math.cos(lat2r);
-        const x = Math.cos(lat1r) * Math.sin(lat2r) - Math.sin(lat1r) * Math.cos(lat2r) * Math.cos(dLng);
-        return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-      }
-
-      let frameCount = 0;
-
-      function animar() {
-        requestAnimationFrame(animar);
-        frameCount++;
-
-        indicadores.forEach(mesh => {
-          const { evento, texture, canvasTex, ctx } = mesh.userData;
-          const dist = calcularDistancia(evento.latitud, evento.longitud);
-          const bearing = miLat !== null ? calcularBearing(evento.latitud, evento.longitud) : 0;
-
-          // Actualizar textura
-          dibujarTextura(ctx, evento, dist);
-          texture.needsUpdate = true;
-
-          // Log cada 60 frames para no saturar
-          if (frameCount % 60 === 0) {
-            log(`${evento.titulo}: ${dist ? dist.toFixed(0) : '?'}m`);
-          }
-
-          // Llegada
-          if (dist !== null && dist < DIST_LLEGADA) {
-            mesh.visible = false;
-            if (!llegadaMostrada[evento.id]) {
-              llegadaMostrada[evento.id] = true;
-              const div = document.getElementById('llegada');
-              div.textContent = `✅ ¡Llegaste a ${evento.titulo}!`;
-              div.style.display = 'block';
-              setTimeout(() => {
-                div.style.display = 'none';
-                delete llegadaMostrada[evento.id];
-              }, 4000);
-            }
-            return;
-          }
-
-          if (dist === null || dist > DIST_MAXIMA) {
-            mesh.visible = false;
-            return;
-          }
-
-          mesh.visible = true;
-
-          // Radio variable según distancia real
-          // Cerca (5m) → radio 3 → indicador grande
-          // Lejos (500m) → radio 11 → indicador pequeño
-          const t = Math.max(0, Math.min(1, (dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA)));
-          const radio = 3 + t * 8;
-
-          const anguloRel = (bearing - heading + 360) % 360;
-          const anguloRad = anguloRel * Math.PI / 180;
-
-          const x = Math.sin(anguloRad) * radio;
-          const z = -Math.cos(anguloRad) * radio;
-          const pitchCorregido = pitch - 90;
-          const pitchRad = pitchCorregido * Math.PI / 180;
-          const y = -Math.sin(pitchRad) * radio;
-
-          mesh.position.set(x, y, z);
-          mesh.scale.setScalar(1);
-          mesh.lookAt(camera.position);
-        });
-
-        renderer.render(scene, camera);
-      }
-
-      async function cargarEventos() {
-        try {
-          log('Cargando eventos...');
-          const res = await fetch(API_URL);
-          const eventos = await res.json();
-          log(`${eventos.length} eventos recibidos`);
-          eventosData = eventos;
-
-          if (eventos.length === 0) {
-            document.getElementById('status').textContent = 'No hay eventos hoy';
-            return;
-          }
-
-          eventos.forEach(e => {
-            const mesh = crearIndicador(e);
-            mesh.visible = false;
-            indicadores.push(mesh);
-          });
-
-          document.getElementById('status').textContent = `${eventos.length} evento(s) encontrado(s)`;
-        } catch (err) {
-          log('ERROR API: ' + err.message);
-        }
-      }
-
+      // ── Init ──
       async function init() {
-        await iniciarCamara();
-        iniciarGPS();
-        await iniciarOrientacion();
-        iniciarThree();
+        log(`Dispositivo: ${esIOS ? 'iOS' : esAndroid ? 'Android' : 'Otro'}`);
         await cargarEventos();
-        animar();
+        iniciarGPS();
+
+        if (esIOS) {
+          await iniciarIOS();
+        } else {
+          await iniciarAndroid();
+        }
       }
 
       init();
