@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
@@ -11,168 +10,123 @@
     body { overflow: hidden; background: black; }
 
     #video {
-      position: fixed;
-      top: 0; left: 0;
+      position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
-      object-fit: cover;
-      z-index: 0;
+      object-fit: cover; z-index: 0;
     }
-
     #canvas {
-      position: fixed;
-      top: 0; left: 0;
+      position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
-      z-index: 1;
-      pointer-events: none;
+      z-index: 1; pointer-events: none;
     }
-
     #ui {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      padding: 14px 16px;
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 12px 16px;
       background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
-      z-index: 10;
-      color: white;
+      z-index: 10; color: white;
       font-family: 'Segoe UI', sans-serif;
       pointer-events: none;
     }
-
     #llegada {
-      position: fixed;
-      top: 50%; left: 50%;
+      position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       background: rgba(0,255,136,0.15);
-      border: 2px solid #00ff88;
-      border-radius: 20px;
-      padding: 24px 36px;
-      color: #00ff88;
-      font-size: 24px;
-      font-weight: bold;
-      text-align: center;
-      z-index: 20;
-      display: none;
-      backdrop-filter: blur(8px);
+      border: 2px solid #00ff88; border-radius: 20px;
+      padding: 24px 36px; color: #00ff88;
+      font-size: 24px; font-weight: bold;
+      text-align: center; z-index: 20;
+      display: none; backdrop-filter: blur(8px);
       animation: pulsar 0.5s ease-in-out infinite alternate;
     }
-
     @keyframes pulsar {
       from { box-shadow: 0 0 10px #00ff88; }
       to   { box-shadow: 0 0 30px #00ff88; }
     }
-
     #debug {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: rgba(0,0,0,0.85);
-      color: lime;
-      font-family: monospace;
-      font-size: 10px;
-      padding: 6px;
-      z-index: 99;
-      max-height: 22vh;
-      overflow-y: auto;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.85); color: lime;
+      font-family: monospace; font-size: 10px;
+      padding: 6px; z-index: 99;
+      max-height: 22vh; overflow-y: auto;
     }
-
-    /* Retícula central */
     #reticle {
-      position: fixed;
-      top: 50%; left: 50%;
+      position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      width: 24px; height: 24px;
-      border: 2px solid rgba(255,255,255,0.6);
-      border-radius: 50%;
-      z-index: 5;
-      pointer-events: none;
+      width: 22px; height: 22px;
+      border: 2px solid rgba(255,255,255,0.5);
+      border-radius: 50%; z-index: 5; pointer-events: none;
     }
-    #reticle::before, #reticle::after {
-      content: '';
-      position: absolute;
-      background: rgba(255,255,255,0.6);
-    }
-    #reticle::before { width: 1px; height: 10px; top: -13px; left: 50%; transform: translateX(-50%); }
-    #reticle::after  { width: 10px; height: 1px; left: -13px; top: 50%; transform: translateY(-50%); }
   </style>
 </head>
-
 <body>
   <video id="video" autoplay playsinline muted></video>
   <canvas id="canvas"></canvas>
   <div id="ui">
     <div style="font-weight:bold;font-size:18px;">🎯 UniEventos AR</div>
-    <div id="status" style="font-size:13px;opacity:0.8;">Iniciando...</div>
+    <div id="status" style="font-size:12px;opacity:0.85;">Iniciando...</div>
   </div>
   <div id="reticle"></div>
   <div id="llegada"></div>
   <div id="debug"></div>
 
   <script>
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     // CONFIGURACIÓN
-    // ════════════════════════════════════════════════════════════════════
-    const API_URL     = 'https://unieventos-s25a.onrender.com/eventos/ar';
-    const DIST_LLEGADA = 5;    // metros — se muestra llegada
-    const DIST_MAXIMA  = 500;  // metros — máximo rango visible
-    const RADIO_MUNDO  = 10;   // unidades Three.js — radio de la esfera de indicadores
+    // ════════════════════════════════════════════════════
+    const API_URL      = 'https://unieventos-s25a.onrender.com/eventos/ar';
+    const DIST_MAXIMA  = 500;   // metros — máximo visible
+    const RADIO_MUNDO  = 10;    // unidades Three.js — radio de la esfera de indicadores
 
-    // Filtro complementario: α=0.98 → 98% giroscopio, 2% brújula
-    // Sube α si hay mucho ruido en brújula, baja si hay deriva del giroscopio
-    const ALPHA_GYRO  = 0.98;
+    // EMA (Exponential Moving Average) para suavizar el heading de la brújula.
+    // 0 = máximo suavizado (muy lento), 1 = sin suavizado (instantáneo pero ruidoso).
+    // 0.08 ≈ τ 250ms a 50Hz — suave y sin lag perceptible al girar normalmente.
+    const EMA_HEADING = 0.08;
+    const EMA_PITCH   = 0.15;   // pitch se puede suavizar menos
 
-    // ════════════════════════════════════════════════════════════════════
-    // ESTADO GLOBAL
-    // ════════════════════════════════════════════════════════════════════
-    let miLat = null, miLng = null;
-    let eventosData  = [];
+    // Umbral de llegada con holgura para GPS (~10-15m de precisión típica)
+    const DIST_LLEGADA_BASE = 20;  // metros — dispara llegada
+
+    // ════════════════════════════════════════════════════
+    // ESTADO
+    // ════════════════════════════════════════════════════
+    let miLat = null, miLng = null, gpsAccuracy = 999;
+    let eventosData     = [];
     let llegadaMostrada = {};
 
-    // Orientación del dispositivo (en radianes para Three.js)
-    let orientacion = {
-      heading : 0,   // yaw   — azimut desde el Norte (rad)
-      pitch   : 0,   // pitch — inclinación arriba/abajo (rad)
-      roll    : 0,   // roll  — giro lateral (rad)
-    };
-
-    // Sensor fusion
-    let gyroDisponible    = false;
-    let brujulaDisponible = false;
-    let gyroHeadingAcum   = 0;    // heading acumulado por giroscopio (rad)
-    let brujulaHeading    = 0;    // último heading de brújula (rad)
-    let lastGyroTime      = null;
+    // Orientación suavizada (grados)
+    let smoothHeading   = null;   // null = no inicializado aún
+    let smoothPitch     = 90;     // 90° = teléfono vertical apuntando al frente
+    let sensorActivo    = false;
 
     let renderer, scene, camera;
     let indicadores = [];
     let frameCount  = 0;
 
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     // UTILIDADES
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     function log(msg) {
       const d = document.getElementById('debug');
       d.innerHTML += msg + '<br>';
       d.scrollTop = d.scrollHeight;
     }
 
-    function deg2rad(d) { return d * Math.PI / 180; }
-    function rad2deg(r) { return r * 180 / Math.PI; }
-
-    /** Diferencia circular corta entre dos ángulos en radianes */
-    function diffCircular(a, b) {
-      let d = ((a - b) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
-      return d;
+    /** Diferencia corta entre dos ángulos en grados (resultado: -180 a 180) */
+    function diffAngDeg(a, b) {
+      return ((a - b + 540) % 360) - 180;
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // CÁMARA
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
+    // CÁMARA TRASERA
+    // ════════════════════════════════════════════════════
     async function iniciarCamara() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false
+          video: { facingMode: { exact: 'environment' } }, audio: false
         });
         document.getElementById('video').srcObject = stream;
         log('Cámara OK');
-      } catch (e) {
+      } catch {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment' }, audio: false
@@ -183,145 +137,96 @@
       }
     }
 
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     // GPS
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     function iniciarGPS() {
       if (!navigator.geolocation) { log('GPS no soportado'); return; }
-      log('Iniciando GPS...');
       navigator.geolocation.watchPosition(pos => {
-        miLat = pos.coords.latitude;
-        miLng = pos.coords.longitude;
-        document.getElementById('status').textContent =
-          `GPS ±${pos.coords.accuracy.toFixed(0)}m | H:${rad2deg(orientacion.heading).toFixed(0)}°`;
-        log(`GPS: ±${pos.coords.accuracy.toFixed(0)}m`);
+        miLat       = pos.coords.latitude;
+        miLng       = pos.coords.longitude;
+        gpsAccuracy = pos.coords.accuracy || 999;
+        log(`GPS: ±${gpsAccuracy.toFixed(0)}m`);
+        actualizarHUD();
       }, err => {
-        log(`ERROR GPS ${err.code}: ${err.message}`);
-        if (err.code === 3) {
-          navigator.geolocation.getCurrentPosition(pos => {
-            miLat = pos.coords.latitude;
-            miLng = pos.coords.longitude;
-            log('GPS fallback OK');
+        log(`GPS ERR ${err.code}: ${err.message}`);
+        if (err.code !== 1) {
+          navigator.geolocation.getCurrentPosition(p => {
+            miLat = p.coords.latitude; miLng = p.coords.longitude;
+            gpsAccuracy = p.coords.accuracy || 999;
           }, () => {}, { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 });
         }
       }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // SENSORES DE ORIENTACIÓN — SENSOR FUSION
+    // ════════════════════════════════════════════════════
+    // ORIENTACIÓN — EMA sobre deviceorientationabsolute
     //
-    // ARQUITECTURA:
-    //   1. Giroscopio (devicemotion.rotationRate) → integración rápida, sin lag, pero deriva
-    //   2. Brújula (deviceorientationabsolute) → lenta pero absoluta
-    //   3. Filtro complementario: heading = α*gyro + (1-α)*brujula
+    // DECISIÓN: NO usar giroscopio (devicemotion).
+    // Motivo: rotationRate en Android varía el mapeo de ejes según fabricante
+    // (Xiaomi, Samsung) y acumula ruido rápidamente. Con EMA sobre
+    // deviceorientationabsolute conseguimos suficiente suavidad SIN el ruido
+    // de integración del giroscopio.
     //
-    // El heading final rota la CÁMARA de Three.js (no los meshes).
-    // Los meshes se posicionan en el ESPACIO MUNDO con bearing absoluto.
-    // Así, aunque la brújula tenga lag, el giroscopio mantiene la cámara estable.
-    // ════════════════════════════════════════════════════════════════════
+    // La CLAVE arquitectónica se mantiene:
+    //   → Los meshes tienen posición FIJA en el mundo (bearing absoluto).
+    //   → La CÁMARA rota con el heading. Así los indicadores no "arrastran".
+    // ════════════════════════════════════════════════════
     function iniciarSensores() {
+      const handler = (e) => {
+        if (e.alpha === null || e.alpha === undefined) return;
+        sensorActivo = true;
 
-      // ── 1. GIROSCOPIO (integración) ──────────────────────────────────
-      window.addEventListener('devicemotion', (e) => {
-        const rr = e.rotationRate;
-        if (!rr || rr.alpha === null) return;
+        // Heading desde alpha de Android (antihorario → negamos para obtener CW desde Norte)
+        const rawHeading = (360 - e.alpha) % 360;
 
-        const now = performance.now();
-        if (lastGyroTime === null) { lastGyroTime = now; return; }
-        const dt = (now - lastGyroTime) / 1000; // segundos
-        lastGyroTime = now;
+        // Pitch: beta = 0° phone vertical, 90° phone flat.
+        // Cuando el usuario apunta al frente con el teléfono vertical: beta ≈ 0.
+        // Añadimos 90° para que la cámara Three.js mire al horizonte por defecto.
+        const rawPitch = e.beta || 0;
 
-        if (dt <= 0 || dt > 0.1) return; // saltar frames anómalos
-
-        gyroDisponible = true;
-
-        // rotationRate.alpha = giro alrededor del eje Z (yaw) en °/s
-        // rotationRate.beta  = giro alrededor del eje X (pitch) en °/s
-        // rotationRate.gamma = giro alrededor del eje Y (roll) en °/s
-        // Nota: el signo de alpha depende de la orientación del dispositivo
-        const dyaw   = deg2rad(rr.alpha) * dt;
-        const dpitch = deg2rad(rr.beta)  * dt;
-        const droll  = deg2rad(rr.gamma) * dt;
-
-        // Acumular giroscopio
-        gyroHeadingAcum = (gyroHeadingAcum - dyaw + 4 * Math.PI) % (2 * Math.PI);
-
-        // Actualizar pitch y roll directo desde giroscopio (son relativos y no derivan tanto)
-        orientacion.pitch = (orientacion.pitch + dpitch + 2 * Math.PI) % (2 * Math.PI);
-        orientacion.roll  = (orientacion.roll  + droll  + 2 * Math.PI) % (2 * Math.PI);
-
-        // Si no hay brújula, usar giroscopio puro
-        if (!brujulaDisponible) {
-          orientacion.heading = gyroHeadingAcum;
-        }
-      }, true);
-
-      // ── 2. BRÚJULA (corrección de deriva) ────────────────────────────
-      const handlerBrujula = (e) => {
-        if (e.alpha === null) return;
-        brujulaDisponible = true;
-
-        // Calcular heading absoluto desde brújula
-        let raw;
-        if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
-          // iOS: webkitCompassHeading ya es heading magnético
-          raw = deg2rad(e.webkitCompassHeading);
-        } else {
-          // Android: alpha es el azimut (0=Norte, 90=Este) pero en sentido antihorario
-          raw = deg2rad((360 - e.alpha) % 360);
+        if (smoothHeading === null) {
+          // Primera muestra — inicializar sin suavizado
+          smoothHeading = rawHeading;
+          smoothPitch   = rawPitch;
+          return;
         }
 
-        brujulaHeading = raw;
+        // EMA circular para heading (evita saltos en torno a 0°/360°)
+        const dH       = diffAngDeg(rawHeading, smoothHeading);
+        smoothHeading  = (smoothHeading + EMA_HEADING * dH + 360) % 360;
 
-        if (!gyroDisponible) {
-          // Sin giroscopio: usar brújula directamente (suavizado circular)
-          orientacion.heading = raw;
-          orientacion.pitch   = deg2rad(e.beta  || 0);
-          orientacion.roll    = deg2rad(e.gamma || 0);
-        } else {
-          // CON giroscopio: filtro complementario
-          // Corrección: alinear el giroscopio acumulado con la brújula
-          const error = diffCircular(brujulaHeading, gyroHeadingAcum);
-          gyroHeadingAcum = (gyroHeadingAcum + (1 - ALPHA_GYRO) * error + 4 * Math.PI) % (2 * Math.PI);
-          orientacion.heading = gyroHeadingAcum;
-
-          // pitch desde brújula (beta) es más estable que integración del giroscopio
-          const targetPitch = deg2rad(e.beta  || 0);
-          const targetRoll  = deg2rad(e.gamma || 0);
-          orientacion.pitch = ALPHA_GYRO * orientacion.pitch + (1 - ALPHA_GYRO) * targetPitch;
-          orientacion.roll  = ALPHA_GYRO * orientacion.roll  + (1 - ALPHA_GYRO) * targetRoll;
-        }
+        // EMA lineal para pitch
+        smoothPitch   += EMA_PITCH * (rawPitch - smoothPitch);
       };
 
-      // Preferir evento absoluto (más preciso en Android)
+      // Preferir evento absoluto (calibrado al Norte magnético)
       let absolutoActivo = false;
       window.addEventListener('deviceorientationabsolute', (e) => {
-        if (e.alpha !== null) { absolutoActivo = true; handlerBrujula(e); }
+        if (e.alpha !== null) { absolutoActivo = true; handler(e); }
       }, true);
 
+      // Fallback: deviceorientation sin garantía de absoluto
       window.addEventListener('deviceorientation', (e) => {
-        if (!absolutoActivo) handlerBrujula(e);
+        if (!absolutoActivo) handler(e);
       }, true);
 
-      log('Sensores OK (gyro + brújula)');
+      log('Sensor orientación OK');
     }
 
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     // THREE.JS
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     function iniciarThree() {
       const canvas = document.getElementById('canvas');
       renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // limitar a 2x para rendimiento
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setClearColor(0x000000, 0);
 
-      scene = new THREE.Scene();
-
-      // FOV ligeramente superior al de la cámara física típica de celular
+      scene  = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
-      // La cámara se queda en el ORIGEN. Solo rotamos su quaternion cada frame.
-      camera.position.set(0, 0, 0);
+      camera.position.set(0, 0, 0); // cámara siempre en el origen
       scene.add(camera);
 
       window.addEventListener('resize', () => {
@@ -333,75 +238,61 @@
       log('Three.js OK');
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // TEXTURA DE TARJETA
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
+    // TARJETA DE EVENTO (CanvasTexture)
+    // ════════════════════════════════════════════════════
     function dibujarCard(ctx, evento, dist) {
       const w = 512, h = 280;
       ctx.clearRect(0, 0, w, h);
       const cerca = dist !== null && dist < 60;
 
-      // Fondo
       ctx.fillStyle = 'rgba(15,15,46,0.93)';
-      ctx.beginPath();
-      ctx.roundRect(4, 4, w-8, h-8, 20);
-      ctx.fill();
+      ctx.beginPath(); ctx.roundRect(4, 4, w-8, h-8, 20); ctx.fill();
 
-      // Borde
       ctx.strokeStyle = cerca ? '#00ff88' : '#6c63ff';
       ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.roundRect(4, 4, w-8, h-8, 20);
-      ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(4, 4, w-8, h-8, 20); ctx.stroke();
 
-      // Barra superior
       ctx.fillStyle = cerca ? '#00ff88' : '#6c63ff';
       ctx.fillRect(4, 4, w-8, 10);
 
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 36px sans-serif';
+      ctx.font = 'bold 34px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(evento.titulo, w/2, 72);
+      ctx.fillText(evento.titulo, w/2, 68);
 
       ctx.fillStyle = '#a0a0ff';
-      ctx.font = '24px sans-serif';
-      ctx.fillText(`📍 ${evento.lugar_nombre}`, w/2, 115);
+      ctx.font = '22px sans-serif';
+      ctx.fillText(`📍 ${evento.lugar_nombre}`, w/2, 110);
 
       ctx.fillStyle = '#80ffcc';
-      ctx.font = '22px sans-serif';
-      ctx.fillText(`🕐 ${evento.hora_inicio.slice(0,5)} - ${evento.hora_fin.slice(0,5)}`, w/2, 155);
+      ctx.font = '20px sans-serif';
+      ctx.fillText(`🕐 ${evento.hora_inicio.slice(0,5)} - ${evento.hora_fin.slice(0,5)}`, w/2, 150);
 
       ctx.fillStyle = '#ffcc00';
       ctx.font = 'bold 28px sans-serif';
       const txt = dist === null ? '...'
         : dist < 1000 ? `${Math.round(dist)} m`
         : `${(dist/1000).toFixed(1)} km`;
-      ctx.fillText(txt, w/2, 210);
+      ctx.fillText(txt, w/2, 205);
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    // INDICADORES — posición FIJA EN EL MUNDO
-    //
-    // CLAVE: Los meshes se posicionan con bearing ABSOLUTO (desde el Norte).
-    // Nunca se restan el heading. La cámara Three.js rota con el heading.
-    // Así el indicador "se queda" en el mundo aunque el celular se mueva.
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
+    // INDICADORES — posición fija en el espacio mundo
+    // ════════════════════════════════════════════════════
     function crearIndicadores() {
       eventosData.forEach(evento => {
         const canvasTex = document.createElement('canvas');
-        canvasTex.width = 512;
-        canvasTex.height = 280;
+        canvasTex.width = 512; canvasTex.height = 280;
         const ctx = canvasTex.getContext('2d');
         dibujarCard(ctx, evento, null);
 
         const texture = new THREE.CanvasTexture(canvasTex);
-        const mesh = new THREE.Mesh(
+        const mesh    = new THREE.Mesh(
           new THREE.PlaneGeometry(3, 1.6),
           new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            side: THREE.DoubleSide,
-            depthWrite: false
+            map: texture, transparent: true,
+            side: THREE.DoubleSide, depthWrite: false
           })
         );
         mesh.userData = { evento, texture, canvasTex, ctx };
@@ -412,144 +303,150 @@
       log(`${indicadores.length} indicadores creados`);
     }
 
-    // ── Cálculos GPS ──────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════
+    // CÁLCULOS GPS
+    // ════════════════════════════════════════════════════
     function calcularDistancia(lat2, lng2) {
       if (miLat === null) return null;
-      const R = 6371000;
-      const dLat = deg2rad(lat2 - miLat);
-      const dLng = deg2rad(lng2 - miLng);
-      const a = Math.sin(dLat/2)**2 +
-                Math.cos(deg2rad(miLat)) * Math.cos(deg2rad(lat2)) *
-                Math.sin(dLng/2)**2;
+      const R    = 6371000;
+      const dLat = (lat2 - miLat) * Math.PI / 180;
+      const dLng = (lng2 - miLng) * Math.PI / 180;
+      const a    = Math.sin(dLat/2)**2 +
+                   Math.cos(miLat*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+                   Math.sin(dLng/2)**2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
+    /** Retorna bearing en GRADOS (0=Norte, 90=Este), absoluto */
     function calcularBearing(lat2, lng2) {
       if (miLat === null) return 0;
-      const dLng  = deg2rad(lng2 - miLng);
-      const lat1r = deg2rad(miLat);
-      const lat2r = deg2rad(lat2);
+      const dLng  = (lng2 - miLng) * Math.PI / 180;
+      const lat1r = miLat * Math.PI / 180;
+      const lat2r = lat2  * Math.PI / 180;
       const y = Math.sin(dLng) * Math.cos(lat2r);
-      const x = Math.cos(lat1r) * Math.sin(lat2r) -
-                Math.sin(lat1r) * Math.cos(lat2r) * Math.cos(dLng);
-      // Retorna bearing en RADIANES, 0 = Norte, aumenta hacia el Este
-      return (Math.atan2(y, x) + 2 * Math.PI) % (2 * Math.PI);
+      const x = Math.cos(lat1r)*Math.sin(lat2r) - Math.sin(lat1r)*Math.cos(lat2r)*Math.cos(dLng);
+      return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
     }
 
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
+    // HUD
+    // ════════════════════════════════════════════════════
+    function actualizarHUD() {
+      const h = smoothHeading !== null ? smoothHeading.toFixed(0) : '?';
+      document.getElementById('status').textContent =
+        `GPS ±${gpsAccuracy.toFixed(0)}m | Heading: ${h}° | Sensor: ${sensorActivo ? '✓' : '⏳'}`;
+    }
+
+    // ════════════════════════════════════════════════════
     // LOOP PRINCIPAL
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     const eulerCamara = new THREE.Euler(0, 0, 0, 'YXZ');
 
     function animar() {
       requestAnimationFrame(animar);
       frameCount++;
 
-      // ── 1. ROTAR LA CÁMARA con la orientación del dispositivo ────────
+      // ── Rotar la CÁMARA con la orientación suavizada ──────────────────
       //
-      //  Three.js usa orden YXZ para orientación de cámara:
-      //    Y = yaw   (heading, girar izq/der)
-      //    X = pitch (inclinar arriba/abajo)
-      //    Z = roll  (girar sobre el eje de visión)
+      //  YXZ = yaw primero, luego pitch, luego roll (correcto para FPS/AR)
       //
-      //  El heading viene en radianes, 0 = Norte, aumenta hacia el Este.
-      //  Three.js: rotación positiva Y = girar a la izquierda.
-      //  Por eso negamos el heading.
+      //  smoothHeading: 0=Norte, 90=Este (igual que brújula)
+      //  Three.js Y+: girar a la izquierda  → negamos el heading
       //
-      //  pitch: beta=90° = horizontal, 0° = apuntando al suelo.
-      //  Ajustamos para que horizontal = 0 en Three.js.
+      //  smoothPitch: beta deviceorientation
+      //    beta=0   → teléfono vertical → miramos al horizonte → X = 0 en Three.js
+      //    beta=90  → teléfono horizontal → miramos al suelo   → X = -90° en Three.js
+      //  Conversión: eulerX = -(beta) * PI/180
+      //  (sin restar 90, porque beta=0 ya es teléfono vertical = mirando al frente)
 
-      eulerCamara.y = -orientacion.heading;
-      // beta: 0°=vertical, 90°=horizontal → convertimos a radianes y corregimos
-      // deviceorientation.beta: -180 a 180
-      // Cuando el teléfono está horizontal apuntando al frente: beta ≈ 90
-      // En Three.js X=0 es al frente, X=-PI/2 apunta al suelo
-      eulerCamara.x = orientacion.pitch - Math.PI / 2;
-      eulerCamara.z = -orientacion.roll;
+      if (smoothHeading !== null) {
+        eulerCamara.y = -smoothHeading * Math.PI / 180;
+        eulerCamara.x = -smoothPitch   * Math.PI / 180;
+        eulerCamara.z = 0;
+        camera.quaternion.setFromEuler(eulerCamara);
+      }
 
-      camera.quaternion.setFromEuler(eulerCamara);
-
-      // ── 2. ACTUALIZAR INDICADORES (posición ABSOLUTA en el mundo) ──
+      // ── Actualizar indicadores (posición FIJA en el espacio mundo) ──
       indicadores.forEach(mesh => {
         const { evento, texture, ctx } = mesh.userData;
         const dist    = calcularDistancia(evento.latitud, evento.longitud);
-        const bearing = calcularBearing(evento.latitud, evento.longitud); // rad absolutos
+        const bearing = calcularBearing(evento.latitud, evento.longitud); // grados absolutos
 
-        // Redibujar tarjeta cada ~30 frames
-        if (frameCount % 30 === 0) {
+        // Redibujar tarjeta cada ~45 frames (≈cada 750ms a 60fps)
+        if (frameCount % 45 === 0) {
           dibujarCard(ctx, evento, dist);
           texture.needsUpdate = true;
         }
 
-        // Debug periódico
-        if (frameCount % 120 === 0) {
-          log(`${evento.titulo.slice(0,12)}: ${dist ? dist.toFixed(0) : '?'}m | B:${rad2deg(bearing).toFixed(0)}° | H:${rad2deg(orientacion.heading).toFixed(0)}°`);
+        // Debug cada 90 frames
+        if (frameCount % 90 === 0 && dist !== null) {
+          log(`${evento.titulo.slice(0,10)}: ${dist.toFixed(0)}m | B:${bearing.toFixed(0)}° | H:${smoothHeading ? smoothHeading.toFixed(0) : '?'}°`);
         }
 
+        // Ocultar si fuera de rango
         if (dist === null || dist > DIST_MAXIMA) { mesh.visible = false; return; }
 
-        if (dist < DIST_LLEGADA) {
+        // Umbral de llegada: adaptar si la precisión GPS es baja
+        const umbralLlegada = Math.max(DIST_LLEGADA_BASE, gpsAccuracy * 0.8);
+        if (dist < umbralLlegada) {
           mesh.visible = false;
           if (!llegadaMostrada[evento.id]) {
             llegadaMostrada[evento.id] = true;
             const div = document.getElementById('llegada');
             div.innerHTML = `✅ ¡Llegaste!<br><span style="font-size:18px">${evento.titulo}</span>`;
             div.style.display = 'block';
-            setTimeout(() => { div.style.display = 'none'; delete llegadaMostrada[evento.id]; }, 4000);
+            setTimeout(() => { div.style.display = 'none'; delete llegadaMostrada[evento.id]; }, 5000);
           }
           return;
         }
 
         mesh.visible = true;
 
-        // Escalar radio según distancia (más lejos → más cerca del centro visual)
-        const t = Math.max(0, Math.min(1, (dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA)));
-        const radio = RADIO_MUNDO * (0.5 + t * 0.5); // entre 5 y 10 unidades
+        // Radio visual: eventos lejanos aparecen en el borde de la esfera,
+        // cercanos se acercan al centro (todos a la misma distancia visual = RADIO_MUNDO)
+        const radio = RADIO_MUNDO;
 
-        // POSICIÓN EN EL MUNDO — bearing ABSOLUTO desde el Norte
-        // bearing=0 → Norte → Z negativo en Three.js (eje -Z = al frente por defecto)
-        // bearing=90 → Este → X positivo
-        const x = Math.sin(bearing) * radio;
-        const z = -Math.cos(bearing) * radio;
-        const y = 0; // altura neutra (se puede ajustar con pitch del evento)
+        // POSICIÓN EN EL MUNDO con bearing ABSOLUTO (no relativo al heading).
+        // bearing=0° → Norte → en Three.js Z negativo (eje -Z es "al frente" por defecto).
+        // bearing=90° → Este → X positivo.
+        const bearingRad = bearing * Math.PI / 180;
+        const x = Math.sin(bearingRad) * radio;
+        const z = -Math.cos(bearingRad) * radio;
+        const y = 0; // altura neutra en el horizonte
 
         mesh.position.set(x, y, z);
 
-        // El indicador siempre mira hacia la posición de la cámara
-        mesh.lookAt(camera.position);
+        // Billboard: la tarjeta siempre mira a la cámara (que está en el origen)
+        // Usamos la dirección desde el mesh hacia el origen para el lookAt
+        mesh.lookAt(0, 0, 0);
       });
 
       renderer.render(scene, camera);
 
-      // Actualizar HUD cada 60 frames
-      if (frameCount % 60 === 0) {
-        document.getElementById('status').textContent =
-          `GPS ±${miLat !== null ? 'OK' : '...'} | H: ${rad2deg(orientacion.heading).toFixed(0)}° | Gyro: ${gyroDisponible ? '✓' : '✗'} | Brújula: ${brujulaDisponible ? '✓' : '✗'}`;
-      }
+      if (frameCount % 90 === 0) actualizarHUD();
     }
 
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     // CARGAR EVENTOS
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     async function cargarEventos() {
       try {
         log('Cargando eventos...');
         const res = await fetch(API_URL);
         eventosData = await res.json();
-        log(`${eventosData.length} eventos recibidos`);
-        if (eventosData.length === 0) {
-          document.getElementById('status').textContent = 'No hay eventos hoy';
-        }
+        log(`${eventosData.length} eventos cargados`);
+        if (eventosData.length === 0)
+          document.getElementById('status').textContent = 'Sin eventos hoy';
       } catch (err) {
         log('ERROR API: ' + err.message);
       }
     }
 
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     // INIT
-    // ════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════
     async function init() {
-      log('Iniciando UniEventos AR (sensor fusion)...');
+      log('Iniciando UniEventos AR...');
       await iniciarCamara();
       iniciarGPS();
       iniciarSensores();
@@ -557,7 +454,7 @@
       await cargarEventos();
       crearIndicadores();
       animar();
-      log('Sistema listo');
+      log('Listo ✓');
     }
 
     init();
