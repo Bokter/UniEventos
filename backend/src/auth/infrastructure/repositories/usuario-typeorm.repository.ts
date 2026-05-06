@@ -21,4 +21,8 @@ export class UsuarioTypeormRepository implements IUsuarioRepository {
     const guardado = await this.repo.save(usuario);
     return guardado;
   }
+
+  async update(id: number, data: any) {
+    await this.repo.update(id, data);
+  }
 }

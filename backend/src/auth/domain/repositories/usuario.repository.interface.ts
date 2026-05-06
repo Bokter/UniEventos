@@ -18,6 +18,7 @@ export interface IUsuarioRepository {
     password_hash: string;
     rol: RolUsuario;
   }): Promise<UsuarioDomain>;
+  update(id: number, data: Partial<UsuarioDomain>): Promise<void>;
 }
 
 export const USUARIO_REPOSITORY = 'USUARIO_REPOSITORY';

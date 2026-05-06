@@ -15,6 +15,15 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) { }
 
+  private readonly ADMIN_EMAILS = [
+    'jbolivarj@uninorte.edu.co',
+    'fatimac@uninorte.edu.co',
+    'cvelias@uninorte.edu.co',
+    'cherj@uninorte.edu.co',
+    'rojasdelahoz@uninorte.edu.co',
+    'caruidiaz@uninorte.edu.co'
+  ];
+
   // ─── VISITANTES (cualquier correo que NO sea @uninorte.edu.co) ───────────────
 
   async register(nombre_completo: string, email: string, password: string) {
@@ -79,7 +88,7 @@ export class AuthService {
         nombre_completo,
         email,
         password_hash,
-        rol: RolUsuario.ORGANIZADOR,
+        rol: this.ADMIN_EMAILS.includes(email) ? RolUsuario.ADMIN : RolUsuario.ORGANIZADOR,
       });
     }
 
@@ -128,11 +137,19 @@ export class AuthService {
         nombre_completo: email.split('@')[0],
         email,
         password_hash,
-        rol: RolUsuario.ORGANIZADOR,
+        rol: this.ADMIN_EMAILS.includes(email) ? RolUsuario.ADMIN : RolUsuario.ORGANIZADOR,
       });
     }
 
-    // 3. Generar nuestro propio JWT
+    // 3. Verificar si debe ser promovido a ADMIN (si estaba como organizador y ahora está en la lista)
+    console.log(`Verificando admin para: ${email}. Rol actual: ${usuario.rol}`);
+    if (this.ADMIN_EMAILS.includes(email) && usuario.rol !== RolUsuario.ADMIN) {
+      console.log(`¡Promoviendo a ADMIN a: ${email}!`);
+      usuario.rol = RolUsuario.ADMIN;
+      await this.usuarioRepository.update(usuario.id, { rol: RolUsuario.ADMIN });
+    }
+
+    // 4. Generar nuestro propio JWT
     const token = this.generarToken(usuario);
     return { access_token: token, usuario: this.formatearUsuario(usuario) };
   }
