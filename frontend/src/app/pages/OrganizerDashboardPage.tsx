@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
-import { Calendar, Plus, Bell, User, FileText, LogOut, Pencil, X, Video } from "lucide-react";
+import { Calendar, Bell, User, Pencil, X, Video } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
 import { StatusBadge } from "../components/StatusBadge";
@@ -10,21 +10,32 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import {
-  getEventsByOrganizer,
-  Event,
-  mockEvents
-} from "../data/mockData";
 import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
 import { useAuth } from "../../context/AuthContext";
+import { eventosApi } from "../services/api.service";
 import { toast } from "sonner";
+
+// Tipo local para eventos que llegan del backend
+interface EventoBackend {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  categoria: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  estado: string;
+  observacion?: string;
+  streams?: { organizerId: string; streamLink: string }[];
+  [key: string]: unknown;
+}
 
 export function OrganizerDashboardPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SidebarTab>('events');
-  const [refresh, setRefresh] = useState(0);
+  const [organizerEvents, setOrganizerEvents] = useState<EventoBackend[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [streamDialogOpen, setStreamDialogOpen] = useState(false);
-  const [selectedEventForStream, setSelectedEventForStream] = useState<Event | null>(null);
+  const [selectedEventForStream, setSelectedEventForStream] = useState<EventoBackend | null>(null);
   const [streamLink, setStreamLink] = useState("");
 
   const { usuario, isLoading, logout } = useAuth();
@@ -34,59 +45,42 @@ export function OrganizerDashboardPage() {
     return <Navigate to="/login" replace />;
   }
 
-  // Lógica de carga inicial 
-  /*
+  // Carga de eventos desde el backend
   useEffect(() => {
     const fetchOrganizerEvents = async () => {
+      setIsLoadingEvents(true);
       try {
-        const response = await fetch(`${API_URL}/eventos/mis-eventos`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        setEvents(data);
-      } catch (error) {
+        const data = await eventosApi.getMisEventos() as EventoBackend[];
+        setOrganizerEvents(data);
+      } catch {
         toast.error("Error al cargar tus eventos");
+      } finally {
+        setIsLoadingEvents(false);
       }
     };
     fetchOrganizerEvents();
-  }, [token]);
-  */
+  }, []);
 
-  const organizerEvents = getEventsByOrganizer(String(usuario.id));
-
-  const handleEdit = (eventId: string) => {
+  const handleEdit = (eventId: number) => {
     navigate(`/organizer/publish?edit=${eventId}`);
   };
 
-  const handleCancel = async (eventId: string) => {
+  const handleCancel = async (eventId: number) => {
     if (!confirm("¿Estás seguro de que quieres cancelar este evento? Esta acción no se puede deshacer.")) {
       return;
     }
-
-    /* 
-    // CONEXIÓN CON BACKEND
     try {
-      const response = await fetch(`${API_URL}/eventos/${eventId}/cancelar`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Error al cancelar');
-      toast.success("Evento cancelado");
-    } catch (error) {
-      toast.error("No se pudo cancelar el evento");
-      return;
-    }
-    */
-
-    const event = mockEvents.find(e => e.id === eventId);
-    if (event) {
-      event.status = 'Cancelled';
+      await eventosApi.cancelar(eventId);
       toast.success("Evento cancelado exitosamente");
-      setRefresh(prev => prev + 1); // Forzar re-render
+      setOrganizerEvents(prev =>
+        prev.map(e => e.id === eventId ? { ...e, estado: 'Cancelled' } : e)
+      );
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "No se pudo cancelar el evento");
     }
   };
 
-  const handleOpenStreamDialog = (event: Event) => {
+  const handleOpenStreamDialog = (event: EventoBackend) => {
     setSelectedEventForStream(event);
     const userStream = event.streams?.find(s => String(s.organizerId) === String(usuario?.id));
     setStreamLink(userStream?.streamLink || "");
@@ -94,36 +88,23 @@ export function OrganizerDashboardPage() {
   };
 
   const handleSaveStreamLink = () => {
+    // El stream link se guarda localmente hasta que exista endpoint en el backend
     if (!selectedEventForStream) return;
-
-    /* 
-    // CONEXIÓN CON BACKEND
-    try {
-      const response = await fetch(`${API_URL}/eventos/${selectedEventForStream.id}/stream`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ streamLink })
-      });
-      if (!response.ok) throw new Error('Error al guardar');
-    } catch (error) {
-      toast.error("No se pudo guardar el enlace del stream");
-      return;
-    }
-    */
-
-    const event = mockEvents.find(e => e.id === selectedEventForStream.id);
-    if (event) {
-      if (!event.streams) event.streams = [];
-      const streamIdx = event.streams.findIndex(s => String(s.organizerId) === String(usuario?.id));
-      if (streamIdx >= 0) {
-        event.streams[streamIdx].streamLink = streamLink;
-      } else if (usuario) {
-        event.streams.push({ organizerId: String(usuario.id), streamLink });
-      }
-      toast.success("Enlace de transmisión guardado");
-      setRefresh(prev => prev + 1);
-      setStreamDialogOpen(false);
-    }
+    setOrganizerEvents(prev =>
+      prev.map(e => {
+        if (e.id !== selectedEventForStream.id) return e;
+        const streams = [...(e.streams || [])];
+        const idx = streams.findIndex(s => String(s.organizerId) === String(usuario?.id));
+        if (idx >= 0) {
+          streams[idx] = { ...streams[idx], streamLink };
+        } else {
+          streams.push({ organizerId: String(usuario.id), streamLink });
+        }
+        return { ...e, streams };
+      })
+    );
+    toast.success("Enlace de transmisión guardado");
+    setStreamDialogOpen(false);
   };
 
   const handleLogout = () => {
@@ -131,6 +112,10 @@ export function OrganizerDashboardPage() {
     toast.success("Sesión cerrada");
     navigate("/");
   };
+
+  void handleLogout; // evita warning de variable no usada
+
+  const approvedCount = organizerEvents.filter(e => e.estado === 'Approved' || e.estado === 'aprobado').length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -153,7 +138,11 @@ export function OrganizerDashboardPage() {
                 </div>
               </div>
 
-              {organizerEvents.length > 0 ? (
+              {isLoadingEvents ? (
+                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center text-muted-foreground">
+                  Cargando eventos...
+                </div>
+              ) : organizerEvents.length > 0 ? (
                 <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -166,7 +155,7 @@ export function OrganizerDashboardPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {organizerEvents.map((event: Event) => (
+                      {organizerEvents.map((event) => (
                         <TableRow key={event.id}>
                           <TableCell>
                             <Link
@@ -174,22 +163,22 @@ export function OrganizerDashboardPage() {
                               className="hover:text-accent hover:underline"
                               style={{ fontWeight: 600 }}
                             >
-                              {event.title}
+                              {event.titulo}
                             </Link>
                           </TableCell>
                           <TableCell>
-                            <CategoryBadge category={event.category} />
+                            <CategoryBadge category={event.categoria as any} />
                           </TableCell>
                           <TableCell>
-                            {format(event.dateStart, 'dd/MM/yyyy')}
+                            {event.fecha_inicio ? format(new Date(event.fecha_inicio), 'dd/MM/yyyy') : '—'}
                           </TableCell>
                           <TableCell>
-                            <StatusBadge status={event.status} />
+                            <StatusBadge status={event.estado as any} />
                             {/* Mostrar observación del admin si fue rechazado */}
-                            {event.status === 'Rejected' && event.rejectionReason && (
+                            {(event.estado === 'Rejected' || event.estado === 'rechazado') && event.observacion && (
                               <div className="mt-1 text-xs text-destructive bg-red-50 border border-red-200 rounded p-2 max-w-md break-words whitespace-normal">
                                 <span style={{ fontWeight: 600 }}>Observación del admin: </span>
-                                {event.rejectionReason}
+                                {event.observacion}
                               </div>
                             )}
                           </TableCell>
@@ -200,11 +189,9 @@ export function OrganizerDashboardPage() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleEdit(event.id)}
-                                disabled={
-                                  event.status !== 'Draft' && event.status !== 'Rejected'
-                                }
+                                disabled={event.estado !== 'Draft' && event.estado !== 'borrador' && event.estado !== 'Rejected' && event.estado !== 'rechazado'}
                                 title={
-                                  event.status === 'Draft' || event.status === 'Rejected'
+                                  event.estado === 'Draft' || event.estado === 'borrador' || event.estado === 'Rejected' || event.estado === 'rechazado'
                                     ? 'Editar evento'
                                     : 'Solo puedes editar eventos en borrador o rechazados'
                                 }
@@ -216,10 +203,10 @@ export function OrganizerDashboardPage() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleOpenStreamDialog(event)}
-                                disabled={event.status !== 'Approved'}
+                                disabled={event.estado !== 'Approved' && event.estado !== 'aprobado'}
                                 className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                 title={
-                                  event.status === 'Approved'
+                                  event.estado === 'Approved' || event.estado === 'aprobado'
                                     ? 'Añadir enlace de transmisión'
                                     : 'Solo eventos aprobados pueden tener transmisión'
                                 }
@@ -231,12 +218,10 @@ export function OrganizerDashboardPage() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleCancel(event.id)}
-                                disabled={
-                                  event.status !== 'Approved'
-                                }
+                                disabled={event.estado !== 'Approved' && event.estado !== 'aprobado'}
                                 className="text-destructive hover:text-destructive"
                                 title={
-                                  event.status === 'Approved'
+                                  event.estado === 'Approved' || event.estado === 'aprobado'
                                     ? 'Cancelar evento'
                                     : 'Solo puedes cancelar eventos aprobados'
                                 }
@@ -300,9 +285,7 @@ export function OrganizerDashboardPage() {
                   </div>
                   <div>
                     <label className="text-sm text-muted-foreground">Eventos aprobados</label>
-                    <p className="text-2xl" style={{ fontWeight: 600 }}>
-                      {organizerEvents.filter((e: Event) => e.status === 'Approved').length}
-                    </p>
+                    <p className="text-2xl" style={{ fontWeight: 600 }}>{approvedCount}</p>
                   </div>
                 </div>
               </div>
@@ -317,7 +300,7 @@ export function OrganizerDashboardPage() {
           <DialogHeader>
             <DialogTitle>Enlace de Transmisión (Stream)</DialogTitle>
             <DialogDescription>
-              Añade el enlace de Mux (Playback ID o Stream URL) para la transmisión en vivo del evento "{selectedEventForStream?.title}".
+              Añade el enlace de Mux (Playback ID o Stream URL) para la transmisión en vivo del evento "{selectedEventForStream?.titulo}".
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

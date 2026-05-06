@@ -26,8 +26,11 @@ function redirigirPorRol(rol: Rol, navigate: ReturnType<typeof useNavigate>) {
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, register, verifyEmail } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showVerify, setShowVerify] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [emailToVerify, setEmailToVerify] = useState("");
 
   // Estado del formulario de inicio de sesión
   const [signInEmail, setSignInEmail] = useState("");
@@ -44,42 +47,19 @@ export function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    /* 
-    // CONEXIÓN CON BACKEND
-    try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: signInEmail, password: signInPassword })
-      });
-      
-      if (!response.ok) throw new Error('Credenciales inválidas');
-      
-      const { token, usuario } = await response.json();
-      
-      // Guardar token y actualizar contexto (Ejemplo)
-      // localStorage.setItem('token', token);
-      // loginContext(usuario); 
-      
-      toast.success(`¡Bienvenido/a, ${usuario.nombre_completo}!`);
-      redirigirPorRol(usuario.rol, navigate);
-      return;
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Error al iniciar sesión");
-      return;
-    } finally {
-      setIsLoading(false);
-    }
-    */
-
     try {
       const usuario = await login(signInEmail, signInPassword);
       toast.success(`¡Bienvenido/a, ${usuario.nombre_completo}!`);
       redirigirPorRol(usuario.rol, navigate);
     } catch (err: unknown) {
-      const mensaje =
-        err instanceof Error ? err.message : "Error al iniciar sesión";
+      const mensaje = err instanceof Error ? err.message : "Error al iniciar sesión";
       toast.error(mensaje);
+      
+      // Si el error sugiere que falta verificación, podríamos mostrar el formulario de verificación
+      if (mensaje.toLowerCase().includes("verificar") || mensaje.toLowerCase().includes("código")) {
+        setEmailToVerify(signInEmail);
+        setShowVerify(true);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -89,65 +69,104 @@ export function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validar correo institucional
     if (!registerEmail.endsWith("@uninorte.edu.co")) {
       toast.error("Debes usar tu correo institucional (@uninorte.edu.co)");
       return;
     }
 
-    // Validar contraseñas
     if (registerPassword !== registerConfirmPassword) {
       toast.error("Las contraseñas no coinciden");
       return;
     }
 
-    if (registerPassword.length < 8) {
-      toast.error("La contraseña debe tener al menos 8 caracteres");
-      return;
-    }
-
     setIsLoading(true);
 
-    /* 
-    // CONEXIÓN CON BACKEND
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          nombre_completo: registerName, 
-          email: registerEmail, 
-          password: registerPassword 
-        })
-      });
+      const result = await register(registerName, registerEmail, registerPassword);
       
-      if (!response.ok) throw new Error('Error en el registro');
-      
-      const { token, usuario } = await response.json();
-      
-      toast.success("¡Cuenta creada exitosamente!");
-      redirigirPorRol(usuario.rol, navigate);
-      return;
+      // Si es un objeto con mensaje (Uninorte)
+      if (result && result.mensaje) {
+        toast.info(result.mensaje);
+        setEmailToVerify(registerEmail);
+        setShowVerify(true);
+      } else {
+        // Si devolvió el usuario (Visitante)
+        toast.success("¡Cuenta creada exitosamente!");
+        redirigirPorRol(result.rol, navigate);
+      }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Error al registrarse");
-      return;
-    } finally {
-      setIsLoading(false);
-    }
-    */
-
-    try {
-      const usuario = await register(registerName, registerEmail, registerPassword);
-      toast.success("¡Cuenta creada exitosamente! Revisa tu correo para verificar tu cuenta.");
-      redirigirPorRol(usuario.rol, navigate);
-    } catch (err: unknown) {
-      const mensaje =
-        err instanceof Error ? err.message : "Error al registrarse";
+      const mensaje = err instanceof Error ? err.message : "Error al registrarse";
       toast.error(mensaje);
+      
+      // Si el usuario ya existe (409), puede que falte verificar
+      if (mensaje.includes("ya está registrado") || mensaje.includes("conflict")) {
+        setEmailToVerify(registerEmail);
+        setShowVerify(true);
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // ─── Manejador de verificación ──────────────────────────────
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      await verifyEmail(emailToVerify, verifyCode);
+      toast.success("¡Correo verificado con éxito! Ya puedes iniciar sesión.");
+      setShowVerify(false);
+      setSignInEmail(emailToVerify);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al verificar código");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (showVerify) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar showSearch={false} />
+        <div className="max-w-md mx-auto px-4 py-12">
+          <Card>
+            <CardHeader>
+              <CardTitle>Verifica tu cuenta</CardTitle>
+              <CardDescription>
+                Ingresa el código que enviamos a {emailToVerify}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleVerify} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="verify-code">Código de verificación</Label>
+                  <Input
+                    id="verify-code"
+                    placeholder="Ej. 123456"
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value)}
+                    required
+                    className="text-center text-2xl tracking-widest"
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-primary" disabled={isLoading}>
+                  {isLoading ? "Verificando..." : "Verificar correo"}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full" 
+                  onClick={() => setShowVerify(false)}
+                >
+                  Volver al inicio de sesión
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -177,7 +196,6 @@ export function LoginPage() {
                 <TabsTrigger value="register">Crear cuenta</TabsTrigger>
               </TabsList>
 
-              {/* ── Pestaña: Iniciar Sesión ──────────────────── */}
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4 mt-4">
                   <div className="space-y-2">
@@ -213,7 +231,6 @@ export function LoginPage() {
                     {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
                   </Button>
 
-                  {/* Cuentas de prueba — SOLO PARA DESARROLLO, borrar antes de producción */}
                   <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
                     <p className="mb-2" style={{ fontWeight: 600 }}>
                       Cuentas de prueba (solo desarrollo):
@@ -231,7 +248,6 @@ export function LoginPage() {
                 </form>
               </TabsContent>
 
-              {/* ── Pestaña: Registro ────────────────────────── */}
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4 mt-4">
                   <div className="space-y-2">

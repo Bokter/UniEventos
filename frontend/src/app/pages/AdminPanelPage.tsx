@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
-import { FileText, Users, Tag, Flag, LogOut, Check, X } from "lucide-react";
+import { FileText, Users, Tag, Flag, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
 import { StatusBadge } from "../components/StatusBadge";
@@ -10,27 +10,61 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
-import { getPendingEvents, mockEvents, Event, mockUsers, mockCategories, User, UserRole } from "../data/mockData";
 import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
 import { EditUserModal } from "../components/EditUserModal";
 import { EditCategoryModal } from "../components/EditCategoryModal";
 import { useAuth } from "../../context/AuthContext";
+import { eventosApi, usuariosApi, categoriasApi } from "../services/api.service";
+import { UserRole } from "../data/mockData";
 import { toast } from "sonner";
+
+interface EventoBackend {
+  id: number;
+  titulo: string;
+  categoria: string;
+  fecha_inicio: string;
+  estado: string;
+  observacion?: string;
+  fecha_envio?: string;
+  organizadores?: { nombre_completo: string }[];
+  [key: string]: unknown;
+}
+
+interface UsuarioBackend {
+  id: number;
+  nombre_completo: string;
+  email: string;
+  rol: string;
+  activo: boolean;
+  [key: string]: unknown;
+}
+
+interface CategoriaBackend {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  activa: boolean;
+  eventCount?: number;
+  [key: string]: unknown;
+}
 
 export function AdminPanelPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SidebarTab>('pending');
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventoBackend | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
-  const [selectedUserToEdit, setSelectedUserToEdit] = useState<User | null>(null);
+  const [selectedUserToEdit, setSelectedUserToEdit] = useState<any | null>(null);
 
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [selectedCategoryToEdit, setSelectedCategoryToEdit] = useState<any | null>(null);
 
-  const [refresh, setRefresh] = useState(0);
+  const [pendingEvents, setPendingEvents] = useState<EventoBackend[]>([]);
+  const [allEvents, setAllEvents] = useState<EventoBackend[]>([]);
+  const [usuarios, setUsuarios] = useState<UsuarioBackend[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaBackend[]>([]);
 
   const { usuario, isLoading, logout } = useAuth();
 
@@ -39,34 +73,41 @@ export function AdminPanelPage() {
     return <Navigate to="/login" replace />;
   }
 
-  const pendingEvents = getPendingEvents();
-  const allEvents = mockEvents;
-
-  const handleApprove = async (eventId: string) => {
-    /* 
-    // CONEXIÓN CON BACKEND
-    try {
-      const response = await fetch(`${API_URL}/eventos/${eventId}/aprobar`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Error al aprobar');
-      toast.success("Evento aprobado!");
-    } catch (error) {
-      toast.error("Error al conectar con el servidor");
-      return;
+  // Carga de datos al montar o cambiar de tab
+  useEffect(() => {
+    if (activeTab === 'pending') {
+      eventosApi.getPendientes()
+        .then(data => setPendingEvents(data as EventoBackend[]))
+        .catch(() => toast.error("Error al cargar eventos pendientes"));
     }
-    */
+    if (activeTab === 'all') {
+      eventosApi.getAll()
+        .then(data => setAllEvents(data as EventoBackend[]))
+        .catch(() => toast.error("Error al cargar los eventos"));
+    }
+    if (activeTab === 'users') {
+      usuariosApi.getAll()
+        .then(data => setUsuarios(data as UsuarioBackend[]))
+        .catch(() => toast.error("Error al cargar los usuarios"));
+    }
+    if (activeTab === 'categories') {
+      categoriasApi.getAll()
+        .then(data => setCategorias(data as CategoriaBackend[]))
+        .catch(() => toast.error("Error al cargar las categorías"));
+    }
+  }, [activeTab]);
 
-    const event = mockEvents.find(e => e.id === eventId);
-    if (event) {
-      event.status = 'Approved';
-      toast.success(`Evento "${event.title}" aprobado!`);
-      setRefresh(prev => prev + 1);
+  const handleApprove = async (eventId: number) => {
+    try {
+      await eventosApi.aprobar(eventId);
+      toast.success("Evento aprobado");
+      setPendingEvents(prev => prev.filter(e => e.id !== eventId));
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Error al aprobar el evento");
     }
   };
 
-  const handleRejectClick = (event: Event) => {
+  const handleRejectClick = (event: EventoBackend) => {
     setSelectedEvent(event);
     setRejectDialogOpen(true);
   };
@@ -76,31 +117,16 @@ export function AdminPanelPage() {
       toast.error("Por favor ingresa un motivo de rechazo");
       return;
     }
-
-    /* 
-    // CONEXIÓN CON BACKEND
     try {
-      const response = await fetch(`${API_URL}/eventos/${selectedEvent.id}/rechazar`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ observacion: rejectionReason })
-      });
-      if (!response.ok) throw new Error('Error al rechazar');
-      toast.success("Evento rechazado");
-    } catch (error) {
-      toast.error("Error al procesar el rechazo");
-      return;
+      await eventosApi.rechazar(selectedEvent.id, rejectionReason);
+      toast.success(`Evento "${selectedEvent.titulo}" rechazado`);
+      setPendingEvents(prev => prev.filter(e => e.id !== selectedEvent.id));
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Error al rechazar el evento");
     }
-    */
-
-    selectedEvent.status = 'Rejected';
-    selectedEvent.rejectionReason = rejectionReason;
-    toast.success(`Evento "${selectedEvent.title}" rechazado`);
-
     setRejectDialogOpen(false);
     setSelectedEvent(null);
     setRejectionReason("");
-    setRefresh(prev => prev + 1);
   };
 
   const handleLogout = () => {
@@ -109,182 +135,80 @@ export function AdminPanelPage() {
     navigate("/");
   };
 
-  const handleEditUserClick = (user: User) => {
+  void handleLogout;
+
+  const handleEditUserClick = (user: UsuarioBackend) => {
     setSelectedUserToEdit(user);
     setEditUserDialogOpen(true);
   };
 
   const handleSaveUserRole = async (userId: string, newRole: UserRole) => {
-    /* 
-    // CONEXIÓN CON BACKEND (Ejemplo de implementación)
+    // Map frontend UserRole enum to backend rol string
+    const rolMap: Record<UserRole, string> = {
+      Admin: 'admin',
+      Organizer: 'organizador',
+      Attendee: 'miembro',
+    };
     try {
-      const response = await fetch(`${API_URL}/admin/usuarios/${userId}/rol`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ rol: newRole })
-      });
-      if (!response.ok) throw new Error('Error al actualizar rol');
-    } catch (error) {
-      toast.error("Error al actualizar el rol");
-      return;
-    }
-    */
-
-    const user = mockUsers.find(u => u.id === userId);
-    if (user) {
-      user.role = newRole;
+      await usuariosApi.cambiarRol(userId, rolMap[newRole]);
       toast.success("Rol de usuario actualizado");
-      setRefresh(prev => prev + 1);
+      setUsuarios(prev =>
+        prev.map(u => u.id === Number(userId) ? { ...u, rol: rolMap[newRole] } : u)
+      );
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Error al actualizar el rol");
     }
   };
 
-  const handleEditCategoryClick = (category: any) => {
+  const handleEditCategoryClick = (category: CategoriaBackend) => {
     setSelectedCategoryToEdit(category);
     setEditCategoryDialogOpen(true);
   };
 
   const handleSaveCategory = async (categoryId: string | null, newName: string, newDescription: string) => {
-    /* 
-    // CONEXIÓN CON BACKEND
     try {
-      const url = categoryId ? `${API_URL}/categorias/${categoryId}` : `${API_URL}/categorias`;
-      const method = categoryId ? 'PUT' : 'POST';
-      const response = await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ nombre: newName, descripcion: newDescription })
-      });
-      if (!response.ok) throw new Error('Error al guardar categoría');
-    } catch (error) {
-      toast.error("Error al procesar la categoría");
-      return;
-    }
-    */
-
-    if (categoryId) {
-      const category = mockCategories.find(c => c.id === categoryId);
-      if (category) {
-        category.name = newName as any;
-        category.description = newDescription;
+      if (categoryId) {
+        await categoriasApi.update(categoryId, newName);
         toast.success("Categoría actualizada");
+        setCategorias(prev =>
+          prev.map(c => c.id === Number(categoryId) ? { ...c, nombre: newName, descripcion: newDescription } : c)
+        );
+      } else {
+        const created = await categoriasApi.create(newName) as CategoriaBackend;
+        toast.success("Categoría creada");
+        setCategorias(prev => [...prev, created]);
       }
-    } else {
-      const newCategory = {
-        id: String(mockCategories.length + 1),
-        name: newName,
-        description: newDescription,
-        eventCount: 0,
-        isActive: true
-      };
-      mockCategories.push(newCategory);
-      toast.success("Categoría creada");
-    }
-    setRefresh(prev => prev + 1);
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (confirm("¿Estás seguro de que quieres eliminar este usuario?")) {
-      /* 
-      // CONEXIÓN CON BACKEND
-      try {
-        const response = await fetch(`${API_URL}/admin/usuarios/${userId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error('Error al eliminar');
-      } catch (error) {
-        toast.error("Error al eliminar el usuario");
-        return;
-      }
-      */
-
-      const index = mockUsers.findIndex(u => u.id === userId);
-      if (index > -1) {
-        mockUsers.splice(index, 1);
-        toast.success("Usuario eliminado");
-        setRefresh(prev => prev + 1);
-      }
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Error al procesar la categoría");
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (confirm("¿Estás seguro de que quieres eliminar esta categoría?")) {
-      /* 
-      // CONEXIÓN CON BACKEND
-      try {
-        const response = await fetch(`${API_URL}/categorias/${categoryId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error('Error al eliminar');
-      } catch (error) {
-        toast.error("Error al eliminar la categoría");
-        return;
+  const handleToggleUserStatus = async (userId: number, isActive: boolean) => {
+    try {
+      if (isActive) {
+        await usuariosApi.desactivar(userId);
+        toast.success("Usuario desactivado");
+      } else {
+        await usuariosApi.activar(userId);
+        toast.success("Usuario activado");
       }
-      */
-
-      const index = mockCategories.findIndex(c => c.id === categoryId);
-      if (index > -1) {
-        mockCategories.splice(index, 1);
-        toast.success("Categoría eliminada");
-        setRefresh(prev => prev + 1);
-      }
+      setUsuarios(prev =>
+        prev.map(u => u.id === userId ? { ...u, activo: !isActive } : u)
+      );
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "No se pudo cambiar el estado del usuario");
     }
   };
 
-  const handleToggleUserStatus = async (userId: string) => {
-    // Lógica para Mock (Actual)
-    const user = mockUsers.find(u => u.id === userId);
-    if (user) {
-      const newStatus = user.isActive === false ? true : false;
-
-      /* 
-      // CONEXIÓN CON BACKEND 
-      try {
-        const response = await fetch(`${API_URL}/admin/usuarios/${userId}/estado`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ activo: newStatus })
-        });
-        if (!response.ok) throw new Error('Error al actualizar estado');
-        toast.success(`Usuario ${newStatus ? 'activado' : 'desactivado'}`);
-      } catch (error) {
-        toast.error("No se pudo cambiar el estado del usuario");
-        return;
-      }
-      */
-
-      user.isActive = newStatus;
-      toast.success(`Usuario ${user.isActive ? 'activado' : 'desactivado'}`);
-      setRefresh(prev => prev + 1);
-    }
-  };
-
-  const handleToggleCategoryStatus = async (categoryId: string) => {
-    // Lógica para Mock (Actual)
-    const category = mockCategories.find(c => c.id === categoryId);
-    if (category) {
-      const newStatus = category.isActive === false ? true : false;
-
-      /* 
-      // CONEXIÓN CON BACKEND 
-      try {
-        const response = await fetch(`${API_URL}/admin/categorias/${categoryId}/estado`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ activo: newStatus })
-        });
-        if (!response.ok) throw new Error('Error al actualizar estado');
-        toast.success(`Categoría ${newStatus ? 'activada' : 'desactivada'}`);
-      } catch (error) {
-        toast.error("No se pudo cambiar el estado de la categoría");
-        return;
-      }
-      */
-
-      category.isActive = newStatus;
-      toast.success(`Categoría ${category.isActive ? 'activada' : 'desactivada'}`);
-      setRefresh(prev => prev + 1);
+  const handleToggleCategoryStatus = async (categoryId: number, isActive: boolean) => {
+    try {
+      await categoriasApi.update(categoryId, undefined, !isActive);
+      toast.success(`Categoría ${!isActive ? 'activada' : 'desactivada'}`);
+      setCategorias(prev =>
+        prev.map(c => c.id === categoryId ? { ...c, activa: !isActive } : c)
+      );
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "No se pudo cambiar el estado de la categoría");
     }
   };
 
@@ -328,15 +252,17 @@ export function AdminPanelPage() {
                               className="hover:text-accent hover:underline"
                               style={{ fontWeight: 600 }}
                             >
-                              {event.title}
+                              {event.titulo}
                             </Link>
                           </TableCell>
-                          <TableCell>{event.organizers.map(o => o.name).join(', ')}</TableCell>
                           <TableCell>
-                            <CategoryBadge category={event.category} />
+                            {event.organizadores?.map(o => o.nombre_completo).join(', ') ?? '—'}
                           </TableCell>
                           <TableCell>
-                            {event.submittedDate && format(event.submittedDate, 'MMM d, yyyy')}
+                            <CategoryBadge category={event.categoria as any} />
+                          </TableCell>
+                          <TableCell>
+                            {event.fecha_envio ? format(new Date(event.fecha_envio), 'dd/MM/yyyy') : '—'}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -407,18 +333,20 @@ export function AdminPanelPage() {
                             className="hover:text-accent hover:underline"
                             style={{ fontWeight: 600 }}
                           >
-                            {event.title}
+                            {event.titulo}
                           </Link>
                         </TableCell>
-                        <TableCell>{event.organizers.map(o => o.name).join(', ')}</TableCell>
                         <TableCell>
-                          <CategoryBadge category={event.category} />
+                          {event.organizadores?.map(o => o.nombre_completo).join(', ') ?? '—'}
                         </TableCell>
                         <TableCell>
-                          {format(event.dateStart, 'MMM d, yyyy')}
+                          <CategoryBadge category={event.categoria as any} />
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={event.status} />
+                          {event.fecha_inicio ? format(new Date(event.fecha_inicio), 'dd/MM/yyyy') : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={event.estado as any} />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -448,29 +376,28 @@ export function AdminPanelPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockUsers.map((user) => (
+                    {usuarios.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell style={{ fontWeight: 500 }}>{user.name}</TableCell>
+                        <TableCell style={{ fontWeight: 500 }}>{user.nombre_completo}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
-                              user.role === 'Organizer' ? 'bg-blue-100 text-blue-700' :
-                                'bg-gray-100 text-gray-700'
+                          <span className={`px-2 py-1 rounded-full text-xs ${user.rol === 'admin' ? 'bg-purple-100 text-purple-700' :
+                            user.rol === 'organizador' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-700'
                             }`}>
-                            {user.role === 'Admin' ? 'Administrador' : user.role === 'Organizer' ? 'Organizador' : 'Asistente'}
+                            {user.rol === 'admin' ? 'Administrador' : user.rol === 'organizador' ? 'Organizador' : 'Asistente'}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${user.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {user.isActive !== false ? 'Activo' : 'Inactivo'}
+                          <span className={`px-2 py-1 rounded-full text-xs ${user.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {user.activo ? 'Activo' : 'Inactivo'}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="ghost" onClick={() => handleToggleUserStatus(user.id)}>
-                            {user.isActive !== false ? 'Desactivar' : 'Activar'}
+                          <Button size="sm" variant="ghost" onClick={() => handleToggleUserStatus(user.id, user.activo)}>
+                            {user.activo ? 'Desactivar' : 'Activar'}
                           </Button>
                           <Button size="sm" variant="ghost" onClick={() => handleEditUserClick(user)}>Editar</Button>
-                          <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteUser(user.id)}>Eliminar</Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -504,31 +431,26 @@ export function AdminPanelPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nombre</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Eventos Totales</TableHead>
                       <TableHead>Estado</TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockCategories.map((category) => (
+                    {categorias.map((category) => (
                       <TableRow key={category.id}>
                         <TableCell>
-                          <CategoryBadge category={category.name as any} />
+                          <CategoryBadge category={category.nombre as any} />
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{category.description}</TableCell>
-                        <TableCell>{category.eventCount}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${category.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {category.isActive !== false ? 'Activo' : 'Inactivo'}
+                          <span className={`px-2 py-1 rounded-full text-xs ${category.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {category.activa ? 'Activo' : 'Inactivo'}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="ghost" onClick={() => handleToggleCategoryStatus(category.id)}>
-                            {category.isActive !== false ? 'Desactivar' : 'Activar'}
+                          <Button size="sm" variant="ghost" onClick={() => handleToggleCategoryStatus(category.id, category.activa)}>
+                            {category.activa ? 'Desactivar' : 'Activar'}
                           </Button>
                           <Button size="sm" variant="ghost" onClick={() => handleEditCategoryClick(category)}>Editar</Button>
-                          <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteCategory(category.id)}>Eliminar</Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -567,8 +489,10 @@ export function AdminPanelPage() {
           <div className="space-y-4 py-4">
             {selectedEvent && (
               <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm" style={{ fontWeight: 600 }}>{selectedEvent.title}</p>
-                <p className="text-xs text-muted-foreground">por {selectedEvent.organizers.map(o => o.name).join(', ')}</p>
+                <p className="text-sm" style={{ fontWeight: 600 }}>{selectedEvent.titulo}</p>
+                <p className="text-xs text-muted-foreground">
+                  por {selectedEvent.organizadores?.map(o => o.nombre_completo).join(', ') ?? '—'}
+                </p>
               </div>
             )}
             <div>

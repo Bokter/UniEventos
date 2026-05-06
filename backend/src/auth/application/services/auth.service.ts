@@ -114,7 +114,9 @@ export class AuthService {
     });
 
     if (!robleRes.ok) {
-      throw new UnauthorizedException('Credenciales Uninorte inválidas');
+      const error = await robleRes.json().catch(() => ({}));
+      console.error('Error de Login en Roble:', error);
+      throw new UnauthorizedException(error?.message || 'Credenciales Uninorte inválidas');
     }
 
     // 2. Buscar o crear usuario local

@@ -1,15 +1,8 @@
 // ============================================================
 // auth.service.ts — Servicio de autenticación para UniEventos
-// Rama: feat/auth-screens  |  Responsable: Fatima
-// ============================================================
-// INSTRUCCIONES PARA CONECTAR AL BACKEND (Juan Jose):
-//   1. Descomenta el bloque "REAL" de cada función
-//   2. Borra el bloque "FAKE" correspondiente
-//   3. Asegúrate de que el backend esté corriendo en localhost:3000
 // ============================================================
 
 const BASE_URL = 'http://localhost:3000';
-import { mockUsers } from '../data/mockData';
 
 // ── Tipos ────────────────────────────────────────────────────
 export type Rol = 'miembro' | 'organizador' | 'admin';
@@ -60,67 +53,21 @@ export const login = async (
   email: string,
   password: string
 ): Promise<RespuestaAuth> => {
-  // ── REAL (descomentar cuando Juan Jose termine el endpoint) ──
-  // const res = await fetch(`${BASE_URL}/auth/login`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ email, password }),
-  // });
-  // if (!res.ok) {
-  //   const err = await res.json().catch(() => ({}));
-  //   throw new Error(err.message || 'Credenciales incorrectas');
-  // }
-  // return res.json();
+  // Uninorte users use the Roble endpoint
+  const endpoint = email.endsWith('@uninorte.edu.co')
+    ? `${BASE_URL}/auth/login-uninorte`
+    : `${BASE_URL}/auth/login`;
 
-  // ── FAKE (borrar cuando conectes al backend real) ────────────
-  await new Promise((r) => setTimeout(r, 800)); // simula delay de red
-
-  // Usuarios de prueba para desarrollo
-  const usuariosFake: Record<string, UsuarioAuth> = {
-    'fatima@uninorte.edu.co': {
-      id: 1,
-      nombre_completo: 'Fatima Castro',
-      email: 'fatima@uninorte.edu.co',
-      rol: 'organizador',
-    },
-    'admin@uninorte.edu.co': {
-      id: 2,
-      nombre_completo: 'Admin Uninorte',
-      email: 'admin@uninorte.edu.co',
-      rol: 'admin',
-    },
-    'juan@uninorte.edu.co': {
-      id: 3,
-      nombre_completo: 'Juan Estudiante',
-      email: 'juan@uninorte.edu.co',
-      rol: 'miembro',
-    },
-  };
-
-  // Agregar dinámicamente los mockUsers para pruebas de desarrollo
-  mockUsers.forEach(mu => {
-    let mappedRol: Rol = 'miembro';
-    if (mu.role === 'Organizer') mappedRol = 'organizador';
-    if (mu.role === 'Admin') mappedRol = 'admin';
-
-    usuariosFake[mu.email] = {
-      id: parseInt(mu.id) || Math.floor(Math.random() * 1000) + 10,
-      nombre_completo: mu.name,
-      email: mu.email,
-      rol: mappedRol,
-    };
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
   });
-
-  const usuario = usuariosFake[email];
-  if (!usuario) {
-    throw new Error('Correo o contraseña incorrectos');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).message || 'Credenciales incorrectas');
   }
-
-  return {
-    token: `fake-token-${usuario.id}-${Date.now()}`,
-    usuario,
-  };
-  // ── FIN FAKE ─────────────────────────────────────────────────
+  return res.json();
 };
 
 // ── Register ─────────────────────────────────────────────────
@@ -129,31 +76,44 @@ export const register = async (
   email: string,
   password: string
 ): Promise<RespuestaAuth> => {
-  // ── REAL (descomentar cuando Juan Jose termine el endpoint) ──
-  // const res = await fetch(`${BASE_URL}/auth/register`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ nombre_completo, email, password }),
-  // });
-  // if (!res.ok) {
-  //   const err = await res.json().catch(() => ({}));
-  //   throw new Error(err.message || 'Error al registrarse');
-  // }
-  // return res.json();
+  const endpoint = email.endsWith('@uninorte.edu.co')
+    ? `${BASE_URL}/auth/register-uninorte`
+    : `${BASE_URL}/auth/register`;
 
-  // ── FAKE (borrar cuando conectes al backend real) ────────────
-  await new Promise((r) => setTimeout(r, 800));
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre_completo, email, password }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).message || 'Error al registrarse');
+  }
+  
+  const data = await res.json();
+  
+  // Si es uninorte, no devuelve token inmediatamente, sino un mensaje de verificación
+  if (email.endsWith('@uninorte.edu.co')) {
+    return data; // Contiene { mensaje: "..." }
+  }
+  
+  return data; // Contiene { access_token, usuario }
+};
 
-  return {
-    token: `fake-token-new-${Date.now()}`,
-    usuario: {
-      id: Math.floor(Math.random() * 1000) + 10,
-      nombre_completo,
-      email,
-      rol: 'miembro',
-    },
-  };
-  // ── FIN FAKE ─────────────────────────────────────────────────
+// ── Verify Email ─────────────────────────────────────────────
+export const verifyEmail = async (email: string, code: string): Promise<{ mensaje: string }> => {
+  const res = await fetch(`${BASE_URL}/auth/verify-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).message || 'Código de verificación inválido');
+  }
+
+  return res.json();
 };
 
 // Exportar BASE_URL por si otros servicios lo necesitan

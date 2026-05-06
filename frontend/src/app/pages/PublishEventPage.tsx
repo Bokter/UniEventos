@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Navigate, useSearchParams } from "react-router";
-import { ArrowLeft, ArrowRight, Upload, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Upload, Check, X as CloseIcon } from "lucide-react";
 import L from "leaflet";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
@@ -10,13 +10,11 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { CategoryBadge } from "../components/CategoryBadge";
-import { EventCategory, mockEvents, mockUsers, User } from "../data/mockData";
 import { useAuth } from "../../context/AuthContext";
+import { eventosApi, categoriasApi, lugaresApi, usuariosApi } from "../services/api.service";
 import { toast } from "sonner";
-import { X as CloseIcon } from "lucide-react";
 
 // Fix for default marker icon
-// TODO: Manejar error si Leaflet no puede cargar iconos desde unpkg.com
 try {
   delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
@@ -41,58 +39,39 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // TODO: Manejar errores de carga de Leaflet y tiles de OpenStreetMap
     try {
-      // Initialize map
-      const map = L.map(mapContainerRef.current).setView([40.7580, -73.9855], 15);
+      const map = L.map(mapContainerRef.current).setView([10.9878, -74.8109], 15);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
 
-      // Add click handler
       map.on('click', (e: L.LeafletMouseEvent) => {
         setLocationCoords([e.latlng.lat, e.latlng.lng]);
       });
 
       mapRef.current = map;
     } catch (error) {
-      console.error("Error inicializando mapa de ubicación:", error);
-      // TODO: Mostrar mensaje de error al usuario
+      console.error("Error inicializando mapa:", error);
     }
 
     return () => {
-      try {
-        if (mapRef.current) {
-          mapRef.current.remove();
-          mapRef.current = null;
-        }
-      } catch (error) {
-        console.error("Error limpiando mapa:", error);
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
     };
   }, [setLocationCoords]);
 
-  // Update marker when location changes
   useEffect(() => {
     if (!mapRef.current) return;
-
-    try {
-      // Remove old marker if exists
-      if (markerRef.current) {
-        markerRef.current.remove();
-      }
-
-      // Add new marker if location is set
-      if (locationCoords) {
-        markerRef.current = L.marker(locationCoords).addTo(mapRef.current);
-      }
-    } catch (error) {
-      console.error("Error actualizando marcador:", error);
+    if (markerRef.current) markerRef.current.remove();
+    if (locationCoords) {
+      markerRef.current = L.marker(locationCoords).addTo(mapRef.current);
     }
   }, [locationCoords]);
 
-  return <div ref={mapContainerRef} style={{ height: '100%', width: '100%' }} />;
+  return <div ref={mapContainerRef} className="h-full w-full" />;
 }
 
 export function PublishEventPage() {
@@ -100,11 +79,12 @@ export function PublishEventPage() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<EventCategory>("Academic");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [dateStart, setDateStart] = useState("");
   const [timeStart, setTimeStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
@@ -112,36 +92,62 @@ export function PublishEventPage() {
   const [coverImage, setCoverImage] = useState("");
   const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
-  const [selectedCoOrganizers, setSelectedCoOrganizers] = useState<User[]>([]);
+  const [selectedCoOrganizers, setSelectedCoOrganizers] = useState<any[]>([]);
+  
+  const [categories, setCategories] = useState<any[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<any[]>([]);
 
   const { usuario, isLoading } = useAuth();
 
   useEffect(() => {
-    if (editId) {
-      const eventToEdit = mockEvents.find(e => e.id === editId);
-      if (eventToEdit) {
-        setTitle(eventToEdit.title);
-        setDescription(eventToEdit.description);
-        setCategory(eventToEdit.category);
-        setDateStart(format(eventToEdit.dateStart, 'yyyy-MM-dd'));
-        setTimeStart(format(eventToEdit.dateStart, 'HH:mm'));
-        setDateEnd(format(eventToEdit.dateEnd, 'yyyy-MM-dd'));
-        setTimeEnd(format(eventToEdit.dateEnd, 'HH:mm'));
-        setLocationName(eventToEdit.location.name);
-        setLocationCoords([eventToEdit.location.lat, eventToEdit.location.lng]);
-        setCoverImage(eventToEdit.coverImage);
+    // Fetch categories and organizers
+    categoriasApi.getAll().then(data => setCategories(data as any[]));
+    usuariosApi.getAll().then(data => {
+      const users = data as any[];
+      setAvailableUsers(users.filter(u => u.rol === 'organizador' || u.rol === 'admin'));
+    });
+  }, []);
 
-        // Populate co-organizers (excluding the current user)
-        if (usuario && eventToEdit.organizers) {
-          const coOrgs = eventToEdit.organizers
-            .filter(o => String(o.id) !== String(usuario.id))
-            .map(o => mockUsers.find(u => u.id === o.id))
-            .filter(Boolean) as User[];
-          setSelectedCoOrganizers(coOrgs);
+  useEffect(() => {
+    if (editId && categories.length > 0) {
+      eventosApi.getById(editId).then((event: any) => {
+        setTitle(event.titulo);
+        setDescription(event.descripcion);
+        
+        // Find category ID by name if backend returns name, or use ID directly
+        if (event.categoria_id) {
+          setCategoryId(String(event.categoria_id));
+        } else if (event.categoria) {
+          const cat = categories.find(c => c.nombre === event.categoria);
+          if (cat) setCategoryId(String(cat.id));
         }
-      }
+
+        if (event.fecha_inicio) {
+          const date = new Date(event.fecha_inicio);
+          setDateStart(format(date, 'yyyy-MM-dd'));
+          setTimeStart(event.hora_inicio || format(date, 'HH:mm'));
+        }
+        if (event.fecha_fin || event.hora_fin) {
+          // Note: Backend might have fecha + hora_fin or fecha_fin
+          const date = event.fecha_fin ? new Date(event.fecha_fin) : new Date(event.fecha_inicio);
+          setDateEnd(format(date, 'yyyy-MM-dd'));
+          setTimeEnd(event.hora_fin || format(date, 'HH:mm'));
+        }
+
+        if (event.lugar) {
+          setLocationName(event.lugar.nombre);
+          if (event.lugar.latitud && event.lugar.longitud) {
+            setLocationCoords([Number(event.lugar.latitud), Number(event.lugar.longitud)]);
+          }
+        }
+        setCoverImage(event.imagen_portada || "");
+        
+        if (event.organizadores) {
+          setSelectedCoOrganizers(event.organizadores.filter((o: any) => String(o.id) !== String(usuario?.id)));
+        }
+      }).catch(() => toast.error("Error al cargar evento para editar"));
     }
-  }, [editId, usuario]);
+  }, [editId, categories, usuario?.id]);
 
   if (isLoading) return null;
   if (!usuario || usuario.rol !== 'organizador') {
@@ -150,15 +156,8 @@ export function PublishEventPage() {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!title || !description || !category || !dateStart || !timeStart || !dateEnd || !timeEnd) {
+      if (!title || !description || !categoryId || !dateStart || !timeStart || !dateEnd || !timeEnd) {
         toast.error("Por favor, rellene todos los campos obligatorios.");
-        return;
-      }
-
-      const startDateTime = new Date(`${dateStart}T${timeStart}`);
-      const endDateTime = new Date(`${dateEnd}T${timeEnd}`);
-      if (endDateTime <= startDateTime) {
-        toast.error("La fecha y hora de finalización debe ser posterior a la de inicio");
         return;
       }
     }
@@ -171,121 +170,59 @@ export function PublishEventPage() {
     setStep(step + 1);
   };
 
-  const handleBack = () => {
-    setStep(step - 1);
-  };
+  const handleBack = () => setStep(step - 1);
 
-  const handleSubmit = async (targetStatus: 'Draft' | 'In review' = 'In review') => {
-    if (!locationCoords || !usuario) return;
+  const handleSubmit = async (targetStatus: 'Draft' | 'In review') => {
+    if (!locationCoords || !usuario || isSubmitting) return;
 
-    /* 
-    // CONEXIÓN CON BACKEND
+    setIsSubmitting(true);
     try {
+      // 1. Create or use place
+      const place = (await lugaresApi.create({
+        nombre: locationName,
+        latitud: locationCoords[0],
+        longitud: locationCoords[1]
+      })) as any;
+
+      // 2. Prepare event data
       const eventData = {
         titulo: title,
         descripcion: description,
-        categoria: category,
-        fecha_inicio: `${dateStart}T${timeStart}`,
-        fecha_fin: `${dateEnd}T${timeEnd}`,
-        lugar: {
-          nombre: locationName,
-          lat: locationCoords[0],
-          lng: locationCoords[1]
-        },
+        categoria_id: Number(categoryId),
+        fecha: dateStart, // Backend expects 'fecha' for CreateEventoDto
+        hora_inicio: timeStart,
+        hora_fin: timeEnd,
+        lugar_id: place.id,
         imagen_portada: coverImage
       };
 
-      const url = editId ? `${API_URL}/eventos/${editId}` : `${API_URL}/eventos`;
-      const method = editId ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(eventData)
-      });
-      
-      const data = await response.json();
-      const eventId = editId || data.id;
+      let eventResponse: any;
+      if (editId) {
+        eventResponse = await eventosApi.update(editId, eventData);
+      } else {
+        eventResponse = await eventosApi.create(eventData);
+      }
 
+      // 3. Send to review if requested
       if (targetStatus === 'In review') {
-        await fetch(`${API_URL}/eventos/${eventId}/enviar`, {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        await eventosApi.enviarRevision(editId || eventResponse?.id);
       }
 
-      toast.success("¡Operación exitosa!");
+      toast.success(targetStatus === 'Draft' ? "¡Guardado como borrador!" : "¡Enviado para revisión!");
       navigate("/organizer/dashboard");
-      return;
-    } catch (error) {
-      toast.error("Error al guardar el evento");
-      return;
-    }
-    */
-
-    // Preparar lista de organizadores
-    const allOrganizers = [
-      { id: String(usuario.id), name: usuario.nombre_completo, email: usuario.email },
-      ...selectedCoOrganizers.map(o => ({ id: o.id, name: o.name, email: o.email }))
-    ];
-
-    if (editId) {
-      const eventToEdit = mockEvents.find(e => e.id === editId);
-      if (eventToEdit) {
-        eventToEdit.title = title;
-        eventToEdit.description = description;
-        eventToEdit.category = category;
-        eventToEdit.dateStart = new Date(`${dateStart}T${timeStart}`);
-        eventToEdit.dateEnd = new Date(`${dateEnd}T${timeEnd}`);
-        eventToEdit.location = {
-          name: locationName,
-          lat: locationCoords[0],
-          lng: locationCoords[1],
-        };
-        eventToEdit.coverImage = coverImage || eventToEdit.coverImage;
-        eventToEdit.organizers = allOrganizers;
-
-        // Si estaba rechazado o en borrador, lo pasamos al estado indicado
-        eventToEdit.status = targetStatus;
-        if (targetStatus === 'In review') {
-          eventToEdit.rejectionReason = undefined;
-        }
-        toast.success(targetStatus === 'Draft' ? "¡Borrador actualizado!" : "¡Evento actualizado y enviado a revisión!");
-        navigate("/organizer/dashboard");
-      }
-    } else {
-      const newEvent = {
-        id: String(mockEvents.length + 1),
-        title,
-        description,
-        category,
-        dateStart: new Date(`${dateStart}T${timeStart}`),
-        dateEnd: new Date(`${dateEnd}T${timeEnd}`),
-        location: {
-          name: locationName,
-          lat: locationCoords[0],
-          lng: locationCoords[1],
-        },
-        coverImage: coverImage || 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-        organizers: allOrganizers,
-        status: targetStatus,
-        submittedDate: targetStatus === 'In review' ? new Date() : undefined,
-      };
-
-      mockEvents.push(newEvent as any); // using any for simplicity since Event type might have streams optional
-      toast.success(targetStatus === 'Draft' ? "¡Guardado como borrador!" : "¡Evento enviado a revisión!");
-      navigate("/organizer/dashboard");
+    } catch (error: any) {
+      console.error("Error submitting event:", error);
+      toast.error(error.message || "Error al guardar el evento");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // In a real app, this would upload to a server
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setCoverImage(reader.result as string);
-      };
+      reader.onloadend = () => setCoverImage(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -295,11 +232,7 @@ export function PublishEventPage() {
       <Navbar showSearch={false} />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/organizer/dashboard")}
-          className="mb-4"
-        >
+        <Button variant="ghost" onClick={() => navigate("/organizer/dashboard")} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Dashboard
         </Button>
@@ -309,23 +242,15 @@ export function PublishEventPage() {
           {editId ? "Actualiza los datos de tu evento" : "Crea y envía un evento para revisión"}
         </p>
 
-        {/* Step Indicator */}
         <div className="flex items-center justify-center mb-8">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${s <= step
-                  ? 'border-primary bg-primary text-white'
-                  : 'border-gray-300 bg-white text-gray-400'
-                  }`}
-              >
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${s <= step ? 'border-primary bg-primary text-white' : 'border-gray-300 bg-white text-gray-400'}`}>
                 {s < step ? <Check className="h-5 w-5" /> : s}
               </div>
               <div className="flex flex-col ml-3 mr-8">
                 <span className="text-xs text-muted-foreground">Paso {s}</span>
-                <span className="text-sm" style={{ fontWeight: 600 }}>
-                  {s === 1 ? 'Información básica' : s === 2 ? 'Ubicación' : 'Revisión'}
-                </span>
+                <span className="text-sm" style={{ fontWeight: 600 }}>{s === 1 ? 'Información básica' : s === 2 ? 'Ubicación' : 'Revisión'}</span>
               </div>
               {s < 3 && <div className="w-12 h-0.5 bg-gray-300 mr-8" />}
             </div>
@@ -333,172 +258,81 @@ export function PublishEventPage() {
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-8">
-          {/* Step 1: Basic Info */}
           {step === 1 && (
             <div className="space-y-6">
               <div>
                 <Label htmlFor="title">Titulo del evento *</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Feria anual de ciencias"
-                  className="mt-2"
-                  required
-                />
+                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Feria anual de ciencias" className="mt-2" required />
               </div>
 
               <div>
                 <Label htmlFor="description">Descripción *</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Proporciona una descripción detallada de tu evento..."
-                  className="mt-2 min-h-32"
-                  required
-                />
+                <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descripción detallada..." className="mt-2 min-h-32" required />
               </div>
 
               <div>
                 <Label htmlFor="category">Categoria *</Label>
-                <Select value={category} onValueChange={(v) => setCategory(v as EventCategory)}>
+                <Select value={categoryId} onValueChange={setCategoryId}>
                   <SelectTrigger id="category" className="mt-2">
-                    <SelectValue />
+                    <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cultural">Cultural</SelectItem>
-                    <SelectItem value="Academic">Académico</SelectItem>
-                    <SelectItem value="Sports">Deportivo</SelectItem>
-                    <SelectItem value="Workshop">Taller</SelectItem>
-                    <SelectItem value="Other">Otro</SelectItem>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>{cat.nombre}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Co-organizadores Select */}
               <div>
                 <Label>Co-organizadores</Label>
-                <p className="text-xs text-muted-foreground mb-2">Tú serás asignado como organizador automáticamente. Selecciona co-organizadores adicionales si es necesario.</p>
-                <Select
-                  onValueChange={(userId) => {
-                    if (!userId) return;
-                    const user = mockUsers.find(u => u.id === userId);
-                    if (user && !selectedCoOrganizers.some(u => u.id === user.id)) {
-                      setSelectedCoOrganizers([...selectedCoOrganizers, user]);
-                    }
-                  }}
-                >
+                <Select onValueChange={(userId) => {
+                  const user = availableUsers.find(u => String(u.id) === userId);
+                  if (user && !selectedCoOrganizers.some(u => String(u.id) === String(user.id))) {
+                    setSelectedCoOrganizers([...selectedCoOrganizers, user]);
+                  }
+                }}>
                   <SelectTrigger className="mt-2">
                     <SelectValue placeholder="Buscar un co-organizador..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockUsers
-                      .filter(u => u.role === 'Organizer' && String(u.id) !== String(usuario?.id) && !selectedCoOrganizers.some(so => so.id === u.id))
-                      .map(u => (
-                        <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
-                      ))}
+                    {availableUsers.filter(u => String(u.id) !== String(usuario?.id)).map(u => (
+                      <SelectItem key={u.id} value={String(u.id)}>{u.nombre_completo} ({u.email})</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-
-                {selectedCoOrganizers.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {selectedCoOrganizers.map(coOrg => (
-                      <div key={coOrg.id} className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-200">
-                        {coOrg.name}
-                        <button
-                          onClick={() => setSelectedCoOrganizers(selectedCoOrganizers.filter(u => u.id !== coOrg.id))}
-                          className="ml-1 hover:text-blue-900 focus:outline-none"
-                        >
-                          <CloseIcon className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date-start">Fecha de inicio *</Label>
-                  <Input
-                    id="date-start"
-                    type="date"
-                    value={dateStart}
-                    onChange={(e) => setDateStart(e.target.value)}
-                    className="mt-2"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="time-start">Hora de inicio *</Label>
-                  <Input
-                    id="time-start"
-                    type="time"
-                    value={timeStart}
-                    onChange={(e) => setTimeStart(e.target.value)}
-                    className="mt-2"
-                    required
-                  />
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {selectedCoOrganizers.map(coOrg => (
+                    <div key={coOrg.id} className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-200">
+                      {coOrg.nombre_completo}
+                      <button onClick={() => setSelectedCoOrganizers(selectedCoOrganizers.filter(u => u.id !== coOrg.id))} className="ml-1 hover:text-blue-900"><CloseIcon className="h-3 w-3" /></button>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date-end">Fecha de finalización *</Label>
-                  <Input
-                    id="date-end"
-                    type="date"
-                    value={dateEnd}
-                    onChange={(e) => setDateEnd(e.target.value)}
-                    className="mt-2"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="time-end">Hora de finalización *</Label>
-                  <Input
-                    id="time-end"
-                    type="time"
-                    value={timeEnd}
-                    onChange={(e) => setTimeEnd(e.target.value)}
-                    className="mt-2"
-                    required
-                  />
-                </div>
+                <div><Label htmlFor="date-start">Fecha *</Label><Input id="date-start" type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-2" required /></div>
+                <div><Label htmlFor="time-start">Hora de inicio *</Label><Input id="time-start" type="time" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className="mt-2" required /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label htmlFor="date-end">Fecha fin</Label><Input id="date-end" type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className="mt-2" /></div>
+                <div><Label htmlFor="time-end">Hora de finalización *</Label><Input id="time-end" type="time" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className="mt-2" required /></div>
               </div>
 
               <div>
-                <Label htmlFor="cover-image">Imagen de portada *</Label>
+                <Label htmlFor="cover-image">Imagen de portada</Label>
                 <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors">
                   {coverImage ? (
                     <div className="relative">
                       <img src={coverImage} alt="Cover" className="max-h-48 mx-auto rounded" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCoverImage("")}
-                        className="mt-2"
-                      >
-                        Remove
-                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setCoverImage("")} className="mt-2">Eliminar</Button>
                     </div>
                   ) : (
                     <label htmlFor="cover-image" className="cursor-pointer">
                       <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Haz click para subir o arrastra y suelta
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        PNG, JPG hasta 10MB
-                      </p>
-                      <input
-                        id="cover-image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
+                      <p className="text-sm text-muted-foreground">Sube una imagen para tu evento</p>
+                      <input id="cover-image" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </label>
                   )}
                 </div>
@@ -506,132 +340,49 @@ export function PublishEventPage() {
             </div>
           )}
 
-          {/* Step 2: Location */}
           {step === 2 && (
             <div className="space-y-6">
               <div>
                 <Label>Ubicación del evento *</Label>
-                <p className="text-sm text-muted-foreground mt-1 mb-4">
-                  Haz click en el mapa para seleccionar la ubicación del evento
-                </p>
-                <div className="h-96 rounded-lg overflow-hidden border border-gray-300">
-                  <LocationMap
-                    locationCoords={locationCoords}
-                    setLocationCoords={setLocationCoords}
-                  />
+                <div className="h-96 rounded-lg overflow-hidden border border-gray-300 mt-4">
+                  <LocationMap locationCoords={locationCoords} setLocationCoords={setLocationCoords} />
                 </div>
               </div>
-
-              {locationCoords && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm">
-                    <span style={{ fontWeight: 600 }}>Selected coordinates:</span>{' '}
-                    {locationCoords[0].toFixed(6)}, {locationCoords[1].toFixed(6)}
-                  </p>
-                </div>
-              )}
-
               <div>
                 <Label htmlFor="location-name">Nombre de la ubicación *</Label>
-                <Input
-                  id="location-name"
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="e.g. Sala principal del campus, Sala 205"
-                  className="mt-2"
-                  required
-                />
+                <Input id="location-name" value={locationName} onChange={(e) => setLocationName(e.target.value)} placeholder="e.g. Bloque B, Sala 205" className="mt-2" required />
               </div>
             </div>
           )}
 
-          {/* Step 3: Review */}
-          {step === 3 && locationCoords && (
+          {step === 3 && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-xl mb-4" style={{ fontWeight: 600 }}>Revisa tu evento</h2>
-                <p className="text-muted-foreground mb-6">
-                  Por favor, revisa toda la información antes de enviar para su aprobación
-                </p>
-              </div>
-
-              {coverImage && (
-                <div className="aspect-video rounded-lg overflow-hidden">
-                  <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
-                </div>
-              )}
-
+              <h2 className="text-xl mb-4" style={{ fontWeight: 600 }}>Revisa tu evento</h2>
+              {coverImage && <div className="aspect-video rounded-lg overflow-hidden"><img src={coverImage} alt="Cover" className="w-full h-full object-cover" /></div>}
               <div>
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <h3 className="text-2xl" style={{ fontWeight: 700 }}>{title}</h3>
-                  <CategoryBadge category={category} />
+                  <CategoryBadge category={categories.find(c => String(c.id) === categoryId)?.nombre || ""} />
                 </div>
               </div>
-
               <div className="grid md:grid-cols-2 gap-4 py-4 border-y border-gray-200">
-                <div>
-                  <p className="text-sm text-muted-foreground">Fecha de inicio</p>
-                  <p style={{ fontWeight: 600 }}>
-                    {format(new Date(`${dateStart}T${timeStart}`), 'MMM d, yyyy • h:mm a')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Fecha de finalización</p>
-                  <p style={{ fontWeight: 600 }}>
-                    {format(new Date(`${dateEnd}T${timeEnd}`), 'MMM d, yyyy • h:mm a')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Ubicación</p>
-                  <p style={{ fontWeight: 600 }}>{locationName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Organizadores</p>
-                  <p style={{ fontWeight: 600 }}>
-                    {usuario.nombre_completo}
-                    {selectedCoOrganizers.length > 0 && `, ${selectedCoOrganizers.map(o => o.name).join(', ')}`}
-                  </p>
-                </div>
+                <div><p className="text-sm text-muted-foreground">Fecha y hora</p><p style={{ fontWeight: 600 }}>{dateStart} • {timeStart}</p></div>
+                <div><p className="text-sm text-muted-foreground">Ubicación</p><p style={{ fontWeight: 600 }}>{locationName}</p></div>
               </div>
-
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Descripción</p>
-                <p className="text-muted-foreground whitespace-pre-wrap">{description}</p>
-              </div>
-
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm">
-                  <span style={{ fontWeight: 600 }}>Nota:</span> Tu evento será enviado para revisión
-                  por la administración. Serás notificado una vez aprobado o si se necesitan cambios.
-                </p>
+                <p className="text-sm"><span style={{ fontWeight: 600 }}>Nota:</span> Tu evento será enviado para revisión.</p>
               </div>
             </div>
           )}
 
-          {/* Navigation Buttons */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-            {step > 1 ? (
-              <Button variant="outline" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Atrás
-              </Button>
-            ) : (
-              <div />
-            )}
-
+            {step > 1 ? <Button variant="outline" onClick={handleBack} disabled={isSubmitting}><ArrowLeft className="h-4 w-4 mr-2" />Atrás</Button> : <div />}
             {step < 3 ? (
-              <Button onClick={handleNext} className="bg-primary hover:bg-primary/90">
-                Siguiente
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+              <Button onClick={handleNext} className="bg-primary hover:bg-primary/90">Siguiente<ArrowRight className="h-4 w-4 ml-2" /></Button>
             ) : (
               <div className="flex gap-2">
-                <Button onClick={() => handleSubmit('Draft')} variant="outline" className="border-primary text-primary hover:bg-primary/5">
-                  Guardar como borrador
-                </Button>
-                <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66]">
-                  Enviar para revisión
-                </Button>
+                <Button onClick={() => handleSubmit('Draft')} variant="outline" disabled={isSubmitting}>{isSubmitting ? "Guardando..." : "Guardar como borrador"}</Button>
+                <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66]" disabled={isSubmitting}>{isSubmitting ? "Enviando..." : "Enviar para revisión"}</Button>
               </div>
             )}
           </div>

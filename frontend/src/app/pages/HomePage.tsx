@@ -1,49 +1,68 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { LayoutGrid, Map as MapIcon, Calendar as IconoCalendario, Search } from "lucide-react";
+import { LayoutGrid, Map as MapIcon, Calendar as IconoCalendario } from "lucide-react";
 
 // Importación de componentes existentes
 import { Navbar } from "../components/Navbar";
 import { EventCard } from "../components/EventCard";
 import { Button } from "../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Input } from "../components/ui/input";
-
-// Datos de prueba (MockData)
-import { getApprovedEvents } from "../data/mockData";
+import { eventosApi } from "../services/api.service";
+import { toast } from "sonner";
 
 export function HomePage() {
   const navegar = useNavigate();
 
   // --- Estados de la página ---
-  // vista: controla si mostramos los eventos en cuadricula o mapa
   const [vista, setVista] = useState<'cuadricula' | 'mapa'>('cuadricula');
-  // busqueda: texto ingresado por el usuario en el buscador
   const [busqueda, setBusqueda] = useState("");
-  // categoriaSeleccionada: filtro por categoría de evento
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>("todas");
-  // filtroFecha: filtro por rango de tiempo
   const [filtroFecha, setFiltroFecha] = useState<string>("todas");
+  const [eventos, setEventos] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Obtención de eventos aprobados desde el mockData
-  const eventos = getApprovedEvents();
+  // Obtención de eventos desde el backend
+  useEffect(() => {
+    const fetchEventos = async () => {
+      setIsLoading(true);
+      try {
+        const data = await eventosApi.getAll();
+        setEventos(data as any[]);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        toast.error("Error al cargar los eventos");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchEventos();
+  }, []);
 
   // --- Lógica de filtrado ---
-  // Filtramos los eventos en tiempo real según los estados de búsqueda, categoría y fecha
   const eventosFiltrados = eventos.filter(evento => {
     // 1. Filtro por búsqueda (Título o Descripción)
+    // El backend devuelve 'titulo' y 'descripcion'
+    const titulo = evento.titulo || evento.title || "";
+    const descripcion = evento.descripcion || evento.description || "";
+    
     const coincideBusqueda = busqueda === "" ||
-      evento.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-      evento.description.toLowerCase().includes(busqueda.toLowerCase());
+      titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
+      descripcion.toLowerCase().includes(busqueda.toLowerCase());
 
     // 2. Filtro por categoría
-    const coincideCategoria = categoriaSeleccionada === "todas" || evento.category === categoriaSeleccionada;
+    // El backend devuelve 'categoria'
+    const categoria = evento.categoria || evento.category || "";
+    const coincideCategoria = categoriaSeleccionada === "todas" || categoria === categoriaSeleccionada;
 
     // 3. Filtro por fecha
+    // El backend devuelve 'fecha_inicio'
+    const fechaInicioStr = evento.fecha_inicio || evento.dateStart;
+    if (!fechaInicioStr) return coincideBusqueda && coincideCategoria;
+
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    const fechaEvento = new Date(evento.dateStart);
+    const fechaEvento = new Date(fechaInicioStr);
     fechaEvento.setHours(0, 0, 0, 0);
 
     let coincideFecha = true;
@@ -60,7 +79,6 @@ export function HomePage() {
       coincideFecha = fechaEvento >= hoy && fechaEvento <= unMesDespues;
     }
 
-    // Los filtros son independientes pero se combinan con AND
     return coincideBusqueda && coincideCategoria && coincideFecha;
   });
 
@@ -69,14 +87,12 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Barra de navegación superior */}
       <Navbar
         showSearch={true}
         onSearchChange={setBusqueda}
         searchValue={busqueda}
       />
 
-      {/* SECCIÓN HERO: Fondo con degradado azul oscuro según diseño de Figma */}
       <div className="bg-gradient-to-br from-[#0A2540] via-[#05325E] to-[#0D4E8E] text-white py-20">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="max-w-2xl">
@@ -99,25 +115,9 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* BARRA DE FILTROS: Buscador y selectores alineados horizontalmente */}
       <div className="border-b border-gray-100 bg-white sticky top-16 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
           <div className="flex flex-col md:flex-row gap-4 items-center">
-            {/* Buscador local para filtrar la lista actual (Comentado temporalmente) */}
-            {/* 
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Buscar eventos..."
-                className="pl-10 h-12 border-gray-200 focus:ring-primary bg-gray-50"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-              />
-            </div>
-            */}
-
-            {/* Selector de Categoría (Cultural, Académico, etc.) */}
             <Select value={categoriaSeleccionada} onValueChange={setCategoriaSeleccionada}>
               <SelectTrigger className="w-full md:w-[200px] h-12 border-gray-200 bg-gray-50">
                 <SelectValue placeholder="Categoría" />
@@ -131,7 +131,6 @@ export function HomePage() {
               </SelectContent>
             </Select>
 
-            {/* Selector de Fecha para filtrar por rango temporal */}
             <Select value={filtroFecha} onValueChange={setFiltroFecha}>
               <SelectTrigger className="w-full md:w-[200px] h-12 border-gray-200 bg-gray-50">
                 <IconoCalendario className="h-4 w-4 mr-2 text-gray-500" />
@@ -148,14 +147,12 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* CONTENIDO PRINCIPAL: Listado de eventos dinámico */}
       <main id="seccion-eventos" className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-gray-800">
-            Próximos Eventos ({eventosFiltrados.length})
+            {isLoading ? "Cargando eventos..." : `Próximos Eventos (${eventosFiltrados.length})`}
           </h2>
 
-          {/* Selector de tipo de vista (Cuadrícula o Mapa) */}
           <div className="flex bg-gray-100 p-1 rounded-lg">
             <Button
               variant={vista === 'cuadricula' ? 'secondary' : 'ghost'}
@@ -178,8 +175,13 @@ export function HomePage() {
           </div>
         </div>
 
-        {/* Listado de tarjetas de eventos */}
-        {eventosFiltrados.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-80 bg-gray-100 animate-pulse rounded-2xl" />
+            ))}
+          </div>
+        ) : eventosFiltrados.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {eventosFiltrados.map(evento => (
               <EventCard key={evento.id} event={evento} />

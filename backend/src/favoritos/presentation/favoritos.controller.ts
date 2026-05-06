@@ -1,31 +1,30 @@
-import { Controller, Get, Post, Delete, Param, Req, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Post, Delete, Param, Req, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FavoritosService } from '../application/services/favoritos.service';
+import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
 
 @ApiTags('favoritos')
 @Controller('favoritos')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class FavoritosController {
   constructor(private readonly favoritosService: FavoritosService) {}
 
   @Get()
   @ApiOperation({ summary: 'Lista favoritos del usuario autenticado' })
   findAll(@Req() req: any) {
-    // TODO: Cambiar a req.user.id cuando el AuthGuard esté configurado
-    const usuarioId = req.user?.id || 1;
-    return this.favoritosService.findByUsuario(usuarioId);
+    return this.favoritosService.findByUsuario(req.user.id);
   }
 
   @Post(':eventoId')
   @ApiOperation({ summary: 'Agregar evento a favoritos' })
   agregar(@Param('eventoId', ParseIntPipe) eventoId: number, @Req() req: any) {
-    const usuarioId = req.user?.id || 1;
-    return this.favoritosService.agregar(usuarioId, eventoId);
+    return this.favoritosService.agregar(req.user.id, eventoId);
   }
 
   @Delete(':eventoId')
   @ApiOperation({ summary: 'Eliminar evento de favoritos' })
   eliminar(@Param('eventoId', ParseIntPipe) eventoId: number, @Req() req: any) {
-    const usuarioId = req.user?.id || 1;
-    return this.favoritosService.eliminar(usuarioId, eventoId);
+    return this.favoritosService.eliminar(req.user.id, eventoId);
   }
 }

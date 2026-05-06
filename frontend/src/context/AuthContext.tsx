@@ -5,6 +5,7 @@ import {
   cerrarSesion,
   login as loginService,
   register as registerService,
+  verifyEmail as verifyService,
   type UsuarioAuth,
 } from "../app/services/auth.service";
 
@@ -13,7 +14,8 @@ interface AuthContextType {
   usuario: UsuarioAuth | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<UsuarioAuth>;
-  register: (nombre_completo: string, email: string, password: string) => Promise<UsuarioAuth>;
+  register: (nombre_completo: string, email: string, password: string) => Promise<any>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -45,11 +47,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     nombre_completo: string,
     email: string,
     password: string
-  ): Promise<UsuarioAuth> => {
+  ): Promise<any> => {
     const data = await registerService(nombre_completo, email, password);
-    guardarSesion(data);
-    setUsuario(data.usuario);
-    return data.usuario;
+    
+    // Si la respuesta tiene usuario (visitante), logueamos automáticamente
+    if (data.usuario && data.access_token) {
+      guardarSesion(data);
+      setUsuario(data.usuario);
+      return data.usuario;
+    }
+    
+    // Si es uninorte, solo devolvemos la respuesta del servicio (mensaje)
+    return data;
+  };
+
+  const verifyEmail = async (email: string, code: string) => {
+    await verifyService(email, code);
   };
 
   // logout: limpia localStorage y el estado de React
@@ -59,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ usuario, isLoading, login, register, verifyEmail, logout }}>
       {children}
     </AuthContext.Provider>
   );

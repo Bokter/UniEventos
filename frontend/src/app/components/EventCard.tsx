@@ -1,37 +1,50 @@
 import { Link } from "react-router";
 import { format } from "date-fns";
-import { es } from "date-fns/locale"; // Importación del idioma español
+import { es } from "date-fns/locale";
 import { Calendar, MapPin } from "lucide-react";
-import { Event } from "../data/mockData";
 import { CategoryBadge } from "./CategoryBadge";
 import { Card, CardContent, CardFooter } from "./ui/card";
 
-// Interfaz para las propiedades de la tarjeta en español
 interface PropiedadesTarjetaEvento {
-  event: Event; // Mantenemos el nombre de la propiedad para no romper la compatibilidad externa
+  event: any; 
 }
 
 export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
-  // Formateamos la fecha usando el locale de español
-  // MMM: Mes abreviado, d: día, yyyy: año, h:mm a: hora y am/pm
-  const fechaFormateada = format(evento.dateStart, 'MMM d, yyyy • h:mm a', { locale: es });
+  // Manejo de nombres de propiedades tanto del Mock como del Backend
+  const id = evento.id;
+  const titulo = evento.titulo || evento.title || "Sin título";
+  const imagenPortada = evento.imagen_portada || evento.coverImage || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000';
+  const categoria = evento.categoria || evento.category || "General";
+  
+  // Manejo de fecha
+  const fechaBruta = evento.fecha_inicio || evento.dateStart;
+  const fechaObjeto = fechaBruta ? new Date(fechaBruta) : new Date();
+  const fechaFormateada = format(fechaObjeto, 'MMM d, yyyy • h:mm a', { locale: es });
+
+  // Manejo de ubicación
+  const lugarNombre = evento.lugar?.nombre || evento.location?.name || "Ubicación pendiente";
+
+  // Manejo de organizadores
+  const organizadores = evento.organizadores || evento.organizers || [];
+  const primerOrganizador = organizadores[0];
+  const nombreOrganizador = primerOrganizador?.nombre_completo || primerOrganizador?.name || "Organizador";
 
   return (
-    <Link to={`/event/${evento.id}`}>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 rounded-lg h-full">
-        <div className="aspect-video overflow-hidden">
+    <Link to={`/event/${id}`}>
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 rounded-lg h-full flex flex-col">
+        <div className="aspect-video overflow-hidden bg-gray-100">
           <img
-            src={evento.coverImage}
-            alt={evento.title}
+            src={imagenPortada}
+            alt={titulo}
             className="w-full h-full object-cover"
           />
         </div>
-        <CardContent className="p-4">
+        <CardContent className="p-4 flex-1">
           <div className="flex items-start justify-between gap-2 mb-2">
             <h3 className="line-clamp-2 flex-1" style={{ fontWeight: 600 }}>
-              {evento.title}
+              {titulo}
             </h3>
-            <CategoryBadge category={evento.category} />
+            <CategoryBadge category={categoria} />
           </div>
           <div className="space-y-1.5 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -42,18 +55,18 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 flex-shrink-0" />
-              <span className="line-clamp-1">{evento.location.name}</span>
+              <span className="line-clamp-1">{lugarNombre}</span>
             </div>
           </div>
         </CardContent>
         <CardFooter className="px-4 py-3 bg-gray-50 border-t border-gray-100">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">
-              {evento.organizers[0]?.name.charAt(0)}
+            <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">
+              {nombreOrganizador.charAt(0).toUpperCase()}
             </div>
             <span className="text-sm text-muted-foreground line-clamp-1">
-              {evento.organizers[0]?.name}
-              {evento.organizers.length > 1 && ` +${evento.organizers.length - 1}`}
+              {nombreOrganizador}
+              {organizadores.length > 1 && ` +${organizadores.length - 1}`}
             </span>
           </div>
         </CardFooter>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { User, UserRole } from "../../data/mockData";
+import { User, UserRole } from "../data/mockData";
 
 interface EditUserModalProps {
   isOpen: boolean;
