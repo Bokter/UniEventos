@@ -13,12 +13,20 @@ const categoryColors: Record<EventCategory, { bg: string; text: string }> = {
   Other: { bg: 'bg-gray-100', text: 'text-gray-700' },
 };
 
+const categoryLabels: Record<EventCategory, string> = {
+  Cultural: 'Cultural',
+  Academic: 'Académico',
+  Sports: 'Deportivo',
+  Workshop: 'Taller',
+  Other: 'Otro',
+};
+
 export function CategoryBadge({ category, className = "" }: CategoryBadgeProps) {
-  const colors = categoryColors[category];
+  const colors = categoryColors[category as EventCategory] || { bg: 'bg-gray-100', text: 'text-gray-700' };
   
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${colors.bg} ${colors.text} ${className}`}>
-      {category}
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors.bg} ${colors.text} ${className}`}>
+      {categoryLabels[category] ?? category}
     </span>
   );
 }

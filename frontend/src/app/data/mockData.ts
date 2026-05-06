@@ -15,14 +15,15 @@ export interface Event {
     lng: number;
   };
   coverImage: string;
-  organizer: {
+  organizers: {
     id: string;
     name: string;
     email: string;
-  };
+  }[];
   status: EventStatus;
   submittedDate?: Date;
   rejectionReason?: string;
+  streams?: { organizerId: string; streamLink: string; }[];
 }
 
 export interface User {
@@ -31,6 +32,7 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
+  isActive?: boolean;
 }
 
 // Mock current user (can be null for public view)
@@ -45,26 +47,65 @@ export const mockUsers: User[] = [
   {
     id: '1',
     name: 'Dr. Sarah Johnson',
-    email: 'sarah.johnson@university.edu',
+    email: 'sarah.johnson@uninorte.edu.co',
     role: 'Organizer',
+    isActive: true,
   },
   {
     id: '2',
     name: 'Prof. Michael Chen',
-    email: 'michael.chen@university.edu',
+    email: 'michael.chen@uninorte.edu.co',
     role: 'Organizer',
+    isActive: true,
   },
   {
     id: '3',
     name: 'Emma Rodriguez',
-    email: 'emma.rodriguez@university.edu',
+    email: 'emma.rodriguez@uninorte.edu.co',
     role: 'Organizer',
+    isActive: true,
   },
   {
     id: '4',
     name: 'Admin User',
-    email: 'admin@university.edu',
+    email: 'admin@uninorte.edu.co',
     role: 'Admin',
+    isActive: true,
+  },
+  {
+    id: '5',
+    name: 'David Kim',
+    email: 'david.kim@uninorte.edu.co',
+    role: 'Organizer',
+    isActive: true,
+  },
+  {
+    id: '6',
+    name: 'Dr. Maria Garcia',
+    email: 'maria.garcia@uninorte.edu.co',
+    role: 'Organizer',
+    isActive: true,
+  },
+  {
+    id: '7',
+    name: 'James Wilson',
+    email: 'james.wilson@uninorte.edu.co',
+    role: 'Organizer',
+    isActive: true,
+  },
+  {
+    id: '8',
+    name: 'Prof. Robert Taylor',
+    email: 'robert.taylor@uninorte.edu.co',
+    role: 'Organizer',
+    isActive: true,
+  },
+  {
+    id: '9',
+    name: 'Linda Martinez',
+    email: 'linda.martinez@uninorte.edu.co',
+    role: 'Organizer',
+    isActive: true,
   },
 ];
 
@@ -72,7 +113,7 @@ export const mockUsers: User[] = [
 export const mockEvents: Event[] = [
   {
     id: '1',
-    title: 'Annual Science Fair',
+    title: 'Evento1',
     description: 'Join us for the annual science fair where students showcase their innovative research projects. Witness groundbreaking experiments, meet brilliant minds, and get inspired by the future of science. This event features presentations from multiple departments including Physics, Chemistry, Biology, and Computer Science. All students, faculty, and staff are welcome to attend.',
     category: 'Academic',
     dateStart: new Date('2026-04-15T09:00:00'),
@@ -83,13 +124,16 @@ export const mockEvents: Event[] = [
       lng: -73.9855,
     },
     coverImage: 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0], mockUsers[1]],
     status: 'Approved',
     submittedDate: new Date('2026-03-10'),
+    streams: [
+      { organizerId: mockUsers[0].id, streamLink: 'mock-stream-1' }
+    ]
   },
   {
     id: '2',
-    title: 'Spring Concert Series',
+    title: 'Evento2',
     description: 'Experience an unforgettable evening of music featuring our talented student musicians and guest performers. The concert will showcase a diverse range of musical styles from classical to contemporary, jazz to pop. Don\'t miss this celebration of artistic talent!',
     category: 'Cultural',
     dateStart: new Date('2026-04-20T19:00:00'),
@@ -100,13 +144,13 @@ export const mockEvents: Event[] = [
       lng: -73.9845,
     },
     coverImage: 'https://images.unsplash.com/photo-1738667289162-9e55132e18a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGNvbmNlcnQlMjBzdGFnZXxlbnwxfHx8fDE3NzU0MDA5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[1],
+    organizers: [mockUsers[1]],
     status: 'Approved',
     submittedDate: new Date('2026-03-12'),
   },
   {
     id: '3',
-    title: 'Career Development Workshop',
+    title: 'Evento3',
     description: 'Learn essential skills for your career success. This comprehensive workshop covers resume writing, interview techniques, networking strategies, and professional communication. Industry experts will share their insights and answer your questions. Perfect for students preparing to enter the job market.',
     category: 'Workshop',
     dateStart: new Date('2026-04-18T14:00:00'),
@@ -117,13 +161,13 @@ export const mockEvents: Event[] = [
       lng: -73.9860,
     },
     coverImage: 'https://images.unsplash.com/photo-1753164725369-23a8c8190922?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b3Jrc2hvcCUyMHBlb3BsZSUyMGxlYXJuaW5nfGVufDF8fHx8MTc3NTQxNDg3MHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[2],
+    organizers: [mockUsers[2]],
     status: 'Approved',
     submittedDate: new Date('2026-03-15'),
   },
   {
     id: '4',
-    title: 'Basketball Championship Finals',
+    title: 'Evento4',
     description: 'Cheer for our university team as they compete in the championship finals! This exciting match-up features our best players against our long-time rivals. Come show your school spirit and support our athletes. Free admission for students with ID. Concessions available.',
     category: 'Sports',
     dateStart: new Date('2026-04-25T18:00:00'),
@@ -134,30 +178,30 @@ export const mockEvents: Event[] = [
       lng: -73.9870,
     },
     coverImage: 'https://images.unsplash.com/photo-1772653519333-c1927e38f791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcG9ydHMlMjBldmVudCUyMGNvbGxlZ2V8ZW58MXx8fHwxNzc1NDE0ODY5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0]],
     status: 'Approved',
     submittedDate: new Date('2026-03-08'),
   },
   {
     id: '5',
-    title: 'Study Abroad Information Session',
+    title: 'Evento5',
     description: 'Discover opportunities to study abroad and expand your global perspective. Learn about our partner universities, scholarship opportunities, application processes, and hear from students who have studied abroad. Q&A session with international programs advisors.',
     category: 'Academic',
-    dateStart: new Date('2026-04-12T13:00:00'),
-    dateEnd: new Date('2026-04-12T15:00:00'),
+    dateStart: new Date('2026-05-01T13:00:00'),
+    dateEnd: new Date('2026-05-01T15:00:00'),
     location: {
       name: 'International Students Office',
       lat: 40.7575,
       lng: -73.9850,
     },
     coverImage: 'https://images.unsplash.com/photo-1620829813947-ef4246827355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMHN0dWR5aW5nJTIwZ3JvdXB8ZW58MXx8fHwxNzc1Mzg1Njk2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[1],
+    organizers: [mockUsers[1]],
     status: 'Approved',
     submittedDate: new Date('2026-03-05'),
   },
   {
     id: '6',
-    title: 'Guest Lecture: Future of AI',
+    title: 'Evento6',
     description: 'Renowned AI researcher Dr. Emily Watson will present her latest findings on artificial intelligence and machine learning. This is a rare opportunity to hear from one of the leading minds in the field. The lecture will cover current trends, ethical considerations, and future predictions.',
     category: 'Academic',
     dateStart: new Date('2026-04-22T16:00:00'),
@@ -168,31 +212,31 @@ export const mockEvents: Event[] = [
       lng: -73.9865,
     },
     coverImage: 'https://images.unsplash.com/photo-1606761568499-6d2451b23c66?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwbGVjdHVyZSUyMGhhbGx8ZW58MXx8fHwxNzc1NDE0ODY5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[2],
+    organizers: [mockUsers[2]],
     status: 'Approved',
     submittedDate: new Date('2026-03-18'),
   },
   // Events in other statuses for organizer dashboard
   {
     id: '7',
-    title: 'Photography Exhibition',
+    title: 'Evento7',
     description: 'Student photography exhibition featuring works from the advanced photography class.',
     category: 'Cultural',
-    dateStart: new Date('2026-05-01T10:00:00'),
-    dateEnd: new Date('2026-05-05T18:00:00'),
+    dateStart: new Date('2026-08-01T10:00:00'),
+    dateEnd: new Date('2026-08-05T18:00:00'),
     location: {
       name: 'Art Gallery',
       lat: 40.7560,
       lng: -73.9880,
     },
     coverImage: 'https://images.unsplash.com/photo-1700671562333-f71286a7c748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzc1Mzk5MjMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0]],
     status: 'In review',
     submittedDate: new Date('2026-04-01'),
   },
   {
     id: '8',
-    title: 'Alumni Networking Event',
+    title: 'Evento8',
     description: 'Connect with successful alumni and expand your professional network.',
     category: 'Other',
     dateStart: new Date('2026-05-10T17:00:00'),
@@ -203,24 +247,42 @@ export const mockEvents: Event[] = [
       lng: -73.9875,
     },
     coverImage: 'https://images.unsplash.com/photo-1620829813947-ef4246827355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMHN0dWR5aW5nJTIwZ3JvdXB8ZW58MXx8fHwxNzc1Mzg1Njk2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0]],
     status: 'Draft',
   },
   {
     id: '9',
-    title: 'Unauthorized Party',
+    title: 'Evento9',
     description: 'This event was rejected due to lack of proper permissions.',
     category: 'Other',
-    dateStart: new Date('2026-04-30T21:00:00'),
-    dateEnd: new Date('2026-04-30T23:59:00'),
+    dateStart: new Date('2026-05-30T21:00:00'),
+    dateEnd: new Date('2026-05-30T23:59:00'),
     location: {
       name: 'Campus Quad',
       lat: 40.7580,
       lng: -73.9855,
     },
     coverImage: 'https://images.unsplash.com/photo-1738667289162-9e55132e18a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGNvbmNlcnQlMjBzdGFnZXxlbnwxfHx8fDE3NzU0MDA5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    organizer: mockUsers[0],
+    organizers: [mockUsers[0]],
     status: 'Rejected',
+    submittedDate: new Date('2026-03-28'),
+    rejectionReason: 'This event does not have proper authorization and violates university policy regarding after-hours events.',
+  },
+  {
+    id: '10',
+    title: 'Evento de prueba',
+    description: 'This event was rejected due to lack of proper permissions.',
+    category: 'Other',
+    dateStart: new Date('2026-05-10T21:00:00'),
+    dateEnd: new Date('2026-05-10T23:59:00'),
+    location: {
+      name: 'Campus Quad',
+      lat: 40.7580,
+      lng: -73.9855,
+    },
+    coverImage: 'https://images.unsplash.com/photo-1738667289162-9e55132e18a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGNvbmNlcnQlMjBzdGFnZXxlbnwxfHx8fDE3NzU0MDA5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    organizers: [mockUsers[0]],
+    status: 'Approved',
     submittedDate: new Date('2026-03-28'),
     rejectionReason: 'This event does not have proper authorization and violates university policy regarding after-hours events.',
   },
@@ -228,5 +290,30 @@ export const mockEvents: Event[] = [
 
 export const getApprovedEvents = () => mockEvents.filter(e => e.status === 'Approved');
 export const getPendingEvents = () => mockEvents.filter(e => e.status === 'In review');
-export const getEventsByOrganizer = (organizerId: string) => 
-  mockEvents.filter(e => e.organizer.id === organizerId);
+export const getEventsByOrganizer = (organizerId: string) =>
+  mockEvents.filter(e => e.organizers.some(o => o.id === organizerId));
+
+export const mockCategories = [
+  { id: '1', name: 'Cultural', description: 'Cultural and artistic events', eventCount: 15, isActive: true },
+  { id: '2', name: 'Academic', description: 'Conferences, talks, and seminars', eventCount: 28, isActive: true },
+  { id: '3', name: 'Sports', description: 'Sports events and tournaments', eventCount: 8, isActive: true },
+  { id: '4', name: 'Workshop', description: 'Practical and skills workshops', eventCount: 12, isActive: true },
+  { id: '5', name: 'Other', description: 'Other types of events', eventCount: 5, isActive: true },
+];
+
+// Simulador de eventos favoritos para el usuario actual
+export let mockFavoriteEvents = mockEvents.filter(e => ['1', '2'].includes(e.id));
+
+export const toggleFavorite = (eventId: string) => {
+  const event = mockEvents.find(e => e.id === eventId);
+  if (!event) return false;
+
+  const index = mockFavoriteEvents.findIndex(e => e.id === eventId);
+  if (index > -1) {
+    mockFavoriteEvents.splice(index, 1);
+    return false;
+  } else {
+    mockFavoriteEvents.push(event);
+    return true;
+  }
+};

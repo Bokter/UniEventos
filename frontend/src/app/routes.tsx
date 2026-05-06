@@ -6,6 +6,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { OrganizerDashboardPage } from "./pages/OrganizerDashboardPage";
 import { PublishEventPage } from "./pages/PublishEventPage";
 import { AdminPanelPage } from "./pages/AdminPanelPage";
+import { UserDashboardPage } from "./pages/UserDashboardPage";
 import { RootLayout } from "./components/RootLayout";
 
 export const router = createBrowserRouter([
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { path: "organizer/dashboard", Component: OrganizerDashboardPage },
       { path: "organizer/publish", Component: PublishEventPage },
       { path: "admin", Component: AdminPanelPage },
+      { path: "user/dashboard", Component: UserDashboardPage },
     ],
   },
 ]);

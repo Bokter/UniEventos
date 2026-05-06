@@ -13,12 +13,20 @@ const statusStyles: Record<EventStatus, { bg: string; text: string }> = {
   Cancelled: { bg: 'bg-gray-100', text: 'text-gray-500' },
 };
 
+const statusLabels: Record<EventStatus, string> = {
+  Draft: 'Borrador',
+  'In review': 'En revisión',
+  Approved: 'Aprobado',
+  Rejected: 'Rechazado',
+  Cancelled: 'Cancelado',
+};
+
 export function StatusBadge({ status, className = "" }: StatusBadgeProps) {
   const styles = statusStyles[status];
   
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${styles.bg} ${styles.text} ${className}`}>
-      {status}
+      {statusLabels[status] ?? status}
     </span>
   );
 }

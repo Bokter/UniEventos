@@ -54,7 +54,7 @@ export function EventMap({ lat, lng, locationName }: EventMapProps) {
   return (
     <div
       ref={mapRef}
-      className="h-64 rounded-lg overflow-hidden border border-gray-200"
+      className="h-64 rounded-lg overflow-hidden border border-gray-200 z-0 relative"
     />
   );
 }
