@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UniEventos AR</title>
+</head>
+
+<body>
+    <script>
+        const ua = navigator.userAgent;
+        const esIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        window.location.href = esIOS ? '/ar-ios.html' : '/ar-android.html';
+    </script>
+</body>
+
+</html>
