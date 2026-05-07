@@ -370,7 +370,7 @@
 
       const h = smoothHeading !== null ? smoothHeading : 0;
       eulerCamara.y = -h * Math.PI / 180;
-      eulerCamara.x = -smoothPitch * Math.PI / 180;
+      eulerCamara.x = -(smoothPitch - 90) * Math.PI / 180;
       eulerCamara.z = 0;
       camera.quaternion.setFromEuler(eulerCamara);
 
