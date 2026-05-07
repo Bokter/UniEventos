@@ -198,7 +198,7 @@
         const ALTURA_INDICADOR = 1.70;        // metros simulados
         const GPS_MIN_MOVEMENT = 2.5;         // metros mínimos para aceptar movimiento GPS
         const GPS_MAX_ACCURACY_TO_TRUST = 80; // si es mayor, se acepta pero se reporta como baja calidad
-        const ORIENTATION_SLERP = 0.34;       // 0.2 = más suave, 0.55 = más reactivo
+        const ORIENTATION_SLERP = 0.15;       // 0.2 = más suave, 0.55 = más reactivo
         const COMPASS_CORRECTION_GAIN = 0.012;// corrección lenta de norte
         const MAX_COMPASS_JUMP = 35;          // grados, ignora saltos bruscos
         const EARTH_RADIUS = 6378137;         // WGS84 aprox.
@@ -830,7 +830,8 @@
                     return;
                 }
 
-                const umbralLlegada = Math.max(DIST_LLEGADA_BASE, gpsAccuracy * 0.8);
+                const umbralLlegada = DIST_LLEGADA_BASE;
+
                 if (dist < umbralLlegada) {
                     mesh.visible = false;
                     mostrarLlegada(evento);
