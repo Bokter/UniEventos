@@ -410,17 +410,33 @@
 
         function actualizarOrientacionCamara() {
             if (!camera || !orientationAvailable) return;
-            const alpha = degToRad(deviceAlpha || 0) + alphaOffsetRad;
+
+            const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            let alpha;
+
+            if (esIOS && esNumero(compassHeading)) {
+                // iOS: usar webkitCompassHeading directamente como heading absoluto
+                // webkitCompassHeading es CW desde Norte magnético
+                alpha = degToRad(compassHeading);
+            } else {
+                // Android: usar alpha con offset
+                alpha = degToRad(deviceAlpha || 0) + alphaOffsetRad;
+            }
+
             const beta = degToRad(deviceBeta || 0);
             const gamma = degToRad(deviceGamma || 0);
             const orient = degToRad(screenOrientationDeg || 0);
+
             orientationEuler.set(beta, alpha, -gamma, 'YXZ');
             qTarget.setFromEuler(orientationEuler);
             qTarget.multiply(q1);
             qTarget.multiply(q0.setFromAxisAngle(zee, -orient));
+
             camera.quaternion.slerp(qTarget, ORIENTATION_SLERP);
             lastHeadingDeg = headingDesdeQuaternion(camera.quaternion);
-            corregirNorteLento();
+
+            // Corrección de norte solo en Android
+            if (!esIOS) corregirNorteLento();
         }
 
         function headingDesdeQuaternion(q) {
