@@ -412,22 +412,35 @@
             if (!camera || !orientationAvailable) return;
 
             const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            let alpha;
 
             if (esIOS && esNumero(compassHeading)) {
-                alpha = degToRad(compassHeading);
+                // iOS: construir quaternion manualmente separando heading y pitch
+                const headingRad = degToRad(compassHeading);
+                const pitchRad = degToRad(deviceBeta || 0);
+
+                // Quaternion de heading (rotación Y)
+                const qHeading = new THREE.Quaternion();
+                qHeading.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -headingRad);
+
+                // Quaternion de pitch (rotación X)
+                const qPitch = new THREE.Quaternion();
+                qPitch.setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitchRad - Math.PI / 2);
+
+                // Combinar: primero heading, luego pitch
+                qTarget.copy(qHeading).multiply(qPitch);
+
             } else {
-                alpha = degToRad(deviceAlpha || 0) + alphaOffsetRad;
+                // Android — igual que antes
+                const alpha = degToRad(deviceAlpha || 0) + alphaOffsetRad;
+                const beta = degToRad(deviceBeta || 0);
+                const gamma = degToRad(deviceGamma || 0);
+                const orient = degToRad(screenOrientationDeg || 0);
+
+                orientationEuler.set(beta, alpha, -gamma, 'YXZ');
+                qTarget.setFromEuler(orientationEuler);
+                qTarget.multiply(q1);
+                qTarget.multiply(q0.setFromAxisAngle(zee, -orient));
             }
-
-            const beta = degToRad(deviceBeta || 0);
-            const gamma = degToRad(deviceGamma || 0);
-            const orient = degToRad(screenOrientationDeg || 0);
-
-            orientationEuler.set(beta, alpha, -gamma, 'YXZ');
-            qTarget.setFromEuler(orientationEuler);
-            qTarget.multiply(q1);
-            qTarget.multiply(q0.setFromAxisAngle(zee, -orient));
 
             camera.quaternion.slerp(qTarget, ORIENTATION_SLERP);
             lastHeadingDeg = headingDesdeQuaternion(camera.quaternion);
