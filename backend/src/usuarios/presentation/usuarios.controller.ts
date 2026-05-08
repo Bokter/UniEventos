@@ -1,9 +1,15 @@
-import { Controller, Get, Patch, Param, Body, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Patch, Param, Body, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UsuariosService } from '../application/services/usuarios.service';
+import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/infrastructure/guards/roles.guard';
+import { Roles } from '../../auth/infrastructure/decorators/roles.decorator';
 
 @ApiTags('usuarios')
 @Controller('usuarios')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
+@ApiBearerAuth()
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 

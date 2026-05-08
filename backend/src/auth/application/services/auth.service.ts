@@ -21,7 +21,6 @@ export class AuthService {
     'cvelias@uninorte.edu.co',
     'cherj@uninorte.edu.co',
     'rojasdelahoz@uninorte.edu.co',
-    'caruidiaz@uninorte.edu.co'
   ];
 
   // ─── VISITANTES (cualquier correo que NO sea @uninorte.edu.co) ───────────────

@@ -15,13 +15,13 @@ export interface UsuarioAuth {
 }
 
 export interface RespuestaAuth {
-  token: string;
+  access_token: string;
   usuario: UsuarioAuth;
 }
 
 // ── Helpers de localStorage ──────────────────────────────────
 export const guardarSesion = (data: RespuestaAuth) => {
-  localStorage.setItem('token', data.token);
+  localStorage.setItem('token', data.access_token);
   localStorage.setItem('usuario', JSON.stringify(data.usuario));
 };
 
