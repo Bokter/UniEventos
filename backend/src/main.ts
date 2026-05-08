@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +13,10 @@ async function bootstrap() {
     forbidNonWhitelisted: true, // Lanza error si envían propiedades desconocidas
     transform: true,        // Transforma payloads a instancias del DTO
   }));
+
+  // Aumentar el límite de tamaño de las peticiones JSON para permitir imágenes base64 grandes
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Habilitar CORS para el frontend
   app.enableCors({

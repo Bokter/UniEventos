@@ -26,23 +26,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ── Auth ─────────────────────────────────────────────────────
-export const authApi = {
-  login: (email: string, password: string) =>
-    fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    }).then(handleResponse),
-
-  register: (nombre_completo: string, email: string, password: string) =>
-    fetch(`${BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre_completo, email, password }),
-    }).then(handleResponse),
-};
-
 // ── Eventos ──────────────────────────────────────────────────
 export const eventosApi = {
   getAll: () =>

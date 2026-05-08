@@ -40,14 +40,12 @@ export function OrganizerDashboardPage() {
 
   const { usuario, isLoading, logout } = useAuth();
 
-  if (isLoading) return null;
-  if (!usuario || usuario.rol !== 'organizador') {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Carga de eventos desde el backend
+  // Carga de eventos desde el backend (siempre arriba de los returns)
   useEffect(() => {
     const fetchOrganizerEvents = async () => {
+      // Solo hacer el fetch si hay un usuario logueado con rol correcto
+      if (!usuario || usuario.rol !== 'organizador') return;
+      
       setIsLoadingEvents(true);
       try {
         const data = await eventosApi.getMisEventos() as EventoBackend[];
@@ -59,7 +57,12 @@ export function OrganizerDashboardPage() {
       }
     };
     fetchOrganizerEvents();
-  }, []);
+  }, [usuario]);
+
+  if (isLoading) return null;
+  if (!usuario || usuario.rol !== 'organizador') {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleEdit = (eventId: number) => {
     navigate(`/organizer/publish?edit=${eventId}`);

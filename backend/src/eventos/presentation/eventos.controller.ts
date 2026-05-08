@@ -8,17 +8,6 @@ import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/infrastructure/guards/roles.guard';
 import { Roles } from '../../auth/infrastructure/decorators/roles.decorator';
 
-
-class CreateEventoSwaggerDto {
-  @ApiProperty({ example: 'Feria de ciencias' }) titulo: string;
-  @ApiProperty({ example: 'Exposición de proyectos' }) descripcion: string;
-  @ApiProperty({ example: '2025-04-29' }) fecha: string;
-  @ApiProperty({ example: '09:00' }) hora_inicio: string;
-  @ApiProperty({ example: '18:00' }) hora_fin: string;
-  @ApiProperty({ example: 1 }) categoria_id: number;
-  @ApiProperty({ example: 1 }) lugar_id: number;
-}
-
 @ApiTags('eventos')
 @Controller('eventos')
 export class EventosController {
@@ -65,7 +54,7 @@ export class EventosController {
   @Roles('organizador', 'admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear evento (organizador)' })
-  create(@Body() createEventoDto: CreateEventoSwaggerDto, @Req() req: any) {
+  create(@Body() createEventoDto: CreateEventoDto, @Req() req: any) {
     return this.eventosService.create(createEventoDto, req.user.id);
   }
 

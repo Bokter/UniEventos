@@ -1,4 +1,4 @@
-import { IsDateString, IsNumber, IsString, Matches } from 'class-validator';
+import { IsDateString, IsNumber, IsOptional, IsString, Matches } from 'class-validator';
 
 export class CreateEventoDto {
   @IsString()
@@ -23,4 +23,8 @@ export class CreateEventoDto {
 
   @IsNumber()
   lugar_id: number;
+
+  @IsString()
+  @IsOptional()
+  imagen_portada?: string;
 }

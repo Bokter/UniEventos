@@ -18,6 +18,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_NAME=unieventos
+      - JWT_SECRET=dev_secret_cambiar_en_produccion
     depends_on:
       - db
     command: sh -c "npm run build && node dist/main.js"
