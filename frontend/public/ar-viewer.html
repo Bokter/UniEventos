@@ -531,6 +531,11 @@
         }
 
         function iniciarGyroNormFallback() {
+            const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (esIOS) {
+                log('iOS detectado — sin GyroNorm fallback');
+                return;
+            }
             if (typeof GyroNorm === 'undefined' || gnInstance) return;
 
             try {
