@@ -415,11 +415,8 @@
             let alpha;
 
             if (esIOS && esNumero(compassHeading)) {
-                // iOS: usar webkitCompassHeading directamente como heading absoluto
-                // webkitCompassHeading es CW desde Norte magnético
                 alpha = degToRad(compassHeading);
             } else {
-                // Android: usar alpha con offset
                 alpha = degToRad(deviceAlpha || 0) + alphaOffsetRad;
             }
 
@@ -434,8 +431,6 @@
 
             camera.quaternion.slerp(qTarget, ORIENTATION_SLERP);
             lastHeadingDeg = headingDesdeQuaternion(camera.quaternion);
-
-            // Corrección de norte solo en Android
             if (!esIOS) corregirNorteLento();
         }
 
