@@ -414,21 +414,17 @@
             const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
             if (esIOS && esNumero(compassHeading)) {
-                // iOS: construir quaternion manualmente separando heading y pitch
+                // iOS: SOLO heading horizontal, pitch fijo en horizonte
                 const headingRad = degToRad(compassHeading);
-                const pitchRad = degToRad(deviceBeta || 0);
 
-                // Quaternion de heading (rotación Y)
                 const qHeading = new THREE.Quaternion();
                 qHeading.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -headingRad);
 
-                // Quaternion de pitch (rotación X)
+                // Pitch fijo apuntando al frente — no usar beta
                 const qPitch = new THREE.Quaternion();
-                qPitch.setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitchRad - Math.PI / 2);
+                qPitch.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 
-                // Combinar: primero heading, luego pitch
                 qTarget.copy(qHeading).multiply(qPitch);
-
             } else {
                 // Android — igual que antes
                 const alpha = degToRad(deviceAlpha || 0) + alphaOffsetRad;
@@ -452,7 +448,7 @@
             return wrap360(radToDeg(Math.atan2(tmpVec3.x, -tmpVec3.z)));
         }
 
-        function corregirNorteLento() {
+        function corregirNorteLento() { /*
             if (!esNumero(compassHeading)) return;
             const now = performance.now();
             if (now - lastCompassCorrectionMs < 120) return;
@@ -460,6 +456,8 @@
             const error = diffAngDeg(compassHeading, lastHeadingDeg);
             if (Math.abs(error) > MAX_COMPASS_JUMP) return;
             alphaOffsetRad += degToRad(error * COMPASS_CORRECTION_GAIN);
+            */
+            return;
         }
 
         // ── Three.js ──
