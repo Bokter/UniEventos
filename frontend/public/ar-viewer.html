@@ -608,7 +608,7 @@
                 // Escala correcta: cerca = grande, lejos = pequeño
                 // dist 20m → escala 3.0, dist 500m → escala 0.5
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
-                const escala = 3.0 - t * 2.5;
+                const escala = 5.0 - t * 4.0;
                 mesh.scale.setScalar(escala);
 
                 // Actualizar textura si la distancia cambió más de 2m
