@@ -5,11 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <title>UniEventos AR</title>
-
-    <!-- Mantiene tu stack: Three.js r128 + GyroNorm desde CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gyronorm@2.0.6/dist/gyronorm.complete.min.js"></script>
-
     <style>
         * {
             margin: 0;
@@ -34,7 +31,6 @@
             height: 100%;
             object-fit: cover;
             z-index: 0;
-            background: #000;
         }
 
         #canvas {
@@ -51,50 +47,23 @@
             top: 0;
             left: 0;
             right: 0;
-            padding: 12px 16px 80px;
+            padding: 12px 16px;
             background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent);
             z-index: 10;
             color: white;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: system-ui, sans-serif;
             pointer-events: none;
         }
 
         #titulo {
             font-weight: 800;
             font-size: 18px;
-            text-shadow: 0 1px 4px #000;
         }
 
         #status {
             margin-top: 4px;
             font-size: 12px;
             opacity: 0.9;
-            line-height: 1.35;
-            text-shadow: 0 1px 4px #000;
-        }
-
-        #acciones {
-            position: fixed;
-            left: 12px;
-            right: 12px;
-            bottom: 24vh;
-            display: none;
-            gap: 8px;
-            z-index: 30;
-            pointer-events: auto;
-        }
-
-        .btn-secundario {
-            flex: 1;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 14px;
-            padding: 10px 12px;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(8px);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
         }
 
         #btn-iniciar {
@@ -111,7 +80,7 @@
             font-weight: 800;
             z-index: 40;
             cursor: pointer;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: system-ui, sans-serif;
             box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
         }
 
@@ -125,13 +94,12 @@
             border-radius: 20px;
             padding: 24px 36px;
             color: #00ff88;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: system-ui, sans-serif;
             font-size: 24px;
             font-weight: 800;
             text-align: center;
             z-index: 35;
             display: none;
-            text-shadow: 0 1px 4px #000;
             animation: pulsar 0.5s ease-in-out infinite alternate;
         }
 
@@ -152,14 +120,12 @@
             right: 0;
             background: rgba(0, 0, 0, 0.86);
             color: #78ff78;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-family: monospace;
             font-size: 10px;
-            line-height: 1.3;
             padding: 6px;
             z-index: 99;
             max-height: 22vh;
             overflow-y: auto;
-            pointer-events: auto;
         }
     </style>
 </head>
@@ -167,77 +133,56 @@
 <body>
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
-
     <div id="ui">
         <div id="titulo">🎯 UniEventos AR</div>
         <div id="status">Toca para iniciar</div>
     </div>
-
     <button id="btn-iniciar">🎯 Iniciar UniEventos AR</button>
-
-    <div id="acciones">
-        <button id="btn-calibrar-evento" class="btn-secundario">📍 Calibrar con evento</button>
-        <button id="btn-calibrar-norte" class="btn-secundario">🧭 Apunto al norte</button>
-        <button id="btn-reset" class="btn-secundario">↺ Reset</button>
-    </div>
-
     <div id="llegada"></div>
     <div id="debug"></div>
 
     <script>
         'use strict';
 
-        // ─────────────────────────────────────────────────────────────
-        // CONFIGURACIÓN
-        // ─────────────────────────────────────────────────────────────
         const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
+        const DIST_MAXIMA = 500;
+        const DIST_LLEGADA = 20;
+        const ALTURA_CAMARA = 1.60;
+        const ALTURA_INDICADOR = 1.70;
+        const GPS_MIN_MOVEMENT = 2.5;
+        const ORIENTATION_SLERP = 0.15;
+        const COMPASS_CORRECTION_GAIN = 0.012;
+        const MAX_COMPASS_JUMP = 35;
+        const EARTH_RADIUS = 6378137;
 
-        const DIST_MAXIMA = 500;              // metros
-        const DIST_LLEGADA_BASE = 20;         // metros
-        const ALTURA_CAMARA = 1.60;           // metros simulados
-        const ALTURA_INDICADOR = 1.70;        // metros simulados
-        const GPS_MIN_MOVEMENT = 2.5;         // metros mínimos para aceptar movimiento GPS
-        const GPS_MAX_ACCURACY_TO_TRUST = 80; // si es mayor, se acepta pero se reporta como baja calidad
-        const ORIENTATION_SLERP = 0.15;       // 0.2 = más suave, 0.55 = más reactivo
-        const COMPASS_CORRECTION_GAIN = 0.012;// corrección lenta de norte
-        const MAX_COMPASS_JUMP = 35;          // grados, ignora saltos bruscos
-        const EARTH_RADIUS = 6378137;         // WGS84 aprox.
+        // Limpiar calibración guardada — causa offset en iOS
+        localStorage.removeItem('unieventos_alphaOffsetRad');
 
-        // ─────────────────────────────────────────────────────────────
-        // ESTADO GLOBAL
-        // ─────────────────────────────────────────────────────────────
         let renderer, scene, camera;
         let eventosData = [];
         let indicadores = [];
-        let llegadaMostrada = {};
         let frameCount = 0;
         let animacionIniciada = false;
 
-        // GPS crudo y filtrado
-        let rawLat = null;
-        let rawLng = null;
-        let miLat = null;
-        let miLng = null;
-        let gpsAccuracy = 999;
-        let originLat = null;
-        let originLng = null;
+        let miLat = null, miLng = null, gpsAccuracy = 999;
+        let originLat = null, originLng = null;
         let ultimoLogGPS = 0;
 
-        // Orientación
         let orientationAvailable = false;
         let lastAbsoluteOrientationMs = 0;
         let orientationSource = 'sin orientación';
-        let deviceAlpha = null;
-        let deviceBeta = null;
-        let deviceGamma = null;
-        let compassHeading = null; // true north en iOS si existe webkitCompassHeading
-        let alphaOffsetRad = Number(localStorage.getItem('unieventos_alphaOffsetRad') || 0);
+        let deviceAlpha = null, deviceBeta = null, deviceGamma = null;
+        let compassHeading = null;
+        let alphaOffsetRad = 0; // siempre empieza en 0
         let lastCompassCorrectionMs = 0;
         let lastHeadingDeg = 0;
         let screenOrientationDeg = getScreenOrientationDeg();
         let gnInstance = null;
 
-        // Objetos reutilizables para no crear basura por frame
+        // llegada
+        let llegadaTimer = null;
+        let llegadaEventoId = null;
+
         const zee = new THREE.Vector3(0, 0, 1);
         const orientationEuler = new THREE.Euler();
         const q0 = new THREE.Quaternion();
@@ -245,76 +190,42 @@
         const qTarget = new THREE.Quaternion();
         const tmpVec3 = new THREE.Vector3();
 
-        // ─────────────────────────────────────────────────────────────
-        // UTILIDADES
-        // ─────────────────────────────────────────────────────────────
-        function $(id) {
-            return document.getElementById(id);
-        }
+        function $(id) { return document.getElementById(id); }
 
         function log(msg) {
             const d = $('debug');
             const lines = d.innerHTML.split('<br>');
-            if (lines.length > 90) {
-                d.innerHTML = lines.slice(lines.length - 80).join('<br>');
-            }
+            if (lines.length > 90) d.innerHTML = lines.slice(-80).join('<br>');
             d.innerHTML += msg + '<br>';
             d.scrollTop = d.scrollHeight;
         }
 
-        function setStatus(msg) {
-            $('status').textContent = msg;
-        }
+        function setStatus(msg) { $('status').textContent = msg; }
 
-        function clamp(v, min, max) {
-            return Math.max(min, Math.min(max, v));
-        }
-
-        function wrap360(a) {
-            return ((a % 360) + 360) % 360;
-        }
-
-        function diffAngDeg(a, b) {
-            return ((a - b + 540) % 360) - 180;
-        }
-
-        function degToRad(deg) {
-            return deg * Math.PI / 180;
-        }
-
-        function radToDeg(rad) {
-            return rad * 180 / Math.PI;
-        }
+        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+        function wrap360(a) { return ((a % 360) + 360) % 360; }
+        function diffAngDeg(a, b) { return ((a - b + 540) % 360) - 180; }
+        function degToRad(d) { return d * Math.PI / 180; }
+        function radToDeg(r) { return r * 180 / Math.PI; }
+        function esNumero(n) { return typeof n === 'number' && Number.isFinite(n); }
 
         function getScreenOrientationDeg() {
-            if (screen.orientation && typeof screen.orientation.angle === 'number') {
+            if (screen.orientation && typeof screen.orientation.angle === 'number')
                 return screen.orientation.angle;
-            }
-            if (typeof window.orientation === 'number') {
-                return window.orientation;
-            }
+            if (typeof window.orientation === 'number') return window.orientation;
             return 0;
         }
 
-        function redondear(num, dec = 1) {
-            if (!Number.isFinite(num)) return '...';
-            return Number(num).toFixed(dec);
-        }
-
-        function esNumero(n) {
-            return typeof n === 'number' && Number.isFinite(n);
-        }
-
-        function sanitizarEvento(evento) {
+        function sanitizarEvento(e) {
             return {
-                ...evento,
-                id: evento.id ?? `${evento.titulo}-${evento.latitud}-${evento.longitud}`,
-                titulo: String(evento.titulo ?? 'Evento'),
-                lugar_nombre: String(evento.lugar_nombre ?? 'Ubicación'),
-                hora_inicio: String(evento.hora_inicio ?? '00:00'),
-                hora_fin: String(evento.hora_fin ?? '00:00'),
-                latitud: Number(evento.latitud),
-                longitud: Number(evento.longitud)
+                ...e,
+                id: e.id ?? `${e.titulo}-${e.latitud}-${e.longitud}`,
+                titulo: String(e.titulo ?? 'Evento'),
+                lugar_nombre: String(e.lugar_nombre ?? 'Ubicación'),
+                hora_inicio: String(e.hora_inicio ?? '00:00'),
+                hora_fin: String(e.hora_fin ?? '00:00'),
+                latitud: Number(e.latitud),
+                longitud: Number(e.longitud)
             };
         }
 
@@ -329,37 +240,27 @@
             ctx.closePath();
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // PERMISOS + CÁMARA
-        // ─────────────────────────────────────────────────────────────
+        // ── Permisos ──
         async function solicitarPermisosSensores() {
-            // iOS 13+ exige permiso explícito dentro de un gesto de usuario.
             if (typeof DeviceOrientationEvent !== 'undefined' &&
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 const r = await DeviceOrientationEvent.requestPermission();
                 if (r !== 'granted') throw new Error('Permiso de orientación denegado');
             }
-
-            // No siempre es necesario, pero algunos iPhone también lo piden para motion.
             if (typeof DeviceMotionEvent !== 'undefined' &&
                 typeof DeviceMotionEvent.requestPermission === 'function') {
-                try { await DeviceMotionEvent.requestPermission(); } catch (_) { /* no crítico */ }
+                try { await DeviceMotionEvent.requestPermission(); } catch (_) { }
             }
         }
 
+        // ── Cámara ──
         async function iniciarCamara() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error('getUserMedia no está disponible. Debe ejecutarse en HTTPS.');
-            }
-
+            if (!navigator.mediaDevices?.getUserMedia)
+                throw new Error('getUserMedia no disponible. Usa HTTPS.');
             const video = $('video');
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: { exact: 'environment' },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
+                    video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
                     audio: false
                 });
                 video.srcObject = stream;
@@ -367,8 +268,7 @@
                 log('Cámara trasera OK');
             } catch (e) {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' },
-                    audio: false
+                    video: { facingMode: 'environment' }, audio: false
                 });
                 video.srcObject = stream;
                 await video.play().catch(() => { });
@@ -376,104 +276,66 @@
             }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // GPS + MUNDO LOCAL EN METROS
-        // ─────────────────────────────────────────────────────────────
+        // ── GPS ──
         function iniciarGPS() {
-            if (!navigator.geolocation) {
-                log('GPS no soportado');
-                return;
-            }
-
+            if (!navigator.geolocation) { log('GPS no soportado'); return; }
             navigator.geolocation.watchPosition(pos => {
                 registrarGPS(pos.coords);
             }, err => {
                 log(`GPS ERR ${err.code}: ${err.message}`);
-                // Fallback menos estricto si el GPS de alta precisión falla por timeout.
                 if (err.code !== 1) {
-                    navigator.geolocation.getCurrentPosition(p => registrarGPS(p.coords), () => { }, {
-                        enableHighAccuracy: false,
-                        timeout: 60000,
-                        maximumAge: 30000
-                    });
+                    navigator.geolocation.getCurrentPosition(
+                        p => registrarGPS(p.coords),
+                        () => { },
+                        { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 }
+                    );
                 }
-            }, {
-                enableHighAccuracy: true,
-                maximumAge: 1000,
-                timeout: 30000
-            });
+            }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 30000 });
         }
 
         function registrarGPS(coords) {
             if (!esNumero(coords.latitude) || !esNumero(coords.longitude)) return;
-
-            rawLat = coords.latitude;
-            rawLng = coords.longitude;
             gpsAccuracy = coords.accuracy || 999;
 
             if (originLat === null) {
-                originLat = rawLat;
-                originLng = rawLng;
-                miLat = rawLat;
-                miLng = rawLng;
-                log(`Origen GPS fijado: ${originLat.toFixed(7)}, ${originLng.toFixed(7)} ±${gpsAccuracy.toFixed(0)}m`);
+                originLat = coords.latitude;
+                originLng = coords.longitude;
+                miLat = originLat;
+                miLng = originLng;
+                log(`Origen GPS: ±${gpsAccuracy.toFixed(0)}m`);
                 posicionarTodosLosIndicadores();
+                return;
             }
 
-            if (miLat === null) {
-                miLat = rawLat;
-                miLng = rawLng;
-            } else {
-                const salto = distanciaEntre(miLat, miLng, rawLat, rawLng);
-                const minMove = Math.max(GPS_MIN_MOVEMENT, gpsAccuracy * 0.35);
-
-                // Anti-jitter: no persigas cambios menores que el error GPS.
-                if (salto > minMove) {
-                    const alpha = clamp(salto / 40, 0.10, 0.45);
-                    miLat += (rawLat - miLat) * alpha;
-                    miLng += (rawLng - miLng) * alpha;
-                }
+            const salto = distanciaEntre(miLat, miLng, coords.latitude, coords.longitude);
+            const minMove = Math.max(GPS_MIN_MOVEMENT, gpsAccuracy * 0.35);
+            if (salto > minMove) {
+                const alpha = clamp(salto / 40, 0.10, 0.45);
+                miLat += (coords.latitude - miLat) * alpha;
+                miLng += (coords.longitude - miLng) * alpha;
             }
 
             const now = performance.now();
             if (now - ultimoLogGPS > 2500) {
                 ultimoLogGPS = now;
-                const calidad = gpsAccuracy <= GPS_MAX_ACCURACY_TO_TRUST ? 'OK' : 'baja precisión';
-                log(`GPS ${calidad}: ±${gpsAccuracy.toFixed(0)}m`);
+                log(`GPS: ±${gpsAccuracy.toFixed(0)}m`);
             }
         }
 
         function distanciaEntre(lat1, lng1, lat2, lng2) {
-            const dLat = degToRad(lat2 - lat1);
-            const dLng = degToRad(lng2 - lng1);
-            const lat1r = degToRad(lat1);
-            const lat2r = degToRad(lat2);
+            const dLat = degToRad(lat2 - lat1), dLng = degToRad(lng2 - lng1);
             const a = Math.sin(dLat / 2) ** 2 +
-                Math.cos(lat1r) * Math.cos(lat2r) * Math.sin(dLng / 2) ** 2;
+                Math.cos(degToRad(lat1)) * Math.cos(degToRad(lat2)) * Math.sin(dLng / 2) ** 2;
             return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
         function calcularDistancia(lat2, lng2) {
-            if (miLat === null || miLng === null) return null;
+            if (miLat === null) return null;
             return distanciaEntre(miLat, miLng, lat2, lng2);
         }
 
-        function calcularBearing(lat2, lng2) {
-            if (miLat === null || miLng === null) return 0;
-            const dLng = degToRad(lng2 - miLng);
-            const lat1r = degToRad(miLat);
-            const lat2r = degToRad(lat2);
-            const y = Math.sin(dLng) * Math.cos(lat2r);
-            const x = Math.cos(lat1r) * Math.sin(lat2r) -
-                Math.sin(lat1r) * Math.cos(lat2r) * Math.cos(dLng);
-            return wrap360(radToDeg(Math.atan2(y, x)));
-        }
-
-        // Conversión local: x = Este/Oeste, z = Norte/Sur invertido para Three.js.
         function latLngToWorld(lat, lng, y = 0) {
-            if (originLat === null || originLng === null) {
-                return new THREE.Vector3(0, y, -8);
-            }
+            if (originLat === null) return new THREE.Vector3(0, y, -8);
             const lat0 = degToRad(originLat);
             const x = degToRad(lng - originLng) * EARTH_RADIUS * Math.cos(lat0);
             const z = -degToRad(lat - originLat) * EARTH_RADIUS;
@@ -481,114 +343,84 @@
         }
 
         function actualizarPosicionCamaraGPS() {
-            if (!camera || miLat === null || miLng === null) return;
+            if (!camera || miLat === null) return;
             const p = latLngToWorld(miLat, miLng, ALTURA_CAMARA);
             camera.position.copy(p);
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // ORIENTACIÓN: QUATERNION, NO EULER SIMPLE
-        // Basado en la lógica de DeviceOrientationControls de Three.js.
-        // ─────────────────────────────────────────────────────────────
+        // ── Orientación ──
         async function iniciarOrientacion() {
             screenOrientationDeg = getScreenOrientationDeg();
             window.addEventListener('orientationchange', () => {
                 screenOrientationDeg = getScreenOrientationDeg();
             });
-
             window.addEventListener('deviceorientationabsolute', onDeviceOrientation, true);
             window.addEventListener('deviceorientation', onDeviceOrientation, true);
 
-            // GyroNorm queda como fallback si el navegador no dispara eventos nativos útiles.
             setTimeout(() => {
                 if (!orientationAvailable) iniciarGyroNormFallback();
             }, 1400);
 
-            log('Listeners de orientación activos');
+            log('Orientación activa');
         }
 
         function onDeviceOrientation(e) {
             if (!esNumero(e.alpha) || !esNumero(e.beta) || !esNumero(e.gamma)) return;
-
             const now = performance.now();
             const hasIOSCompass = esNumero(e.webkitCompassHeading);
             const isAbsolute = e.type === 'deviceorientationabsolute' || e.absolute === true || hasIOSCompass;
-
-            // Si ya llega orientación absoluta, ignora eventos relativos recientes.
             if (!isAbsolute && now - lastAbsoluteOrientationMs < 900) return;
             if (isAbsolute) lastAbsoluteOrientationMs = now;
-
             deviceAlpha = e.alpha;
             deviceBeta = e.beta;
             deviceGamma = e.gamma;
             orientationAvailable = true;
-            orientationSource = isAbsolute ? 'deviceorientation absolute' : 'deviceorientation relative';
-
+            orientationSource = isAbsolute ? 'absolute' : 'relative';
             if (hasIOSCompass) {
                 compassHeading = wrap360(e.webkitCompassHeading);
-                orientationSource = 'iOS webkitCompassHeading';
+                orientationSource = 'iOS compass';
             }
         }
 
         function iniciarGyroNormFallback() {
             const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            if (esIOS) {
-                log('iOS detectado — sin GyroNorm fallback');
-                return;
-            }
+            if (esIOS) { log('iOS — sin GyroNorm'); return; }
             if (typeof GyroNorm === 'undefined' || gnInstance) return;
-
             try {
                 gnInstance = new GyroNorm();
                 gnInstance.init({
-                    frequency: 50,
-                    gravityNormalized: true,
-                    orientationBase: GyroNorm.WORLD,
-                    decimalCount: 2,
-                    logger: null,
-                    screenAdjusted: false
+                    frequency: 50, gravityNormalized: true,
+                    orientationBase: GyroNorm.WORLD, decimalCount: 2,
+                    logger: null, screenAdjusted: false
                 }).then(() => {
                     gnInstance.start(data => {
-                        if (!data || !data.do) return;
+                        if (!data?.do) return;
                         if (!esNumero(data.do.alpha) || !esNumero(data.do.beta) || !esNumero(data.do.gamma)) return;
-
-                        // No sobreescribas una fuente absoluta nativa reciente.
                         if (performance.now() - lastAbsoluteOrientationMs < 900) return;
-
                         deviceAlpha = data.do.alpha;
                         deviceBeta = data.do.beta;
                         deviceGamma = data.do.gamma;
                         orientationAvailable = true;
-                        orientationSource = 'GyroNorm fallback';
+                        orientationSource = 'GyroNorm';
                     });
-                    log('GyroNorm fallback activo');
-                }).catch(err => {
-                    log('GyroNorm no disponible: ' + err.message);
-                });
-            } catch (err) {
-                log('GyroNorm fallback error: ' + err.message);
-            }
+                    log('GyroNorm OK');
+                }).catch(err => log('GyroNorm err: ' + err.message));
+            } catch (err) { log('GyroNorm exc: ' + err.message); }
         }
 
         function actualizarOrientacionCamara() {
             if (!camera || !orientationAvailable) return;
-
             const alpha = degToRad(deviceAlpha || 0) + alphaOffsetRad;
             const beta = degToRad(deviceBeta || 0);
             const gamma = degToRad(deviceGamma || 0);
             const orient = degToRad(screenOrientationDeg || 0);
-
-            // Conversión correcta deviceorientation → quaternion cámara.
             orientationEuler.set(beta, alpha, -gamma, 'YXZ');
             qTarget.setFromEuler(orientationEuler);
             qTarget.multiply(q1);
             qTarget.multiply(q0.setFromAxisAngle(zee, -orient));
-
-            // Slerp = giros suaves sin el lag fuerte del EMA sobre grados.
             camera.quaternion.slerp(qTarget, ORIENTATION_SLERP);
-
             lastHeadingDeg = headingDesdeQuaternion(camera.quaternion);
-            corregirNorteLentoConBrujula();
+            corregirNorteLento();
         }
 
         function headingDesdeQuaternion(q) {
@@ -596,115 +428,42 @@
             return wrap360(radToDeg(Math.atan2(tmpVec3.x, -tmpVec3.z)));
         }
 
-        function corregirNorteLentoConBrujula() {
+        function corregirNorteLento() {
             if (!esNumero(compassHeading)) return;
-
             const now = performance.now();
             if (now - lastCompassCorrectionMs < 120) return;
             lastCompassCorrectionMs = now;
-
             const error = diffAngDeg(compassHeading, lastHeadingDeg);
             if (Math.abs(error) > MAX_COMPASS_JUMP) return;
-
             alphaOffsetRad += degToRad(error * COMPASS_CORRECTION_GAIN);
         }
 
-        function guardarCalibracion() {
-            localStorage.setItem('unieventos_alphaOffsetRad', String(alphaOffsetRad));
-        }
-
-        function resetearCalibracion() {
-            alphaOffsetRad = 0;
-            localStorage.removeItem('unieventos_alphaOffsetRad');
-            log('Calibración reseteada');
-        }
-
-        function calibrarApuntandoAlNorte() {
-            if (!camera || !orientationAvailable) {
-                log('No hay orientación para calibrar');
-                return;
-            }
-            const actual = headingDesdeQuaternion(camera.quaternion);
-            const error = diffAngDeg(0, actual);
-            alphaOffsetRad += degToRad(error);
-            guardarCalibracion();
-            log(`Calibrado al norte: corrección ${error.toFixed(1)}°`);
-        }
-
-        function calibrarConEventoMasCercano() {
-            if (!camera || !orientationAvailable || miLat === null || eventosData.length === 0) {
-                log('Falta orientación/GPS/eventos para calibrar');
-                return;
-            }
-
-            let mejor = null;
-            for (const evento of eventosData) {
-                const dist = calcularDistancia(evento.latitud, evento.longitud);
-                if (dist === null || dist < DIST_LLEGADA_BASE || dist > DIST_MAXIMA) continue;
-                if (!mejor || dist < mejor.dist) mejor = { evento, dist };
-            }
-
-            if (!mejor) {
-                log('No hay evento cercano válido para calibrar');
-                return;
-            }
-
-            const bearingEvento = calcularBearing(mejor.evento.latitud, mejor.evento.longitud);
-            const headingActual = headingDesdeQuaternion(camera.quaternion);
-            const error = diffAngDeg(bearingEvento, headingActual);
-
-            alphaOffsetRad += degToRad(error);
-            guardarCalibracion();
-
-            log(`Calibrado con "${mejor.evento.titulo.slice(0, 20)}": evento ${bearingEvento.toFixed(1)}°, cámara ${headingActual.toFixed(1)}°, corr ${error.toFixed(1)}°`);
-        }
-
-        // ─────────────────────────────────────────────────────────────
-        // THREE.JS + INDICADORES
-        // ─────────────────────────────────────────────────────────────
+        // ── Three.js ──
         function iniciarThree() {
             const canvas = $('canvas');
-
-            renderer = new THREE.WebGLRenderer({
-                canvas,
-                alpha: true,
-                antialias: true,
-                powerPreference: 'high-performance'
-            });
+            renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
             renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setClearColor(0x000000, 0);
-
             scene = new THREE.Scene();
-
-            // FOV aproximado de cámara móvil. Si quieres más coincidencia visual,
-            // ajusta entre 60 y 75 según el lente del dispositivo.
             camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 1200);
             camera.position.set(0, ALTURA_CAMARA, 0);
             scene.add(camera);
-
-            window.addEventListener('resize', onResize);
-            onResize();
-
+            window.addEventListener('resize', () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            });
             log('Three.js OK');
         }
 
-        function onResize() {
-            if (!renderer || !camera) return;
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-        }
-
+        // ── Textura ──
         function dibujarCard(ctx, evento, dist) {
             const w = 512, h = 280;
             ctx.clearRect(0, 0, w, h);
-
             const cerca = dist !== null && dist < 60;
             const titulo = evento.titulo.length > 28 ? evento.titulo.slice(0, 25) + '...' : evento.titulo;
             const lugar = evento.lugar_nombre.length > 32 ? evento.lugar_nombre.slice(0, 29) + '...' : evento.lugar_nombre;
-            const hi = evento.hora_inicio.slice(0, 5);
-            const hf = evento.hora_fin.slice(0, 5);
 
             ctx.save();
             ctx.shadowColor = 'rgba(0,0,0,0.45)';
@@ -735,7 +494,7 @@
 
             ctx.fillStyle = '#82ffd0';
             ctx.font = '21px system-ui, sans-serif';
-            ctx.fillText(`🕐 ${hi} - ${hf}`, w / 2, 154);
+            ctx.fillText(`🕐 ${evento.hora_inicio.slice(0, 5)} - ${evento.hora_fin.slice(0, 5)}`, w / 2, 154);
 
             ctx.fillStyle = '#ffcc00';
             ctx.font = 'bold 30px system-ui, sans-serif';
@@ -743,28 +502,22 @@
                 : dist < 1000 ? `${Math.round(dist)} m`
                     : `${(dist / 1000).toFixed(1)} km`;
             ctx.fillText(txt, w / 2, 208);
-
-            ctx.fillStyle = 'rgba(255,255,255,0.70)';
-            ctx.font = '16px system-ui, sans-serif';
-            ctx.fillText('Mantén el celular calibrado para mejor precisión', w / 2, 244);
         }
 
+        // ── Indicadores ──
         function crearIndicadores() {
-            // Limpia si se recarga la API.
             indicadores.forEach(mesh => {
                 scene.remove(mesh);
-                if (mesh.geometry) mesh.geometry.dispose();
-                if (mesh.material && mesh.material.map) mesh.material.map.dispose();
-                if (mesh.material) mesh.material.dispose();
+                mesh.geometry?.dispose();
+                mesh.material?.map?.dispose();
+                mesh.material?.dispose();
             });
             indicadores = [];
 
             eventosData.forEach(evento => {
                 if (!esNumero(evento.latitud) || !esNumero(evento.longitud)) return;
-
                 const canvasTex = document.createElement('canvas');
-                canvasTex.width = 512;
-                canvasTex.height = 280;
+                canvasTex.width = 512; canvasTex.height = 280;
                 const ctx = canvasTex.getContext('2d');
                 dibujarCard(ctx, evento, null);
 
@@ -775,22 +528,11 @@
                 const mesh = new THREE.Mesh(
                     new THREE.PlaneGeometry(3.2, 1.75),
                     new THREE.MeshBasicMaterial({
-                        map: texture,
-                        transparent: true,
-                        side: THREE.DoubleSide,
-                        depthWrite: false,
-                        depthTest: true
+                        map: texture, transparent: true,
+                        side: THREE.DoubleSide, depthWrite: false, depthTest: true
                     })
                 );
-
-                mesh.userData = {
-                    evento,
-                    texture,
-                    canvasTex,
-                    ctx,
-                    gpsPositioned: false,
-                    lastTextureUpdate: 0
-                };
+                mesh.userData = { evento, texture, canvasTex, ctx, gpsPositioned: false, lastDist: null };
                 mesh.visible = false;
                 mesh.renderOrder = 10;
                 scene.add(mesh);
@@ -803,10 +545,8 @@
 
         function posicionarTodosLosIndicadores() {
             if (originLat === null || !scene) return;
-
             indicadores.forEach(mesh => {
-                const evento = mesh.userData.evento;
-                const pos = latLngToWorld(evento.latitud, evento.longitud, ALTURA_INDICADOR);
+                const pos = latLngToWorld(mesh.userData.evento.latitud, mesh.userData.evento.longitud, ALTURA_INDICADOR);
                 mesh.position.copy(pos);
                 mesh.userData.gpsPositioned = true;
             });
@@ -814,7 +554,6 @@
 
         function actualizarIndicadores() {
             if (!camera) return;
-
             indicadores.forEach(mesh => {
                 const { evento, texture, ctx } = mesh.userData;
                 const dist = calcularDistancia(evento.latitud, evento.longitud);
@@ -825,104 +564,94 @@
                     mesh.userData.gpsPositioned = true;
                 }
 
-                if (dist === null || !mesh.userData.gpsPositioned) {
+                if (dist === null || !mesh.userData.gpsPositioned) { mesh.visible = false; return; }
+                if (dist > DIST_MAXIMA) { mesh.visible = false; return; }
+
+                if (dist < DIST_LLEGADA) {
                     mesh.visible = false;
+                    mostrarLlegada(evento, dist);
                     return;
                 }
 
-                if (dist > DIST_MAXIMA) {
-                    mesh.visible = false;
-                    return;
-                }
-
-                const umbralLlegada = DIST_LLEGADA_BASE;
-
-                if (dist < umbralLlegada) {
-                    mesh.visible = false;
-                    mostrarLlegada(evento);
-                    return;
+                // Si estaba mostrando llegada y se alejó, limpiarlo
+                if (llegadaEventoId === evento.id && dist > DIST_LLEGADA + 5) {
+                    ocultarLlegada();
                 }
 
                 mesh.visible = true;
-
-                // Billboard real: siempre mira a la cámara, pero su posición NO depende del heading.
                 mesh.lookAt(camera.position);
 
-                // Escala UX: mantiene legibles los letreros lejanos sin moverlos del mundo.
-                const escala = clamp(dist / 22, 1.0, 8.5);
+                // Escala correcta: cerca = grande, lejos = pequeño
+                // dist 20m → escala 3.0, dist 500m → escala 0.5
+                const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
+                const escala = 3.0 - t * 2.5;
                 mesh.scale.setScalar(escala);
 
-                const now = performance.now();
-                if (now - mesh.userData.lastTextureUpdate > 750) {
-                    mesh.userData.lastTextureUpdate = now;
+                // Actualizar textura si la distancia cambió más de 2m
+                const distCambio = mesh.userData.lastDist === null
+                    ? 999
+                    : Math.abs(dist - mesh.userData.lastDist);
+
+                if (distCambio > 2) {
+                    mesh.userData.lastDist = dist;
                     dibujarCard(ctx, evento, dist);
                     texture.needsUpdate = true;
                 }
             });
         }
 
-        function mostrarLlegada(evento) {
-            if (llegadaMostrada[evento.id]) return;
-            llegadaMostrada[evento.id] = true;
+        function mostrarLlegada(evento, dist) {
+            // No mostrar si ya está mostrando para este evento
+            if (llegadaEventoId === evento.id) return;
+            llegadaEventoId = evento.id;
 
+            if (llegadaTimer) clearTimeout(llegadaTimer);
             const div = $('llegada');
             div.innerHTML = `✅ ¡Llegaste!<br><span style="font-size:18px">${evento.titulo}</span>`;
             div.style.display = 'block';
 
-            setTimeout(() => {
-                div.style.display = 'none';
-                delete llegadaMostrada[evento.id];
-            }, 5000);
+            llegadaTimer = setTimeout(() => ocultarLlegada(), 5000);
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // API
-        // ─────────────────────────────────────────────────────────────
+        function ocultarLlegada() {
+            $('llegada').style.display = 'none';
+            llegadaEventoId = null;
+            llegadaTimer = null;
+        }
+
+        // ── API ──
         async function cargarEventos() {
             log('Cargando eventos...');
             const res = await fetch(API_URL, { cache: 'no-store' });
-            if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
-
+            if (!res.ok) throw new Error(`API ${res.status}`);
             const data = await res.json();
-            if (!Array.isArray(data)) throw new Error('La API no devolvió un array');
-
+            if (!Array.isArray(data)) throw new Error('API no devolvió array');
             eventosData = data.map(sanitizarEvento).filter(e => esNumero(e.latitud) && esNumero(e.longitud));
             log(`${eventosData.length} eventos cargados`);
-
-            if (eventosData.length === 0) {
-                setStatus('Sin eventos disponibles');
-            }
+            if (eventosData.length === 0) setStatus('Sin eventos hoy');
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // LOOP
-        // ─────────────────────────────────────────────────────────────
+        // ── Loop ──
         function animar() {
             requestAnimationFrame(animar);
             frameCount++;
-
             actualizarPosicionCamaraGPS();
             actualizarOrientacionCamara();
             actualizarIndicadores();
-
             if (frameCount % 60 === 0) {
                 const acc = gpsAccuracy < 999 ? `±${gpsAccuracy.toFixed(0)}m` : 'sin GPS';
-                setStatus(`GPS ${acc} · heading ${lastHeadingDeg.toFixed(0)}° · ${orientationSource} · ${indicadores.length} eventos`);
+                setStatus(`GPS ${acc} · ${lastHeadingDeg.toFixed(0)}° · ${orientationSource}`);
             }
-
             renderer.render(scene, camera);
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // INIT
-        // ─────────────────────────────────────────────────────────────
+        // ── Init ──
         async function iniciar() {
             const btn = $('btn-iniciar');
             btn.disabled = true;
             btn.textContent = 'Iniciando...';
             setStatus('Solicitando permisos...');
             log('Iniciando AR...');
-
             try {
                 await solicitarPermisosSensores();
                 await iniciarCamara();
@@ -931,29 +660,18 @@
                 await iniciarOrientacion();
                 await cargarEventos();
                 crearIndicadores();
-
                 btn.style.display = 'none';
-                $('acciones').style.display = 'flex';
-                setStatus('Listo. Si el norte queda corrido, calibra apuntando a un evento real.');
-
-                if (!animacionIniciada) {
-                    animacionIniciada = true;
-                    animar();
-                }
-
+                if (!animacionIniciada) { animacionIniciada = true; animar(); }
                 log('Listo ✓');
             } catch (err) {
                 btn.disabled = false;
                 btn.textContent = 'Reintentar';
                 setStatus('Error: ' + err.message);
-                log('ERROR INIT: ' + err.message);
+                log('ERROR: ' + err.message);
             }
         }
 
         $('btn-iniciar').addEventListener('click', iniciar);
-        $('btn-calibrar-evento').addEventListener('click', calibrarConEventoMasCercano);
-        $('btn-calibrar-norte').addEventListener('click', calibrarApuntandoAlNorte);
-        $('btn-reset').addEventListener('click', resetearCalibracion);
     </script>
 </body>
 
