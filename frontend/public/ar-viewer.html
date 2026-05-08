@@ -146,7 +146,7 @@
 
         const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
         const DIST_MAXIMA = 500;
-        const DIST_LLEGADA = 20;
+        const DIST_LLEGADA = 5;
         const ALTURA_CAMARA = 1.60;
         const ALTURA_INDICADOR = 1.70;
         const GPS_MIN_MOVEMENT = 2.5;
@@ -595,14 +595,13 @@
                     mesh.visible = false;
                     mostrarLlegada(evento, dist);
                     return;
+                } else {
+                    if (llegadaEventoId === evento.id) {
+                        ocultarLlegada();
+                    }
+                    mesh.visible = true;
                 }
 
-                // Si estaba mostrando llegada y se alejó, limpiarlo
-                if (llegadaEventoId === evento.id && dist > DIST_LLEGADA + 5) {
-                    ocultarLlegada();
-                }
-
-                mesh.visible = true;
                 mesh.lookAt(camera.position);
 
                 // Escala correcta: cerca = grande, lejos = pequeño
