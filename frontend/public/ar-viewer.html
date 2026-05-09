@@ -570,6 +570,7 @@
                 const pos = latLngToWorld(mesh.userData.evento.latitud, mesh.userData.evento.longitud, ALTURA_INDICADOR);
                 mesh.position.copy(pos);
                 mesh.userData.gpsPositioned = true;
+                log(`Indicador posicionado: x=${pos.x.toFixed(1)} z=${pos.z.toFixed(1)}`);
             });
         }
 
@@ -585,7 +586,8 @@
                     mesh.userData.gpsPositioned = true;
                 }
 
-                if (dist === null || !mesh.userData.gpsPositioned) { mesh.visible = false; return; }
+                if (!mesh.userData.gpsPositioned) { mesh.visible = false; return; }
+                if (dist === null) { mesh.visible = true; mesh.lookAt(camera.position); return; }
                 if (dist > DIST_MAXIMA) { mesh.visible = false; return; }
 
                 if (dist < DIST_LLEGADA) {
