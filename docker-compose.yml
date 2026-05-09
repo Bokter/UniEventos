@@ -20,7 +20,8 @@ services:
       - DB_NAME=unieventos
       - JWT_SECRET=dev_secret_cambiar_en_produccion
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     command: sh -c "npm run build && npm run migration:run && node dist/main.js"
 
   db:
@@ -29,6 +30,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: unieventos
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d unieventos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - "5432:5432"
     volumes:
