@@ -414,13 +414,12 @@
             const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
             if (esIOS && esNumero(compassHeading)) {
-                // iOS: SOLO heading horizontal, pitch fijo en horizonte
+                // iOS: negamos el heading porque webkitCompassHeading es CW y Three.js es CCW
                 const headingRad = degToRad(compassHeading);
 
                 const qHeading = new THREE.Quaternion();
-                qHeading.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -headingRad);
+                qHeading.setFromAxisAngle(new THREE.Vector3(0, 1, 0), headingRad); // sin negación
 
-                // Pitch fijo apuntando al frente — no usar beta
                 const qPitch = new THREE.Quaternion();
                 qPitch.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 
