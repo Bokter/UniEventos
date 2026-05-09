@@ -51,9 +51,9 @@ export function EditUserModal({ isOpen, onClose, user, onSave }: EditUserModalPr
                 <SelectValue placeholder="Seleccionar rol" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="Organizer">Organizer</SelectItem>
-                <SelectItem value="Attendee">Attendee</SelectItem>
+                <SelectItem value="Admin">Administrador</SelectItem>
+                <SelectItem value="Organizer">Organizador</SelectItem>
+                <SelectItem value="Attendee">Miembro</SelectItem>
               </SelectContent>
             </Select>
           </div>

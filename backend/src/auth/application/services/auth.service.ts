@@ -16,10 +16,7 @@ export class AuthService {
   ) { }
 
   private readonly ADMIN_EMAILS = [
-    'jbolivarj@uninorte.edu.co',
     'fatimac@uninorte.edu.co',
-    'cvelias@uninorte.edu.co',
-    'cherj@uninorte.edu.co',
     'rojasdelahoz@uninorte.edu.co',
   ];
 
