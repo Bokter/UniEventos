@@ -377,6 +377,7 @@
             orientationAvailable = true;
             orientationSource = isAbsolute ? 'absolute' : 'relative';
             if (hasIOSCompass) {
+                if (compassHeading === null) log(`Primer compass iOS: ${e.webkitCompassHeading.toFixed(1)}°`);
                 compassHeading = wrap360(e.webkitCompassHeading);
                 orientationSource = 'iOS compass';
             }
