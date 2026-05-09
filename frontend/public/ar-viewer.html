@@ -377,8 +377,14 @@
             orientationAvailable = true;
             orientationSource = isAbsolute ? 'absolute' : 'relative';
             if (hasIOSCompass) {
-                if (compassHeading === null) log(`Primer compass iOS: ${e.webkitCompassHeading.toFixed(1)}°`);
-                compassHeading = wrap360(e.webkitCompassHeading);
+                if (compassHeading === null) {
+                    log(`Primer compass iOS: ${e.webkitCompassHeading.toFixed(1)}°`);
+                    compassHeading = wrap360(e.webkitCompassHeading);
+                    // Forzar reposicionamiento cuando llega el primer heading
+                    posicionarTodosLosIndicadores();
+                } else {
+                    compassHeading = wrap360(e.webkitCompassHeading);
+                }
                 orientationSource = 'iOS compass';
             }
         }
@@ -588,7 +594,14 @@
                 }
 
                 if (!mesh.userData.gpsPositioned) { mesh.visible = false; return; }
-                if (dist === null) { mesh.visible = true; mesh.lookAt(camera.position); return; }
+                if (dist === null) {
+                    // GPS aún no listo — mostrar indicador al frente
+                    mesh.visible = true;
+                    mesh.lookAt(camera.position);
+                    const t = 0.5; // escala media mientras espera GPS
+                    mesh.scale.setScalar(5.0 - t * 4.0);
+                    return;
+                }
                 if (dist > DIST_MAXIMA) { mesh.visible = false; return; }
 
                 if (dist < DIST_LLEGADA) {
