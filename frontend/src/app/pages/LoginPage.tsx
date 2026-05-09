@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
-import { type Rol } from "../services/auth.service";
+import { type Rol, resendCode } from "../services/auth.service";
 
 // Redirige al usuario según su rol
 function redirigirPorRol(rol: Rol, navigate: ReturnType<typeof useNavigate>) {
@@ -125,6 +125,16 @@ export function LoginPage() {
     }
   };
 
+  const handleResendCode = async () => {
+    try {
+      toast.info("Solicitando nuevo código...");
+      await resendCode(emailToVerify);
+      toast.success("Se ha enviado un nuevo código a tu correo.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al reenviar código");
+    }
+  };
+
   if (showVerify) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -153,13 +163,23 @@ export function LoginPage() {
                 <Button type="submit" className="w-full bg-primary" disabled={isLoading}>
                   {isLoading ? "Verificando..." : "Verificar correo"}
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full" 
-                  onClick={() => setShowVerify(false)}
-                >
-                  Volver al inicio de sesión
-                </Button>
+                <div className="flex flex-col space-y-2 mt-4">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleResendCode}
+                  >
+                    Reenviar código
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full" 
+                    onClick={() => setShowVerify(false)}
+                  >
+                    Volver al inicio de sesión
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>

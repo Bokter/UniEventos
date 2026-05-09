@@ -95,6 +95,8 @@ export class AuthService {
   }
 
   async verifyEmail(email: string, code: string) {
+    console.log('--- verifyEmail SERVICE ---');
+    console.log(`Enviando a Roble -> email: "${email}", code: "${code}"`);
     // Verificar el código en Roble
     const robleRes = await fetch(`${ROBLE_BASE}/verify-email`, {
       method: 'POST',
@@ -103,10 +105,26 @@ export class AuthService {
     });
 
     if (!robleRes.ok) {
+      const errorData = await robleRes.json().catch(() => ({}));
+      console.error('Error de Verificación en Roble:', robleRes.status, errorData);
       throw new UnauthorizedException('Código de verificación inválido o expirado');
     }
 
     return { mensaje: 'Correo verificado exitosamente. Ya puedes iniciar sesión.' };
+  }
+
+  async resendCode(email: string) {
+    const robleRes = await fetch(`${ROBLE_BASE}/resend-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!robleRes.ok) {
+      throw new UnauthorizedException('No se pudo reenviar el código. Intenta de nuevo.');
+    }
+
+    return { mensaje: 'Se ha reenviado un nuevo código de verificación al correo.' };
   }
 
   async loginUninorte(email: string, password: string) {
