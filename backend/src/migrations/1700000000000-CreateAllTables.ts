@@ -64,7 +64,6 @@ export class CreateAllTables1700000000000 implements MigrationInterface {
         "hora_fin"         time NOT NULL,
         "estado"           "public"."eventos_estado_enum" NOT NULL DEFAULT 'borrador',
         "observacion_admin" text,
-        "imagen_url"       character varying,
         "created_at"       TIMESTAMP NOT NULL DEFAULT now(),
         "updated_at"       TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "FK_eventos_organizador" FOREIGN KEY ("organizador_id") REFERENCES "usuarios"("id") ON DELETE SET NULL,
