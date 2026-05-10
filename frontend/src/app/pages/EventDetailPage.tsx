@@ -107,8 +107,12 @@ export function EventDetailPage() {
     return d;
   };
 
-  const fechaInicio = parseSafeDate(event.fecha || event.dateStart);
-  const fechaFin = parseSafeDate(event.fecha || event.dateEnd);
+  const fechaBase = event.fecha || event.dateStart;
+  const horaInicioStr = event.hora_inicio || '00:00:00';
+  const horaFinStr = event.hora_fin || '00:00:00';
+
+  const fechaInicio = parseSafeDate(event.fecha ? `${event.fecha}T${horaInicioStr}` : (event.dateStart || new Date()));
+  const fechaFin = parseSafeDate(event.fecha ? `${event.fecha}T${horaFinStr}` : (event.dateEnd || new Date()));
   const lugarNombre = event.lugar?.nombre || event.location?.name;
   const lat = event.lugar?.lat || event.location?.lat;
   const lng = event.lugar?.lng || event.location?.lng;
