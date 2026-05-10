@@ -43,6 +43,9 @@ export class EventoOrmEntity {
   @Column({ type: 'text', nullable: true })
   observacion_admin: string | null;
 
+  @Column({ name: 'imagen_url', type: 'varchar', nullable: true })
+  imagen_portada: string | null;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 

@@ -61,14 +61,16 @@ export function HomePage() {
     const coincideCategoria = categoriaSeleccionada === "todas" || nombreCategoria === categoriaSeleccionada;
 
     // 3. Filtro por fecha
-    // El backend devuelve 'fecha_inicio'
-    const fechaInicioStr = evento.fecha_inicio || evento.dateStart;
+    // El backend devuelve 'fecha'
+    const fechaInicioStr = evento.fecha || evento.fecha_inicio || evento.dateStart;
     if (!fechaInicioStr) return coincideBusqueda && coincideCategoria;
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    const fechaEvento = new Date(fechaInicioStr);
+    // Ajustar si viene como YYYY-MM-DD puro para evitar desfase de timezone
+    const fechaParaParsear = fechaInicioStr.includes('T') ? fechaInicioStr : `${fechaInicioStr}T12:00:00`;
+    const fechaEvento = new Date(fechaParaParsear);
     fechaEvento.setHours(0, 0, 0, 0);
 
     let coincideFecha = true;

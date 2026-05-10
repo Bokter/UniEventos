@@ -12,6 +12,7 @@ export class EventoMapper {
     evento.hora_fin = orm.hora_fin;
     evento.estado = orm.estado;
     evento.observacion_admin = orm.observacion_admin;
+    evento.imagen_portada = orm.imagen_portada;
     evento.created_at = orm.created_at;
     evento.updated_at = orm.updated_at;
 
@@ -53,6 +54,7 @@ export class EventoMapper {
     if (domain.hora_fin !== undefined) orm.hora_fin = domain.hora_fin;
     if (domain.estado !== undefined) orm.estado = domain.estado;
     if (domain.observacion_admin !== undefined) orm.observacion_admin = domain.observacion_admin;
+    if (domain.imagen_portada !== undefined) orm.imagen_portada = domain.imagen_portada;
 
     if (domain.organizador_id) orm.organizador = { id: domain.organizador_id };
     if (domain.categoria_id) orm.categoria = { id: domain.categoria_id };

@@ -10,6 +10,7 @@ export class Evento {
   hora_fin: string;
   estado: EstadoEvento;
   observacion_admin: string | null;
+  imagen_portada?: string | null;
   created_at: Date;
   updated_at: Date;
 
