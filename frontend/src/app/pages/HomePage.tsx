@@ -7,7 +7,7 @@ import { Navbar } from "../components/Navbar";
 import { EventCard } from "../components/EventCard";
 import { Button } from "../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { eventosApi } from "../services/api.service";
+import { eventosApi, categoriasApi } from "../services/api.service";
 import { toast } from "sonner";
 
 export function HomePage() {
@@ -19,6 +19,7 @@ export function HomePage() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>("todas");
   const [filtroFecha, setFiltroFecha] = useState<string>("todas");
   const [eventos, setEventos] = useState<any[]>([]);
+  const [categoriasLista, setCategoriasLista] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Obtención de eventos desde el backend
@@ -26,8 +27,12 @@ export function HomePage() {
     const fetchEventos = async () => {
       setIsLoading(true);
       try {
-        const data = await eventosApi.getAll();
-        setEventos(data as any[]);
+        const [eventosData, categoriasData] = await Promise.all([
+          eventosApi.getAll(),
+          categoriasApi.getAll()
+        ]);
+        setEventos(eventosData as any[]);
+        setCategoriasLista(categoriasData as any[]);
       } catch (error) {
         console.error("Error fetching events:", error);
         toast.error("Error al cargar los eventos");
@@ -44,15 +49,16 @@ export function HomePage() {
     // El backend devuelve 'titulo' y 'descripcion'
     const titulo = evento.titulo || evento.title || "";
     const descripcion = evento.descripcion || evento.description || "";
-    
+
     const coincideBusqueda = busqueda === "" ||
       titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
       descripcion.toLowerCase().includes(busqueda.toLowerCase());
 
     // 2. Filtro por categoría
-    // El backend devuelve 'categoria'
-    const categoria = evento.categoria || evento.category || "";
-    const coincideCategoria = categoriaSeleccionada === "todas" || categoria === categoriaSeleccionada;
+    // El backend devuelve 'categoria' como objeto {id, nombre, ...}
+    const categoriaRaw = evento.categoria || evento.category || "";
+    const nombreCategoria = typeof categoriaRaw === 'object' && categoriaRaw !== null ? categoriaRaw.nombre : categoriaRaw;
+    const coincideCategoria = categoriaSeleccionada === "todas" || nombreCategoria === categoriaSeleccionada;
 
     // 3. Filtro por fecha
     // El backend devuelve 'fecha_inicio'
@@ -124,10 +130,9 @@ export function HomePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas las categorías</SelectItem>
-                <SelectItem value="Cultural">Cultural</SelectItem>
-                <SelectItem value="Academic">Académico</SelectItem>
-                <SelectItem value="Sports">Deportes</SelectItem>
-                <SelectItem value="Workshop">Talleres</SelectItem>
+                {categoriasLista.map(cat => (
+                  <SelectItem key={cat.id} value={cat.nombre}>{cat.nombre}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
