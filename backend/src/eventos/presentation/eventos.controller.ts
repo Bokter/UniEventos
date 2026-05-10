@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Patch, Param, Query, Req, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Patch, Delete, Param, Query, Req, ParseIntPipe, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiProperty, ApiBearerAuth } from '@nestjs/swagger';
 import { EventosService } from '../application/services/eventos.service';
 import { CreateEventoDto } from '../application/dto/create-evento.dto';
@@ -7,17 +7,6 @@ import { EventoArDto } from '../application/dto/evento-ar.dto';
 import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/infrastructure/guards/roles.guard';
 import { Roles } from '../../auth/infrastructure/decorators/roles.decorator';
-
-
-class CreateEventoSwaggerDto {
-  @ApiProperty({ example: 'Feria de ciencias' }) titulo: string;
-  @ApiProperty({ example: 'Exposición de proyectos' }) descripcion: string;
-  @ApiProperty({ example: '2025-04-29' }) fecha: string;
-  @ApiProperty({ example: '09:00' }) hora_inicio: string;
-  @ApiProperty({ example: '18:00' }) hora_fin: string;
-  @ApiProperty({ example: 1 }) categoria_id: number;
-  @ApiProperty({ example: 1 }) lugar_id: number;
-}
 
 @ApiTags('eventos')
 @Controller('eventos')
@@ -65,7 +54,7 @@ export class EventosController {
   @Roles('organizador', 'admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear evento (organizador)' })
-  create(@Body() createEventoDto: CreateEventoSwaggerDto, @Req() req: any) {
+  create(@Body() createEventoDto: CreateEventoDto, @Req() req: any) {
     return this.eventosService.create(createEventoDto, req.user.id);
   }
 
@@ -113,5 +102,15 @@ export class EventosController {
   @ApiBody({ schema: { properties: { observacion: { type: 'string' } } } })
   rechazar(@Param('id', ParseIntPipe) id: number, @Body('observacion') observacion: string) {
     return this.eventosService.rechazar(id, observacion);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('organizador')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Eliminar evento en borrador o cancelado (organizador)' })
+  eliminar(@Param('id', ParseIntPipe) id: number) {
+    return this.eventosService.eliminar(id);
   }
 }

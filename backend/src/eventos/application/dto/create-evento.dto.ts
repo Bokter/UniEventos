@@ -1,4 +1,10 @@
-import { IsDateString, IsNumber, IsString, Matches } from 'class-validator';
+import { IsDateString, IsNumber, IsOptional, IsString, Matches, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class CoorganizadorDto {
+  @IsNumber()
+  id: number;
+}
 
 export class CreateEventoDto {
   @IsString()
@@ -23,4 +29,14 @@ export class CreateEventoDto {
 
   @IsNumber()
   lugar_id: number;
+
+  @IsString()
+  @IsOptional()
+  imagen_portada?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CoorganizadorDto)
+  coorganizadores?: CoorganizadorDto[];
 }

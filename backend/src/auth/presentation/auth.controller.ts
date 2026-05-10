@@ -32,10 +32,16 @@ export class AuthController {
 
   @Post('verify-email')
   @ApiOperation({ summary: 'Verificar código enviado al correo Uninorte' })
-  // @ts-ignore - Bypass strict DTO check to avoid ValidationPipe stripping properties
-  verifyEmail(@Body() body: any) {
-    const { email, code } = body;
-    return this.authService.verifyEmail(email, code);
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    console.log('--- verifyEmail CONTROLLER ---');
+    console.log('Payload recibido:', dto);
+    return this.authService.verifyEmail(dto.email, dto.code);
+  }
+
+  @Post('resend-code')
+  @ApiOperation({ summary: 'Reenviar código de verificación al correo Uninorte' })
+  resendCode(@Body('email') email: string) {
+    return this.authService.resendCode(email);
   }
 
   @Post('login-uninorte')

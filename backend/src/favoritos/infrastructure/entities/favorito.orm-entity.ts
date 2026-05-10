@@ -13,7 +13,7 @@ export class FavoritoOrmEntity {
   @JoinColumn({ name: 'usuario_id' })
   usuario: UsuarioOrmEntity;
 
-  @ManyToOne(() => EventoOrmEntity)
+  @ManyToOne(() => EventoOrmEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'evento_id' })
   evento: EventoOrmEntity;
 

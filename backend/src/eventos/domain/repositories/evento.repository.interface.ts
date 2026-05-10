@@ -9,6 +9,8 @@ export interface IEventoRepository {
   findEventosHoyConCoordenadas(): Promise<Evento[]>;
   create(evento: Partial<Evento>): Promise<Evento>;
   save(evento: Evento): Promise<Evento>;
+  delete(id: number): Promise<void>;
+  marcarTerminados(): Promise<void>;
 }
 
 // Token de inyección de dependencias para NestJS

@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
-import { type Rol } from "../services/auth.service";
+import { type Rol, resendCode } from "../services/auth.service";
 
 // Redirige al usuario según su rol
 function redirigirPorRol(rol: Rol, navigate: ReturnType<typeof useNavigate>) {
@@ -69,10 +69,9 @@ export function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!registerEmail.endsWith("@uninorte.edu.co")) {
-      toast.error("Debes usar tu correo institucional (@uninorte.edu.co)");
-      return;
-    }
+    // El sistema ahora permite cualquier correo electrónico. 
+    // Los correos @uninorte.edu.co se registrarán como organizadores vía Roble,
+    // otros dominios se registrarán como miembros visitantes.
 
     if (registerPassword !== registerConfirmPassword) {
       toast.error("Las contraseñas no coinciden");
@@ -125,6 +124,16 @@ export function LoginPage() {
     }
   };
 
+  const handleResendCode = async () => {
+    try {
+      toast.info("Solicitando nuevo código...");
+      await resendCode(emailToVerify);
+      toast.success("Se ha enviado un nuevo código a tu correo.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error al reenviar código");
+    }
+  };
+
   if (showVerify) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -153,13 +162,23 @@ export function LoginPage() {
                 <Button type="submit" className="w-full bg-primary" disabled={isLoading}>
                   {isLoading ? "Verificando..." : "Verificar correo"}
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full" 
-                  onClick={() => setShowVerify(false)}
-                >
-                  Volver al inicio de sesión
-                </Button>
+                <div className="flex flex-col space-y-2 mt-4">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleResendCode}
+                  >
+                    Reenviar código
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full" 
+                    onClick={() => setShowVerify(false)}
+                  >
+                    Volver al inicio de sesión
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
@@ -186,7 +205,7 @@ export function LoginPage() {
           <CardHeader>
             <CardTitle>Accede a tu cuenta</CardTitle>
             <CardDescription>
-              Usa tu correo institucional Uninorte para acceder
+              Inicia sesión con tu cuenta para acceder a UniEventos
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -199,11 +218,11 @@ export function LoginPage() {
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Correo institucional</Label>
+                    <Label htmlFor="signin-email">Correo electrónico</Label>
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="tu.nombre@uninorte.edu.co"
+                      placeholder="ejemplo@correo.com"
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
                       required
@@ -263,18 +282,18 @@ export function LoginPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-email">Correo institucional</Label>
+                    <Label htmlFor="register-email">Correo electrónico</Label>
                     <Input
                       id="register-email"
                       type="email"
-                      placeholder="tu.nombre@uninorte.edu.co"
+                      placeholder="ejemplo@correo.com"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
                       required
                       className="bg-white"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Debe terminar en @uninorte.edu.co
+                      Usa tu correo institucional si eres organizador
                     </p>
                   </div>
                   <div className="space-y-2">

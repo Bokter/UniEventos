@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
-import { Calendar, Bell, User, Pencil, X, Video } from "lucide-react";
+import { Calendar, Bell, User, Pencil, X, Video, Heart, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
 import { StatusBadge } from "../components/StatusBadge";
 import { CategoryBadge } from "../components/CategoryBadge";
+import { EventCard } from "../components/EventCard";
 import { Button } from "../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
@@ -12,7 +13,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
 import { useAuth } from "../../context/AuthContext";
-import { eventosApi } from "../services/api.service";
+import { eventosApi, favoritosApi } from "../services/api.service";
 import { toast } from "sonner";
 
 // Tipo local para eventos que llegan del backend
@@ -20,11 +21,12 @@ interface EventoBackend {
   id: number;
   titulo: string;
   descripcion: string;
-  categoria: string;
-  fecha_inicio: string;
-  fecha_fin: string;
+  categoria: { id: number; nombre: string } | string;
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string;
   estado: string;
-  observacion?: string;
+  observacion_admin?: string;
   streams?: { organizerId: string; streamLink: string }[];
   [key: string]: unknown;
 }
@@ -37,17 +39,17 @@ export function OrganizerDashboardPage() {
   const [streamDialogOpen, setStreamDialogOpen] = useState(false);
   const [selectedEventForStream, setSelectedEventForStream] = useState<EventoBackend | null>(null);
   const [streamLink, setStreamLink] = useState("");
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
 
   const { usuario, isLoading, logout } = useAuth();
 
-  if (isLoading) return null;
-  if (!usuario || usuario.rol !== 'organizador') {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Carga de eventos desde el backend
+  // Carga de eventos desde el backend (siempre arriba de los returns)
   useEffect(() => {
     const fetchOrganizerEvents = async () => {
+      // Solo hacer el fetch si hay un usuario logueado con rol correcto
+      if (!usuario || usuario.rol !== 'organizador') return;
+      
       setIsLoadingEvents(true);
       try {
         const data = await eventosApi.getMisEventos() as EventoBackend[];
@@ -59,7 +61,31 @@ export function OrganizerDashboardPage() {
       }
     };
     fetchOrganizerEvents();
-  }, []);
+  }, [usuario]);
+
+  // Carga de favoritos (solo cuando se abre la pestaña)
+  useEffect(() => {
+    if (usuario && activeTab === 'favorites') {
+      const fetchFavorites = async () => {
+        setIsLoadingFavorites(true);
+        try {
+          const data = await favoritosApi.getAll();
+          setFavorites(data as any[]);
+        } catch (error) {
+          console.error("Error al cargar favoritos", error);
+          toast.error("No se pudieron cargar tus favoritos");
+        } finally {
+          setIsLoadingFavorites(false);
+        }
+      };
+      fetchFavorites();
+    }
+  }, [usuario, activeTab]);
+
+  if (isLoading) return null;
+  if (!usuario || usuario.rol !== 'organizador') {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleEdit = (eventId: number) => {
     navigate(`/organizer/publish?edit=${eventId}`);
@@ -73,10 +99,23 @@ export function OrganizerDashboardPage() {
       await eventosApi.cancelar(eventId);
       toast.success("Evento cancelado exitosamente");
       setOrganizerEvents(prev =>
-        prev.map(e => e.id === eventId ? { ...e, estado: 'Cancelled' } : e)
+        prev.map(e => e.id === eventId ? { ...e, estado: 'cancelado' } : e)
       );
     } catch (error: unknown) {
       toast.error((error as Error).message || "No se pudo cancelar el evento");
+    }
+  };
+
+  const handleEliminar = async (eventId: number) => {
+    if (!confirm("¿Estás seguro de que quieres eliminar este evento permanentemente? Esta acción no se puede deshacer.")) {
+      return;
+    }
+    try {
+      await eventosApi.eliminar(eventId);
+      toast.success("Evento eliminado");
+      setOrganizerEvents(prev => prev.filter(e => e.id !== eventId));
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "No se pudo eliminar el evento");
     }
   };
 
@@ -170,15 +209,15 @@ export function OrganizerDashboardPage() {
                             <CategoryBadge category={event.categoria as any} />
                           </TableCell>
                           <TableCell>
-                            {event.fecha_inicio ? format(new Date(event.fecha_inicio), 'dd/MM/yyyy') : '—'}
+                            {event.fecha ? format(new Date(event.fecha), 'dd/MM/yyyy') : '—'}
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={event.estado as any} />
                             {/* Mostrar observación del admin si fue rechazado */}
-                            {(event.estado === 'Rejected' || event.estado === 'rechazado') && event.observacion && (
+                            {(event.estado === 'Rejected' || event.estado === 'rechazado') && event.observacion_admin && (
                               <div className="mt-1 text-xs text-destructive bg-red-50 border border-red-200 rounded p-2 max-w-md break-words whitespace-normal">
                                 <span style={{ fontWeight: 600 }}>Observación del admin: </span>
-                                {event.observacion}
+                                {event.observacion_admin}
                               </div>
                             )}
                           </TableCell>
@@ -228,6 +267,18 @@ export function OrganizerDashboardPage() {
                               >
                                 <X className="h-4 w-4" />
                               </Button>
+                              {/* Eliminar: solo disponible en borrador o cancelado */}
+                              {(event.estado === 'borrador' || event.estado === 'cancelado') && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleEliminar(event.id)}
+                                  className="text-destructive hover:text-destructive hover:bg-red-50"
+                                  title="Eliminar evento permanentemente"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -243,6 +294,41 @@ export function OrganizerDashboardPage() {
                   </h3>
                   <p className="text-muted-foreground mb-6">
                     ¡Publica tu primer evento para empezar!
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'favorites' && (
+            <>
+              <div className="mb-6">
+                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Mis Eventos Favoritos</h1>
+                <p className="text-muted-foreground">
+                  Aquí encontrarás los eventos que has guardado
+                </p>
+              </div>
+
+              {isLoadingFavorites ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-xl" />
+                  ))}
+                </div>
+              ) : favorites.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {favorites.map((event) => (
+                    <EventCard key={event.id} event={event} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                  <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg mb-2" style={{ fontWeight: 600 }}>
+                    Aún no tienes favoritos
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Explora eventos y guárdalos para verlos aquí
                   </p>
                 </div>
               )}
@@ -300,7 +386,7 @@ export function OrganizerDashboardPage() {
           <DialogHeader>
             <DialogTitle>Enlace de Transmisión (Stream)</DialogTitle>
             <DialogDescription>
-              Añade el enlace de Mux (Playback ID o Stream URL) para la transmisión en vivo del evento "{selectedEventForStream?.titulo}".
+              Añade el enlace de YouTube, Twitch u otra plataforma para la transmisión en vivo del evento "{selectedEventForStream?.titulo}".
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

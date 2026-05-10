@@ -12,35 +12,39 @@ export class TransmisionTypeormRepository implements ITransmisionRepository {
   ) {}
 
   async findByEventoId(eventoId: number) {
-    return this.repo.findOne({
+    return this.repo.find({
       where: { evento: { id: eventoId } },
+      relations: ['organizador'],
     });
   }
 
-  async create(eventoId: number, data: { stream_id: string; stream_key: string; playback_id: string }) {
-    const transmision = this.repo.create({
-      evento: { id: eventoId } as any,
-      stream_id: data.stream_id,
-      stream_key: data.stream_key,
-      playback_id: data.playback_id,
+  async upsert(eventoId: number, organizadorId: number, url: string) {
+    let transmision = await this.repo.findOne({
+      where: { 
+        evento: { id: eventoId },
+        organizador: { id: organizadorId }
+      },
     });
+
+    if (!transmision) {
+      transmision = this.repo.create({
+        evento: { id: eventoId } as any,
+        organizador: { id: organizadorId } as any,
+      });
+    }
+
+    transmision.stream_url = url;
     return this.repo.save(transmision);
   }
 
-  async update(eventoId: number, data: { stream_id: string; stream_key: string; playback_id: string }) {
-    const transmision = await this.findByEventoId(eventoId);
-    if (transmision) {
-      transmision.stream_id = data.stream_id;
-      transmision.stream_key = data.stream_key;
-      transmision.playback_id = data.playback_id;
-      return this.repo.save(transmision);
-    }
-    // Si no existe, crear una nueva
-    return this.create(eventoId, data);
-  }
-
-  async remove(eventoId: number) {
-    const transmision = await this.findByEventoId(eventoId);
+  async remove(eventoId: number, organizadorId: number) {
+    const transmision = await this.repo.findOne({
+      where: { 
+        evento: { id: eventoId },
+        organizador: { id: organizadorId }
+      },
+    });
+    
     if (transmision) {
       await this.repo.remove(transmision);
     }

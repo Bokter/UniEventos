@@ -18,10 +18,12 @@ export class EventosService {
   ) {}
 
   async findAll(categoria?: number, fecha?: string) {
+    await this.eventoRepository.marcarTerminados();
     return this.eventoRepository.findAllAprobados(categoria, fecha);
   }
 
   async findOne(id: number) {
+    await this.eventoRepository.marcarTerminados();
     const evento = await this.eventoRepository.findById(id);
     if (!evento) {
       throw new NotFoundException(`Evento con ID ${id} no encontrado`);
@@ -34,6 +36,7 @@ export class EventosService {
   }
 
   async findMisEventos(organizadorId: number) {
+    await this.eventoRepository.marcarTerminados();
     return this.eventoRepository.findByOrganizadorId(organizadorId);
   }
 
@@ -122,7 +125,16 @@ export class EventosService {
     return guardado;
   }
 
+  async eliminar(id: number) {
+    const evento = await this.findOne(id);
+    if (evento.estado !== EstadoEvento.BORRADOR && evento.estado !== EstadoEvento.CANCELADO) {
+      throw new BadRequestException('Solo se pueden eliminar eventos en borrador o cancelados');
+    }
+    await this.eventoRepository.delete(id);
+  }
+
   async findEventosAR(): Promise<EventoArDto[]> {
+    await this.eventoRepository.marcarTerminados();
     const eventos = await this.eventoRepository.findEventosHoyConCoordenadas();
     return eventos.map((e) => ({
       id: e.id,

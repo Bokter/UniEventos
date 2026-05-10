@@ -40,14 +40,28 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
     if (!mapContainerRef.current || mapRef.current) return;
 
     try {
-      const map = L.map(mapContainerRef.current).setView([10.9878, -74.8109], 15);
+      // Coordenadas de la Universidad del Norte: 11.019, -74.851
+      const map = L.map(mapContainerRef.current).setView([11.019, -74.851], 16);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
 
       map.on('click', (e: L.LeafletMouseEvent) => {
-        setLocationCoords([e.latlng.lat, e.latlng.lng]);
+        const { lat, lng } = e.latlng;
+        
+        // Límites aproximados del campus de Uninorte
+        // (Ajustar si es necesario, estos valores cubren el campus principal)
+        const isInsideCampus = 
+          lat >= 11.0140 && lat <= 11.0240 &&
+          lng >= -74.8550 && lng <= -74.8460;
+
+        if (!isInsideCampus) {
+          toast.error("La ubicación del evento debe estar dentro del campus de la Universidad del Norte.");
+          return;
+        }
+
+        setLocationCoords([lat, lng]);
       });
 
       mapRef.current = map;
@@ -87,12 +101,13 @@ export function PublishEventPage() {
   const [categoryId, setCategoryId] = useState<string>("");
   const [dateStart, setDateStart] = useState("");
   const [timeStart, setTimeStart] = useState("");
-  const [dateEnd, setDateEnd] = useState("");
   const [timeEnd, setTimeEnd] = useState("");
   const [coverImage, setCoverImage] = useState("");
   const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
   const [selectedCoOrganizers, setSelectedCoOrganizers] = useState<any[]>([]);
+  const [streamUrl, setStreamUrl] = useState("");
+
   
   const [categories, setCategories] = useState<any[]>([]);
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
@@ -104,7 +119,7 @@ export function PublishEventPage() {
     categoriasApi.getAll().then(data => setCategories(data as any[]));
     usuariosApi.getAll().then(data => {
       const users = data as any[];
-      setAvailableUsers(users.filter(u => u.rol === 'organizador' || u.rol === 'admin'));
+      setAvailableUsers(users.filter(u => u.rol === 'organizador'));
     });
   }, []);
 
@@ -122,16 +137,13 @@ export function PublishEventPage() {
           if (cat) setCategoryId(String(cat.id));
         }
 
-        if (event.fecha_inicio) {
-          const date = new Date(event.fecha_inicio);
-          setDateStart(format(date, 'yyyy-MM-dd'));
-          setTimeStart(event.hora_inicio || format(date, 'HH:mm'));
-        }
-        if (event.fecha_fin || event.hora_fin) {
-          // Note: Backend might have fecha + hora_fin or fecha_fin
-          const date = event.fecha_fin ? new Date(event.fecha_fin) : new Date(event.fecha_inicio);
-          setDateEnd(format(date, 'yyyy-MM-dd'));
-          setTimeEnd(event.hora_fin || format(date, 'HH:mm'));
+        // El backend envía 'fecha', no 'fecha_inicio'
+        if (event.fecha) {
+          // Extraemos solo la parte YYYY-MM-DD para evitar errores de timezone
+          const dateOnly = event.fecha.split('T')[0];
+          setDateStart(dateOnly);
+          setTimeStart(event.hora_inicio || "");
+          setTimeEnd(event.hora_fin || "");
         }
 
         if (event.lugar) {
@@ -141,6 +153,8 @@ export function PublishEventPage() {
           }
         }
         setCoverImage(event.imagen_portada || "");
+        setStreamUrl(event.stream_url || "");
+
         
         if (event.organizadores) {
           setSelectedCoOrganizers(event.organizadores.filter((o: any) => String(o.id) !== String(usuario?.id)));
@@ -156,7 +170,7 @@ export function PublishEventPage() {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!title || !description || !categoryId || !dateStart || !timeStart || !dateEnd || !timeEnd) {
+      if (!title || !description || !categoryId || !dateStart || !timeStart || !timeEnd) {
         toast.error("Por favor, rellene todos los campos obligatorios.");
         return;
       }
@@ -185,16 +199,21 @@ export function PublishEventPage() {
       })) as any;
 
       // 2. Prepare event data
+      // Garantizar formato HH:MM de 2 dígitos para cumplir el regex del backend
+      const padTime = (t: string) => t.split(':').map(p => p.padStart(2, '0')).join(':');
+
       const eventData = {
         titulo: title,
         descripcion: description,
         categoria_id: Number(categoryId),
-        fecha: dateStart, // Backend expects 'fecha' for CreateEventoDto
-        hora_inicio: timeStart,
-        hora_fin: timeEnd,
+        fecha: dateStart,
+        hora_inicio: padTime(timeStart),
+        hora_fin: padTime(timeEnd),
         lugar_id: place.id,
-        imagen_portada: coverImage
+        imagen_portada: coverImage,
+        coorganizadores: selectedCoOrganizers.map(o => ({ id: o.id }))
       };
+
 
       let eventResponse: any;
       if (editId) {
@@ -311,12 +330,24 @@ export function PublishEventPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="stream-url">Enlace de transmisión (Opcional)</Label>
+                <Input 
+                  id="stream-url" 
+                  value={streamUrl} 
+                  onChange={(e) => setStreamUrl(e.target.value)} 
+                  placeholder="e.g. https://www.youtube.com/watch?v=... o https://twitch.tv/..." 
+                  className="mt-2" 
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Soporta enlaces de YouTube y Twitch.
+                </p>
+              </div>
+
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div><Label htmlFor="date-start">Fecha *</Label><Input id="date-start" type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-2" required /></div>
                 <div><Label htmlFor="time-start">Hora de inicio *</Label><Input id="time-start" type="time" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className="mt-2" required /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label htmlFor="date-end">Fecha fin</Label><Input id="date-end" type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className="mt-2" /></div>
                 <div><Label htmlFor="time-end">Hora de finalización *</Label><Input id="time-end" type="time" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className="mt-2" required /></div>
               </div>
 

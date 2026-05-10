@@ -15,13 +15,13 @@ export interface UsuarioAuth {
 }
 
 export interface RespuestaAuth {
-  token: string;
+  access_token: string;
   usuario: UsuarioAuth;
 }
 
 // ── Helpers de localStorage ──────────────────────────────────
 export const guardarSesion = (data: RespuestaAuth) => {
-  localStorage.setItem('token', data.token);
+  localStorage.setItem('token', data.access_token);
   localStorage.setItem('usuario', JSON.stringify(data.usuario));
 };
 
@@ -111,6 +111,22 @@ export const verifyEmail = async (email: string, code: string): Promise<{ mensaj
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as any).message || 'Código de verificación inválido');
+  }
+
+  return res.json();
+};
+
+// ── Resend Code ──────────────────────────────────────────────
+export const resendCode = async (email: string): Promise<{ mensaje: string }> => {
+  const res = await fetch(`${BASE_URL}/auth/resend-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).message || 'No se pudo reenviar el código');
   }
 
   return res.json();

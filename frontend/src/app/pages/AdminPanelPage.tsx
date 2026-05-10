@@ -21,12 +21,13 @@ import { toast } from "sonner";
 interface EventoBackend {
   id: number;
   titulo: string;
-  categoria: string;
-  fecha_inicio: string;
+  categoria: { id: number; nombre: string } | string;
+  fecha: string;
   estado: string;
   observacion?: string;
-  fecha_envio?: string;
-  organizadores?: { nombre_completo: string }[];
+  created_at?: string;
+  organizador?: { id: number; nombre_completo: string; email: string };
+  coorganizadores?: { id: number; nombre_completo: string; email: string }[];
   [key: string]: unknown;
 }
 
@@ -68,13 +69,10 @@ export function AdminPanelPage() {
 
   const { usuario, isLoading, logout } = useAuth();
 
-  if (isLoading) return null;
-  if (!usuario || usuario.rol !== 'admin') {
-    return <Navigate to="/login" replace />;
-  }
-
   // Carga de datos al montar o cambiar de tab
   useEffect(() => {
+    if (!usuario || usuario.rol !== 'admin') return;
+    
     if (activeTab === 'pending') {
       eventosApi.getPendientes()
         .then(data => setPendingEvents(data as EventoBackend[]))
@@ -95,7 +93,12 @@ export function AdminPanelPage() {
         .then(data => setCategorias(data as CategoriaBackend[]))
         .catch(() => toast.error("Error al cargar las categorías"));
     }
-  }, [activeTab]);
+  }, [activeTab, usuario]);
+
+  if (isLoading) return null;
+  if (!usuario || usuario.rol !== 'admin') {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleApprove = async (eventId: number) => {
     try {
@@ -107,8 +110,14 @@ export function AdminPanelPage() {
     }
   };
 
-  const handleRejectClick = (event: EventoBackend) => {
-    setSelectedEvent(event);
+  const handleRejectClick = async (event: EventoBackend) => {
+    try {
+      const fullEvent = await eventosApi.getById(event.id);
+      setSelectedEvent(fullEvent as EventoBackend);
+    } catch (error) {
+      console.error("Error al obtener detalle del evento", error);
+      setSelectedEvent(event);
+    }
     setRejectDialogOpen(true);
   };
 
@@ -256,13 +265,15 @@ export function AdminPanelPage() {
                             </Link>
                           </TableCell>
                           <TableCell>
-                            {event.organizadores?.map(o => o.nombre_completo).join(', ') ?? '—'}
+                            {event.organizador?.nombre_completo ?? '—'}
+                            {event.coorganizadores && event.coorganizadores.length > 0 && 
+                              `, ${event.coorganizadores.map(c => c.nombre_completo).join(', ')}`}
                           </TableCell>
                           <TableCell>
                             <CategoryBadge category={event.categoria as any} />
                           </TableCell>
                           <TableCell>
-                            {event.fecha_envio ? format(new Date(event.fecha_envio), 'dd/MM/yyyy') : '—'}
+                            {event.created_at ? format(new Date(event.created_at), 'dd/MM/yyyy') : '—'}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -337,14 +348,20 @@ export function AdminPanelPage() {
                           </Link>
                         </TableCell>
                         <TableCell>
-                          {event.organizadores?.map(o => o.nombre_completo).join(', ') ?? '—'}
+                          {event.organizador?.nombre_completo ?? '—'}
+                          {event.coorganizadores && event.coorganizadores.length > 0 && 
+                            ` (+${event.coorganizadores.length})`}
                         </TableCell>
                         <TableCell>
                           <CategoryBadge category={event.categoria as any} />
                         </TableCell>
-                        <TableCell>
-                          {event.fecha_inicio ? format(new Date(event.fecha_inicio), 'dd/MM/yyyy') : '—'}
-                        </TableCell>
+                          <TableCell>
+                            {(() => {
+                              if (!event.fecha) return '—';
+                              const d = new Date(event.fecha);
+                              return isNaN(d.getTime()) ? 'Fecha inválida' : format(d, 'dd/MM/yyyy');
+                            })()}
+                          </TableCell>
                         <TableCell>
                           <StatusBadge status={event.estado as any} />
                         </TableCell>
@@ -491,7 +508,9 @@ export function AdminPanelPage() {
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm" style={{ fontWeight: 600 }}>{selectedEvent.titulo}</p>
                 <p className="text-xs text-muted-foreground">
-                  por {selectedEvent.organizadores?.map(o => o.nombre_completo).join(', ') ?? '—'}
+                  por {selectedEvent.organizador?.nombre_completo ?? '—'}
+                  {selectedEvent.coorganizadores && selectedEvent.coorganizadores.length > 0 && 
+                    `, ${selectedEvent.coorganizadores.map(c => c.nombre_completo).join(', ')}`}
                 </p>
               </div>
             )}

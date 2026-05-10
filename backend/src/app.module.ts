@@ -34,7 +34,7 @@ import { TransmisionOrmEntity } from './transmision/infrastructure/entities/tran
         FavoritoOrmEntity,
         TransmisionOrmEntity,
       ],
-      synchronize: false, // Migraciones manuales requeridas
+      synchronize: true,
     }),
     AuthModule,
     EventosModule,
@@ -46,4 +46,4 @@ import { TransmisionOrmEntity } from './transmision/infrastructure/entities/tran
     NotificacionesModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

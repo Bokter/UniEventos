@@ -35,7 +35,7 @@ export class EventoTypeormRepository implements IEventoRepository {
   async findById(id: number): Promise<Evento | null> {
     const orm = await this.repo.findOne({
       where: { id },
-      relations: ['categoria', 'lugar', 'organizador'],
+      relations: ['categoria', 'lugar', 'organizador', 'coorganizadores', 'transmisiones', 'transmisiones.organizador'],
     });
     return orm ? EventoMapper.toDomain(orm) : null;
   }
@@ -50,9 +50,11 @@ export class EventoTypeormRepository implements IEventoRepository {
 
   async findByOrganizadorId(organizadorId: number): Promise<Evento[]> {
     const orms = await this.repo.find({
-      where: { organizador: { id: organizadorId } },
-      relations: ['categoria', 'lugar'],
-      order: { created_at: 'DESC' },
+      where: [
+        { organizador: { id: organizadorId } },
+        { coorganizadores: { id: organizadorId } }
+      ],
+      relations: ['categoria', 'lugar', 'organizador', 'coorganizadores'],
     });
     return orms.map(EventoMapper.toDomain);
   }
@@ -96,5 +98,19 @@ export class EventoTypeormRepository implements IEventoRepository {
       relations: ['categoria', 'lugar', 'organizador'],
     });
     return EventoMapper.toDomain(full!);
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.repo.delete(id);
+  }
+
+  async marcarTerminados(): Promise<void> {
+    // Actualiza a TERMINADO los eventos APROBADOS cuya fecha + hora_fin ya pasó en hora de Colombia
+    await this.repo.query(`
+      UPDATE eventos 
+      SET estado = $1 
+      WHERE estado = $2 
+      AND CAST(CONCAT(fecha, ' ', COALESCE(hora_fin, '23:59:59')) AS TIMESTAMP) < CURRENT_TIMESTAMP AT TIME ZONE 'America/Bogota'
+    `, [EstadoEvento.TERMINADO, EstadoEvento.APROBADO]);
   }
 }

@@ -1,15 +1,9 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Put } from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LugaresService } from '../application/services/lugares.service';
+import { CreateLugarDto } from '../application/dto/create-lugar.dto';
 import { UpdateLugarDto } from '../application/dto/update-lugar.dto';
 
-// DTO de Swagger — clase independiente para documentación
-class CreateLugarSwaggerDto {
-  @ApiProperty({ example: 'Bloque B' }) nombre: string;
-  @ApiPropertyOptional({ example: 'Edificio principal de ingeniería' }) descripcion?: string;
-  @ApiPropertyOptional({ example: 10.9878350 }) latitud?: number;
-  @ApiPropertyOptional({ example: -74.7889120 }) longitud?: number;
-}
 
 @ApiTags('lugares')
 @Controller('lugares')
@@ -24,7 +18,7 @@ export class LugaresController {
 
   @Post()
   @ApiOperation({ summary: 'Crear lugar (admin)' })
-  create(@Body() dto: CreateLugarSwaggerDto) {
+  create(@Body() dto: CreateLugarDto) {
     return this.lugaresService.create(dto);
   }
 

@@ -17,15 +17,44 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
   const categoria = evento.categoria || evento.category || "General";
   
   // Manejo de fecha
-  const fechaBruta = evento.fecha_inicio || evento.dateStart;
+  let fechaBruta = evento.fecha_inicio || evento.dateStart;
+  if (!fechaBruta && evento.fecha) {
+    fechaBruta = `${evento.fecha}T${evento.hora_inicio || '00:00:00'}`;
+  }
+  
   const fechaObjeto = fechaBruta ? new Date(fechaBruta) : new Date();
-  const fechaFormateada = format(fechaObjeto, 'MMM d, yyyy • h:mm a', { locale: es });
+  const fechaFormateada = format(fechaObjeto, "EEE d 'de' MMM", { locale: es });
+
+  // Rango de hora
+  const horaInicio = evento.hora_inicio || '';
+  const horaFin = evento.hora_fin || '';
+  const rangoHora = horaInicio
+    ? horaFin ? `${horaInicio} – ${horaFin}` : horaInicio
+    : '';
+
+  // Determinar si el evento ya pasó o está cancelado
+  const estado = typeof evento.estado === 'string' ? evento.estado.toLowerCase() : '';
+  const esCancelado = estado === 'cancelado';
+  const esTerminado = estado === 'terminado';
+  
+  // Como fallback para la preview en PublishEventPage que no tiene estado guardado
+  const horaFinEvaluar = horaFin || '23:59';
+  const fechaFinStr = fechaBruta ? `${fechaBruta.split('T')[0]}T${horaFinEvaluar}:00` : null;
+  const esPasado = esTerminado || (!estado && fechaFinStr ? new Date(fechaFinStr) < new Date() : false);
+
+  // Etiqueta a mostrar
+  let etiquetaEstado = null;
+  if (esCancelado) {
+    etiquetaEstado = <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 uppercase tracking-wide">Cancelado</span>;
+  } else if (esPasado) {
+    etiquetaEstado = <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide">Finalizado</span>;
+  }
 
   // Manejo de ubicación
   const lugarNombre = evento.lugar?.nombre || evento.location?.name || "Ubicación pendiente";
 
   // Manejo de organizadores
-  const organizadores = evento.organizadores || evento.organizers || [];
+  const organizadores = evento.organizadores || evento.organizers || (evento.organizador ? [evento.organizador] : []);
   const primerOrganizador = organizadores[0];
   const nombreOrganizador = primerOrganizador?.nombre_completo || primerOrganizador?.name || "Organizador";
 
@@ -44,7 +73,10 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
             <h3 className="line-clamp-2 flex-1" style={{ fontWeight: 600 }}>
               {titulo}
             </h3>
-            <CategoryBadge category={categoria} />
+            <div className="flex flex-col gap-1 items-end">
+              <CategoryBadge category={categoria} />
+              {etiquetaEstado}
+            </div>
           </div>
           <div className="space-y-1.5 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -53,6 +85,9 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
                 {fechaFormateada}
               </span>
             </div>
+            {rangoHora && (
+              <div className="text-xs text-muted-foreground/70 pl-6">Hora: {rangoHora}</div>
+            )}
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 flex-shrink-0" />
               <span className="line-clamp-1">{lugarNombre}</span>

@@ -18,7 +18,7 @@ function buildHeaders(extra?: Record<string, string>): Record<string, string> {
 }
 
 // Helper: lanza error con mensaje legible si la respuesta no es OK
-async function handleResponse<T>(res: Response): Promise<T> {
+async function handleResponse<T = any>(res: Response): Promise<T> {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as any).message || `Error ${res.status}`);
@@ -26,27 +26,13 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ── Auth ─────────────────────────────────────────────────────
-export const authApi = {
-  login: (email: string, password: string) =>
-    fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    }).then(handleResponse),
-
-  register: (nombre_completo: string, email: string, password: string) =>
-    fetch(`${BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre_completo, email, password }),
-    }).then(handleResponse),
-};
-
 // ── Eventos ──────────────────────────────────────────────────
 export const eventosApi = {
-  getAll: () =>
-    fetch(`${BASE_URL}/eventos`, { headers: buildHeaders() }).then(handleResponse),
+  getAll: (categoriaId?: number) => {
+    const url = new URL(`${BASE_URL}/eventos`);
+    if (categoriaId) url.searchParams.append('categoria', String(categoriaId));
+    return fetch(url.toString(), { headers: buildHeaders() }).then(handleResponse);
+  },
 
   getPendientes: () =>
     fetch(`${BASE_URL}/eventos/pendientes`, { headers: buildHeaders() }).then(handleResponse),
@@ -76,6 +62,19 @@ export const eventosApi = {
       headers: buildHeaders(),
     }).then(handleResponse),
 
+  registrarStream: (id: number | string, url: string) =>
+    fetch(`${BASE_URL}/eventos/${id}/stream`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify({ url }),
+    }).then(handleResponse),
+
+  eliminarStream: (id: number | string) =>
+    fetch(`${BASE_URL}/eventos/${id}/stream`, {
+      method: 'DELETE',
+      headers: buildHeaders(),
+    }).then(handleResponse),
+
   enviarRevision: (id: number | string) =>
     fetch(`${BASE_URL}/eventos/${id}/enviar`, {
       method: 'PATCH',
@@ -95,6 +94,12 @@ export const eventosApi = {
       headers: buildHeaders(),
       body: JSON.stringify(body),
     }).then(handleResponse),
+
+  eliminar: (id: number | string) =>
+    fetch(`${BASE_URL}/eventos/${id}`, {
+      method: 'DELETE',
+      headers: buildHeaders(),
+    }).then(res => { if (!res.ok) return handleResponse(res); }),
 };
 
 // ── Usuarios ─────────────────────────────────────────────────

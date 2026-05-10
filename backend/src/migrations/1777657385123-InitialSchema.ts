@@ -8,6 +8,7 @@ export class InitialSchema1777657385123 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "lugares" ADD "latitud" numeric(10,7)`);
         await queryRunner.query(`ALTER TABLE "lugares" DROP COLUMN "longitud"`);
         await queryRunner.query(`ALTER TABLE "lugares" ADD "longitud" numeric(10,7)`);
+        await queryRunner.query(`ALTER TABLE "favoritos" DROP CONSTRAINT IF EXISTS "UQ_3ab287b3697c4e81e95e6edbded"`);
         await queryRunner.query(`ALTER TABLE "favoritos" ADD CONSTRAINT "UQ_3ab287b3697c4e81e95e6edbded" UNIQUE ("usuario_id", "evento_id")`);
     }
 

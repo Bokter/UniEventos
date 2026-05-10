@@ -5,4 +5,5 @@ export enum EstadoEvento {
   APROBADO = 'aprobado',
   RECHAZADO = 'rechazado',
   CANCELADO = 'cancelado',
+  TERMINADO = 'terminado',
 }
