@@ -69,10 +69,9 @@ export function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!registerEmail.endsWith("@uninorte.edu.co")) {
-      toast.error("Debes usar tu correo institucional (@uninorte.edu.co)");
-      return;
-    }
+    // El sistema ahora permite cualquier correo electrónico. 
+    // Los correos @uninorte.edu.co se registrarán como organizadores vía Roble,
+    // otros dominios se registrarán como miembros visitantes.
 
     if (registerPassword !== registerConfirmPassword) {
       toast.error("Las contraseñas no coinciden");
@@ -186,7 +185,7 @@ export function LoginPage() {
           <CardHeader>
             <CardTitle>Accede a tu cuenta</CardTitle>
             <CardDescription>
-              Usa tu correo institucional Uninorte para acceder
+              Inicia sesión con tu cuenta para acceder a UniEventos
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -199,11 +198,11 @@ export function LoginPage() {
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Correo institucional</Label>
+                    <Label htmlFor="signin-email">Correo electrónico</Label>
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="tu.nombre@uninorte.edu.co"
+                      placeholder="ejemplo@correo.com"
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
                       required
@@ -263,18 +262,18 @@ export function LoginPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="register-email">Correo institucional</Label>
+                    <Label htmlFor="register-email">Correo electrónico</Label>
                     <Input
                       id="register-email"
                       type="email"
-                      placeholder="tu.nombre@uninorte.edu.co"
+                      placeholder="ejemplo@correo.com"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
                       required
                       className="bg-white"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Debe terminar en @uninorte.edu.co
+                      Usa tu correo institucional si eres organizador
                     </p>
                   </div>
                   <div className="space-y-2">

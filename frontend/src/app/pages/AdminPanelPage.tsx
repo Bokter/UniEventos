@@ -68,13 +68,10 @@ export function AdminPanelPage() {
 
   const { usuario, isLoading, logout } = useAuth();
 
-  if (isLoading) return null;
-  if (!usuario || usuario.rol !== 'admin') {
-    return <Navigate to="/login" replace />;
-  }
-
   // Carga de datos al montar o cambiar de tab
   useEffect(() => {
+    if (!usuario || usuario.rol !== 'admin') return;
+    
     if (activeTab === 'pending') {
       eventosApi.getPendientes()
         .then(data => setPendingEvents(data as EventoBackend[]))
@@ -95,7 +92,12 @@ export function AdminPanelPage() {
         .then(data => setCategorias(data as CategoriaBackend[]))
         .catch(() => toast.error("Error al cargar las categorías"));
     }
-  }, [activeTab]);
+  }, [activeTab, usuario]);
+
+  if (isLoading) return null;
+  if (!usuario || usuario.rol !== 'admin') {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleApprove = async (eventId: number) => {
     try {

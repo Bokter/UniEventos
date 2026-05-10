@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { obtenerUsuario } from "../services/auth.service";
-import { eventosApi } from "../services/api.service";
+import { eventosApi, favoritosApi } from "../services/api.service";
 import { toast } from "sonner";
 
 export function EventDetailPage() {
@@ -34,7 +34,7 @@ export function EventDetailPage() {
     const fetchEvent = async () => {
       setIsLoading(true);
       try {
-        const data = await eventosApi.getById(id);
+        const data = await eventosApi.getById(id) as any;
         setEvent(data);
         
         // Check if current user is an organizer to set initial stream link
@@ -52,7 +52,7 @@ export function EventDetailPage() {
 
         // Fetch favorites to set initial state
         if (usuario) {
-          const userFavorites = await favoritosApi.getAll();
+          const userFavorites = await favoritosApi.getAll() as any[];
           const isFav = userFavorites.some((f: any) => String(f.id) === String(id));
           setIsFavorite(isFav);
         }

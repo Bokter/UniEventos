@@ -18,7 +18,7 @@ function buildHeaders(extra?: Record<string, string>): Record<string, string> {
 }
 
 // Helper: lanza error con mensaje legible si la respuesta no es OK
-async function handleResponse<T>(res: Response): Promise<T> {
+async function handleResponse<T = any>(res: Response): Promise<T> {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as any).message || `Error ${res.status}`);
