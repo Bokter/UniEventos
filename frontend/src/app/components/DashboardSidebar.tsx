@@ -7,7 +7,6 @@ import {
   LogOut,
   Users,
   Tag,
-  Flag,
   Heart,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -22,7 +21,6 @@ export type SidebarTab =
   | "all"
   | "users"
   | "categories"
-  | "reports"
   // Attendee/User tabs
   | "favorites";
 
@@ -152,16 +150,6 @@ export function DashboardSidebar({
         >
           <Tag className="h-4 w-4" />
           <span>Categorías</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("reports")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "reports"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
-            }`}
-        >
-          <Flag className="h-4 w-4" />
-          <span>Reportes</span>
         </button>
       </nav>
     </>

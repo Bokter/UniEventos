@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
-import { FileText, Users, Tag, Flag, Check, X } from "lucide-react";
+import { FileText, Users, Tag, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
 import { StatusBadge } from "../components/StatusBadge";
@@ -477,20 +477,6 @@ export function AdminPanelPage() {
             </>
           )}
 
-          {activeTab === 'reports' && (
-            <>
-              <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Reportes</h1>
-                <p className="text-muted-foreground">
-                  Ver contenido reportado
-                </p>
-              </div>
-              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                <Flag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-muted-foreground">Sin reportes por el momento</p>
-              </div>
-            </>
-          )}
         </div>
       </div>
 
