@@ -23,7 +23,19 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
   }
   
   const fechaObjeto = fechaBruta ? new Date(fechaBruta) : new Date();
-  const fechaFormateada = format(fechaObjeto, 'MMM d, yyyy • h:mm a', { locale: es });
+  const fechaFormateada = format(fechaObjeto, "EEE d 'de' MMM", { locale: es });
+
+  // Rango de hora
+  const horaInicio = evento.hora_inicio || '';
+  const horaFin = evento.hora_fin || '';
+  const rangoHora = horaInicio
+    ? horaFin ? `${horaInicio} – ${horaFin}` : horaInicio
+    : '';
+
+  // Determinar si el evento ya pasó
+  const horaFinEvaluar = horaFin || '23:59';
+  const fechaFinStr = fechaBruta ? `${fechaBruta.split('T')[0]}T${horaFinEvaluar}:00` : null;
+  const esPasado = fechaFinStr ? new Date(fechaFinStr) < new Date() : false;
 
   // Manejo de ubicación
   const lugarNombre = evento.lugar?.nombre || evento.location?.name || "Ubicación pendiente";
@@ -48,7 +60,14 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
             <h3 className="line-clamp-2 flex-1" style={{ fontWeight: 600 }}>
               {titulo}
             </h3>
-            <CategoryBadge category={categoria} />
+            <div className="flex flex-col gap-1 items-end">
+              <CategoryBadge category={categoria} />
+              {esPasado && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide">
+                  Finalizado
+                </span>
+              )}
+            </div>
           </div>
           <div className="space-y-1.5 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -57,6 +76,9 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
                 {fechaFormateada}
               </span>
             </div>
+            {rangoHora && (
+              <div className="text-xs text-muted-foreground/70 pl-6">{rangoHora}</div>
+            )}
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 flex-shrink-0" />
               <span className="line-clamp-1">{lugarNombre}</span>

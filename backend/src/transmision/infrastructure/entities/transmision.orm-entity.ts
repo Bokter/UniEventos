@@ -7,7 +7,7 @@ export class TransmisionOrmEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => EventoOrmEntity)
+  @ManyToOne(() => EventoOrmEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'evento_id' })
   evento: EventoOrmEntity;
 

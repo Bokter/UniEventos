@@ -94,6 +94,12 @@ export const eventosApi = {
       headers: buildHeaders(),
       body: JSON.stringify(body),
     }).then(handleResponse),
+
+  eliminar: (id: number | string) =>
+    fetch(`${BASE_URL}/eventos/${id}`, {
+      method: 'DELETE',
+      headers: buildHeaders(),
+    }).then(res => { if (!res.ok) return handleResponse(res); }),
 };
 
 // ── Usuarios ─────────────────────────────────────────────────

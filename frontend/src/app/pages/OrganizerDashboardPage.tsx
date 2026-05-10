@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
-import { Calendar, Bell, User, Pencil, X, Video, Heart } from "lucide-react";
+import { Calendar, Bell, User, Pencil, X, Video, Heart, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
 import { StatusBadge } from "../components/StatusBadge";
@@ -98,10 +98,23 @@ export function OrganizerDashboardPage() {
       await eventosApi.cancelar(eventId);
       toast.success("Evento cancelado exitosamente");
       setOrganizerEvents(prev =>
-        prev.map(e => e.id === eventId ? { ...e, estado: 'Cancelled' } : e)
+        prev.map(e => e.id === eventId ? { ...e, estado: 'cancelado' } : e)
       );
     } catch (error: unknown) {
       toast.error((error as Error).message || "No se pudo cancelar el evento");
+    }
+  };
+
+  const handleEliminar = async (eventId: number) => {
+    if (!confirm("¿Estás seguro de que quieres eliminar este evento permanentemente? Esta acción no se puede deshacer.")) {
+      return;
+    }
+    try {
+      await eventosApi.eliminar(eventId);
+      toast.success("Evento eliminado");
+      setOrganizerEvents(prev => prev.filter(e => e.id !== eventId));
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "No se pudo eliminar el evento");
     }
   };
 
@@ -253,6 +266,18 @@ export function OrganizerDashboardPage() {
                               >
                                 <X className="h-4 w-4" />
                               </Button>
+                              {/* Eliminar: solo disponible en borrador o cancelado */}
+                              {(event.estado === 'borrador' || event.estado === 'cancelado') && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleEliminar(event.id)}
+                                  className="text-destructive hover:text-destructive hover:bg-red-50"
+                                  title="Eliminar evento permanentemente"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -360,7 +385,7 @@ export function OrganizerDashboardPage() {
           <DialogHeader>
             <DialogTitle>Enlace de Transmisión (Stream)</DialogTitle>
             <DialogDescription>
-              Añade el enlace de Mux (Playback ID o Stream URL) para la transmisión en vivo del evento "{selectedEventForStream?.titulo}".
+              Añade el enlace de YouTube, Twitch u otra plataforma para la transmisión en vivo del evento "{selectedEventForStream?.titulo}".
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

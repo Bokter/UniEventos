@@ -99,4 +99,8 @@ export class EventoTypeormRepository implements IEventoRepository {
     });
     return EventoMapper.toDomain(full!);
   }
+
+  async delete(id: number): Promise<void> {
+    await this.repo.delete(id);
+  }
 }

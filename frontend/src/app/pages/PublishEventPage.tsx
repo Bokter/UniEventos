@@ -201,13 +201,16 @@ export function PublishEventPage() {
       })) as any;
 
       // 2. Prepare event data
+      // Garantizar formato HH:MM de 2 dígitos para cumplir el regex del backend
+      const padTime = (t: string) => t.split(':').map(p => p.padStart(2, '0')).join(':');
+
       const eventData = {
         titulo: title,
         descripcion: description,
         categoria_id: Number(categoryId),
-        fecha: dateStart, // Backend expects 'fecha' for CreateEventoDto
-        hora_inicio: timeStart,
-        hora_fin: timeEnd,
+        fecha: dateStart,
+        hora_inicio: padTime(timeStart),
+        hora_fin: padTime(timeEnd),
         lugar_id: place.id,
         imagen_portada: coverImage,
         coorganizadores: selectedCoOrganizers.map(o => ({ id: o.id }))

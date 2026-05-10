@@ -122,6 +122,14 @@ export class EventosService {
     return guardado;
   }
 
+  async eliminar(id: number) {
+    const evento = await this.findOne(id);
+    if (evento.estado !== EstadoEvento.BORRADOR && evento.estado !== EstadoEvento.CANCELADO) {
+      throw new BadRequestException('Solo se pueden eliminar eventos en borrador o cancelados');
+    }
+    await this.eventoRepository.delete(id);
+  }
+
   async findEventosAR(): Promise<EventoArDto[]> {
     const eventos = await this.eventoRepository.findEventosHoyConCoordenadas();
     return eventos.map((e) => ({

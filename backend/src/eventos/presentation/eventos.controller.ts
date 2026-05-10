@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Patch, Param, Query, Req, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Patch, Delete, Param, Query, Req, ParseIntPipe, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiProperty, ApiBearerAuth } from '@nestjs/swagger';
 import { EventosService } from '../application/services/eventos.service';
 import { CreateEventoDto } from '../application/dto/create-evento.dto';
@@ -102,5 +102,15 @@ export class EventosController {
   @ApiBody({ schema: { properties: { observacion: { type: 'string' } } } })
   rechazar(@Param('id', ParseIntPipe) id: number, @Body('observacion') observacion: string) {
     return this.eventosService.rechazar(id, observacion);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('organizador')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Eliminar evento en borrador o cancelado (organizador)' })
+  eliminar(@Param('id', ParseIntPipe) id: number) {
+    return this.eventosService.eliminar(id);
   }
 }

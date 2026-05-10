@@ -51,11 +51,10 @@ export function HomePage() {
       titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
       descripcion.toLowerCase().includes(busqueda.toLowerCase());
 
-    // 2. Filtro por categoría
-    // El backend devuelve 'categoria' como objeto {id, nombre, ...}
-    const categoriaRaw = evento.categoria || evento.category || "";
-    const nombreCategoria = typeof categoriaRaw === 'object' && categoriaRaw !== null ? categoriaRaw.nombre : categoriaRaw;
-    const coincideCategoria = categoriaSeleccionada === "todas" || nombreCategoria === categoriaSeleccionada;
+    // 2. Filtro por categoría — compara por ID numérico
+    const categoriaObj = evento.categoria;
+    const categoriaIdEvento = categoriaObj?.id ? String(categoriaObj.id) : null;
+    const coincideCategoria = categoriaSeleccionada === "todas" || categoriaIdEvento === categoriaSeleccionada;
 
     // 3. Filtro por fecha
     // El backend devuelve 'fecha'
@@ -69,6 +68,12 @@ export function HomePage() {
     const fechaParaParsear = fechaInicioStr.includes('T') ? fechaInicioStr : `${fechaInicioStr}T12:00:00`;
     const fechaEvento = new Date(fechaParaParsear);
     fechaEvento.setHours(0, 0, 0, 0);
+
+    // 0. Ocultar eventos ya finalizados (fecha + hora_fin en el pasado)
+    const horaFinStr = evento.hora_fin || '23:59';
+    const fechaFinStr = fechaInicioStr ? `${fechaInicioStr.split('T')[0]}T${horaFinStr}:00` : null;
+    const esPasado = fechaFinStr ? new Date(fechaFinStr) < new Date() : false;
+    if (esPasado) return false;
 
     let coincideFecha = true;
     if (filtroFecha === "hoy") {
