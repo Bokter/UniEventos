@@ -104,7 +104,7 @@ export function PublishEventPage() {
     categoriasApi.getAll().then(data => setCategories(data as any[]));
     usuariosApi.getAll().then(data => {
       const users = data as any[];
-      setAvailableUsers(users.filter(u => u.rol === 'organizador' || u.rol === 'admin'));
+      setAvailableUsers(users.filter(u => u.rol === 'organizador'));
     });
   }, []);
 

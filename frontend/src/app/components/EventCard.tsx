@@ -25,7 +25,7 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
   const lugarNombre = evento.lugar?.nombre || evento.location?.name || "Ubicación pendiente";
 
   // Manejo de organizadores
-  const organizadores = evento.organizadores || evento.organizers || [];
+  const organizadores = evento.organizadores || evento.organizers || (evento.organizador ? [evento.organizador] : []);
   const primerOrganizador = organizadores[0];
   const nombreOrganizador = primerOrganizador?.nombre_completo || primerOrganizador?.name || "Organizador";
 

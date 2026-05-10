@@ -94,14 +94,21 @@ export function EventDetailPage() {
   const titulo = event.titulo || event.title;
   const descripcion = event.descripcion || event.description;
   const categoria = event.categoria || event.category;
-  const fechaInicio = event.fecha_inicio ? new Date(event.fecha_inicio) : new Date(event.dateStart);
-  const fechaFin = event.fecha_fin ? new Date(event.fecha_fin) : new Date(event.dateEnd);
+  // Helper para parsear fechas de forma segura
+  const parseSafeDate = (dateVal: any) => {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return new Date(); // Fallback a hoy si es inválida
+    return d;
+  };
+
+  const fechaInicio = parseSafeDate(event.fecha_inicio || event.dateStart);
+  const fechaFin = parseSafeDate(event.fecha_fin || event.dateEnd);
   const lugarNombre = event.lugar?.nombre || event.location?.name;
   const lat = event.lugar?.lat || event.location?.lat;
   const lng = event.lugar?.lng || event.location?.lng;
   const imagenPortada = event.imagen_portada || event.coverImage || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000';
   
-  const organizadores = event.organizadores || event.organizers || [];
+  const organizadores = event.organizadores || event.organizers || (event.organizador ? [event.organizador] : []);
   const isOrganizer = !!usuario && organizadores.some((o: any) => String(o.id) === String(usuario.id));
 
   const handleStartStream = () => {

@@ -344,9 +344,13 @@ export function AdminPanelPage() {
                         <TableCell>
                           <CategoryBadge category={event.categoria as any} />
                         </TableCell>
-                        <TableCell>
-                          {event.fecha_inicio ? format(new Date(event.fecha_inicio), 'dd/MM/yyyy') : '—'}
-                        </TableCell>
+                          <TableCell>
+                            {(() => {
+                              if (!event.fecha_inicio) return '—';
+                              const d = new Date(event.fecha_inicio);
+                              return isNaN(d.getTime()) ? 'Fecha inválida' : format(d, 'dd/MM/yyyy');
+                            })()}
+                          </TableCell>
                         <TableCell>
                           <StatusBadge status={event.estado as any} />
                         </TableCell>
