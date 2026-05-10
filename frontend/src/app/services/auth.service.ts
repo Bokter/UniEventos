@@ -116,5 +116,21 @@ export const verifyEmail = async (email: string, code: string): Promise<{ mensaj
   return res.json();
 };
 
+// ── Resend Code ──────────────────────────────────────────────
+export const resendCode = async (email: string): Promise<{ mensaje: string }> => {
+  const res = await fetch(`${BASE_URL}/auth/resend-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).message || 'No se pudo reenviar el código');
+  }
+
+  return res.json();
+};
+
 // Exportar BASE_URL por si otros servicios lo necesitan
 export { BASE_URL };
