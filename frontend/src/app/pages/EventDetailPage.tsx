@@ -19,7 +19,7 @@ export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const usuario = obtenerUsuario();
-  
+
   const [event, setEvent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -36,7 +36,7 @@ export function EventDetailPage() {
       try {
         const data = await eventosApi.getById(id) as any;
         setEvent(data);
-        
+
         // Check if current user is an organizer to set initial stream link
         if (usuario && data.streams) {
           const userStream = data.streams.find((s: any) => String(s.organizerId) === String(usuario.id));
@@ -44,7 +44,7 @@ export function EventDetailPage() {
             setStreamLink(userStream.streamLink);
           }
         }
-        
+
         // Set first active stream if available
         if (data.streams && data.streams.length > 0) {
           setActiveStreamId(data.streams[0].organizerId);
@@ -101,13 +101,13 @@ export function EventDetailPage() {
     return d;
   };
 
-  const fechaInicio = parseSafeDate(event.fecha_inicio || event.dateStart);
-  const fechaFin = parseSafeDate(event.fecha_fin || event.dateEnd);
+  const fechaInicio = parseSafeDate(event.fecha || event.dateStart);
+  const fechaFin = parseSafeDate(event.fecha || event.dateEnd);
   const lugarNombre = event.lugar?.nombre || event.location?.name;
   const lat = event.lugar?.lat || event.location?.lat;
   const lng = event.lugar?.lng || event.location?.lng;
   const imagenPortada = event.imagen_portada || event.coverImage || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000';
-  
+
   const organizadores = event.organizadores || event.organizers || (event.organizador ? [event.organizador] : []);
   const isOrganizer = !!usuario && organizadores.some((o: any) => String(o.id) === String(usuario.id));
 
@@ -121,19 +121,19 @@ export function EventDetailPage() {
 
   const handleSaveStreamLink = async () => {
     if (!event || !usuario) return;
-    
+
     // NOTE: Implementation depends on backend endpoint for saving stream link
     // For now, we simulate the update or call a hypothetical endpoint if it existed
     toast.success("Enlace de transmisión guardado");
     setShowStreamDialog(false);
-    
+
     // Re-fetch or update local state
     const newStream = { organizerId: String(usuario.id), streamLink };
     const updatedStreams = [...(event.streams || [])];
     const idx = updatedStreams.findIndex(s => String(s.organizerId) === String(usuario.id));
     if (idx >= 0) updatedStreams[idx] = newStream;
     else updatedStreams.push(newStream);
-    
+
     setEvent({ ...event, streams: updatedStreams });
     if (!activeStreamId) setActiveStreamId(String(usuario.id));
   };
@@ -186,7 +186,7 @@ export function EventDetailPage() {
           text: descripcion,
           url: window.location.href,
         });
-      } catch (err) {}
+      } catch (err) { }
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast.success("Enlace copiado al portapapeles");
