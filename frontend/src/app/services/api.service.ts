@@ -59,6 +59,19 @@ export const eventosApi = {
       headers: buildHeaders(),
     }).then(handleResponse),
 
+  registrarStream: (id: number | string, url: string) =>
+    fetch(`${BASE_URL}/eventos/${id}/stream`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify({ url }),
+    }).then(handleResponse),
+
+  eliminarStream: (id: number | string) =>
+    fetch(`${BASE_URL}/eventos/${id}/stream`, {
+      method: 'DELETE',
+      headers: buildHeaders(),
+    }).then(handleResponse),
+
   enviarRevision: (id: number | string) =>
     fetch(`${BASE_URL}/eventos/${id}/enviar`, {
       method: 'PATCH',

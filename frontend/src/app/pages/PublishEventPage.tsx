@@ -107,6 +107,8 @@ export function PublishEventPage() {
   const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
   const [selectedCoOrganizers, setSelectedCoOrganizers] = useState<any[]>([]);
+  const [streamUrl, setStreamUrl] = useState("");
+
   
   const [categories, setCategories] = useState<any[]>([]);
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
@@ -153,6 +155,8 @@ export function PublishEventPage() {
           }
         }
         setCoverImage(event.imagen_portada || "");
+        setStreamUrl(event.stream_url || "");
+
         
         if (event.organizadores) {
           setSelectedCoOrganizers(event.organizadores.filter((o: any) => String(o.id) !== String(usuario?.id)));
@@ -205,8 +209,10 @@ export function PublishEventPage() {
         hora_inicio: timeStart,
         hora_fin: timeEnd,
         lugar_id: place.id,
-        imagen_portada: coverImage
+        imagen_portada: coverImage,
+        coorganizadores: selectedCoOrganizers.map(o => ({ id: o.id }))
       };
+
 
       let eventResponse: any;
       if (editId) {
@@ -322,6 +328,21 @@ export function PublishEventPage() {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <Label htmlFor="stream-url">Enlace de transmisión (Opcional)</Label>
+                <Input 
+                  id="stream-url" 
+                  value={streamUrl} 
+                  onChange={(e) => setStreamUrl(e.target.value)} 
+                  placeholder="e.g. https://www.youtube.com/watch?v=... o https://twitch.tv/..." 
+                  className="mt-2" 
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Soporta enlaces de YouTube y Twitch.
+                </p>
+              </div>
+
 
               <div className="grid grid-cols-2 gap-4">
                 <div><Label htmlFor="date-start">Fecha *</Label><Input id="date-start" type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-2" required /></div>

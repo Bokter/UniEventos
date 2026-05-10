@@ -23,4 +23,6 @@ export class Evento {
   organizador?: { id: number; nombre_completo: string; email: string };
   categoria?: { id: number; nombre: string };
   lugar?: { id: number; nombre: string; latitud: number; longitud: number };
+  coorganizadores?: { id: number; nombre_completo?: string; email?: string }[];
+  transmisiones?: { id: number; stream_url: string; organizador?: { id: number; nombre_completo: string } }[];
 }

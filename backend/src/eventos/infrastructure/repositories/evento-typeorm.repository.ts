@@ -35,7 +35,7 @@ export class EventoTypeormRepository implements IEventoRepository {
   async findById(id: number): Promise<Evento | null> {
     const orm = await this.repo.findOne({
       where: { id },
-      relations: ['categoria', 'lugar', 'organizador'],
+      relations: ['categoria', 'lugar', 'organizador', 'coorganizadores', 'transmisiones', 'transmisiones.organizador'],
     });
     return orm ? EventoMapper.toDomain(orm) : null;
   }
@@ -50,9 +50,11 @@ export class EventoTypeormRepository implements IEventoRepository {
 
   async findByOrganizadorId(organizadorId: number): Promise<Evento[]> {
     const orms = await this.repo.find({
-      where: { organizador: { id: organizadorId } },
-      relations: ['categoria', 'lugar'],
-      order: { created_at: 'DESC' },
+      where: [
+        { organizador: { id: organizadorId } },
+        { coorganizadores: { id: organizadorId } }
+      ],
+      relations: ['categoria', 'lugar', 'organizador', 'coorganizadores'],
     });
     return orms.map(EventoMapper.toDomain);
   }

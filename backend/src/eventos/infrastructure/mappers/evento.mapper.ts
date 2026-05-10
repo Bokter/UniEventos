@@ -41,6 +41,25 @@ export class EventoMapper {
       };
     }
 
+    if (orm.coorganizadores) {
+      evento.coorganizadores = orm.coorganizadores.map(co => ({
+        id: co.id,
+        nombre_completo: co.nombre_completo,
+        email: co.email
+      }));
+    }
+
+    if (orm.transmisiones) {
+      evento.transmisiones = orm.transmisiones.map(t => ({
+        id: t.id,
+        stream_url: t.stream_url,
+        organizador: t.organizador ? {
+          id: t.organizador.id,
+          nombre_completo: t.organizador.nombre_completo
+        } : undefined
+      }));
+    }
+
     return evento;
   }
 
@@ -56,9 +75,14 @@ export class EventoMapper {
     if (domain.observacion_admin !== undefined) orm.observacion_admin = domain.observacion_admin;
     if (domain.imagen_portada !== undefined) orm.imagen_portada = domain.imagen_portada;
 
+
     if (domain.organizador_id) orm.organizador = { id: domain.organizador_id };
     if (domain.categoria_id) orm.categoria = { id: domain.categoria_id };
     if (domain.lugar_id) orm.lugar = { id: domain.lugar_id };
+
+    if (domain.coorganizadores) {
+      orm.coorganizadores = domain.coorganizadores.map(co => ({ id: co.id } as any));
+    }
 
     return orm;
   }
