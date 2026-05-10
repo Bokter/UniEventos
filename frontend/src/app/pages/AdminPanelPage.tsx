@@ -110,8 +110,14 @@ export function AdminPanelPage() {
     }
   };
 
-  const handleRejectClick = (event: EventoBackend) => {
-    setSelectedEvent(event);
+  const handleRejectClick = async (event: EventoBackend) => {
+    try {
+      const fullEvent = await eventosApi.getById(event.id);
+      setSelectedEvent(fullEvent as EventoBackend);
+    } catch (error) {
+      console.error("Error al obtener detalle del evento", error);
+      setSelectedEvent(event);
+    }
     setRejectDialogOpen(true);
   };
 
@@ -502,7 +508,9 @@ export function AdminPanelPage() {
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm" style={{ fontWeight: 600 }}>{selectedEvent.titulo}</p>
                 <p className="text-xs text-muted-foreground">
-                  por {selectedEvent.organizadores?.map(o => o.nombre_completo).join(', ') ?? '—'}
+                  por {selectedEvent.organizador?.nombre_completo ?? '—'}
+                  {selectedEvent.coorganizadores && selectedEvent.coorganizadores.length > 0 && 
+                    `, ${selectedEvent.coorganizadores.map(c => c.nombre_completo).join(', ')}`}
                 </p>
               </div>
             )}

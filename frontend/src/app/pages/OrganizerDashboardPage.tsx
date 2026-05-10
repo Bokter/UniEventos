@@ -21,11 +21,12 @@ interface EventoBackend {
   id: number;
   titulo: string;
   descripcion: string;
-  categoria: string;
-  fecha_inicio: string;
-  fecha_fin: string;
+  categoria: { id: number; nombre: string } | string;
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string;
   estado: string;
-  observacion?: string;
+  observacion_admin?: string;
   streams?: { organizerId: string; streamLink: string }[];
   [key: string]: unknown;
 }
@@ -208,15 +209,15 @@ export function OrganizerDashboardPage() {
                             <CategoryBadge category={event.categoria as any} />
                           </TableCell>
                           <TableCell>
-                            {event.fecha_inicio ? format(new Date(event.fecha_inicio), 'dd/MM/yyyy') : '—'}
+                            {event.fecha ? format(new Date(event.fecha), 'dd/MM/yyyy') : '—'}
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={event.estado as any} />
                             {/* Mostrar observación del admin si fue rechazado */}
-                            {(event.estado === 'Rejected' || event.estado === 'rechazado') && event.observacion && (
+                            {(event.estado === 'Rejected' || event.estado === 'rechazado') && event.observacion_admin && (
                               <div className="mt-1 text-xs text-destructive bg-red-50 border border-red-200 rounded p-2 max-w-md break-words whitespace-normal">
                                 <span style={{ fontWeight: 600 }}>Observación del admin: </span>
-                                {event.observacion}
+                                {event.observacion_admin}
                               </div>
                             )}
                           </TableCell>
