@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
-import { Calendar, Bell, User, Pencil, X, Video } from "lucide-react";
+import { Calendar, Bell, User, Pencil, X, Video, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
 import { StatusBadge } from "../components/StatusBadge";
 import { CategoryBadge } from "../components/CategoryBadge";
+import { EventCard } from "../components/EventCard";
 import { Button } from "../components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
@@ -12,7 +13,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
 import { useAuth } from "../../context/AuthContext";
-import { eventosApi } from "../services/api.service";
+import { eventosApi, favoritosApi } from "../services/api.service";
 import { toast } from "sonner";
 
 // Tipo local para eventos que llegan del backend
@@ -37,6 +38,8 @@ export function OrganizerDashboardPage() {
   const [streamDialogOpen, setStreamDialogOpen] = useState(false);
   const [selectedEventForStream, setSelectedEventForStream] = useState<EventoBackend | null>(null);
   const [streamLink, setStreamLink] = useState("");
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
 
   const { usuario, isLoading, logout } = useAuth();
 
@@ -58,6 +61,25 @@ export function OrganizerDashboardPage() {
     };
     fetchOrganizerEvents();
   }, [usuario]);
+
+  // Carga de favoritos (solo cuando se abre la pestaña)
+  useEffect(() => {
+    if (usuario && activeTab === 'favorites') {
+      const fetchFavorites = async () => {
+        setIsLoadingFavorites(true);
+        try {
+          const data = await favoritosApi.getAll();
+          setFavorites(data as any[]);
+        } catch (error) {
+          console.error("Error al cargar favoritos", error);
+          toast.error("No se pudieron cargar tus favoritos");
+        } finally {
+          setIsLoadingFavorites(false);
+        }
+      };
+      fetchFavorites();
+    }
+  }, [usuario, activeTab]);
 
   if (isLoading) return null;
   if (!usuario || usuario.rol !== 'organizador') {
@@ -246,6 +268,41 @@ export function OrganizerDashboardPage() {
                   </h3>
                   <p className="text-muted-foreground mb-6">
                     ¡Publica tu primer evento para empezar!
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'favorites' && (
+            <>
+              <div className="mb-6">
+                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Mis Eventos Favoritos</h1>
+                <p className="text-muted-foreground">
+                  Aquí encontrarás los eventos que has guardado
+                </p>
+              </div>
+
+              {isLoadingFavorites ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-xl" />
+                  ))}
+                </div>
+              ) : favorites.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {favorites.map((event) => (
+                    <EventCard key={event.id} event={event} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                  <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg mb-2" style={{ fontWeight: 600 }}>
+                    Aún no tienes favoritos
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Explora eventos y guárdalos para verlos aquí
                   </p>
                 </div>
               )}

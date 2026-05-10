@@ -50,8 +50,8 @@ export function EventDetailPage() {
           setActiveStreamId(data.streams[0].organizerId);
         }
 
-        // Fetch favorites to set initial state
-        if (usuario) {
+        // Fetch favorites to set initial state (solo para no-admins)
+        if (usuario && usuario.rol !== 'admin') {
           const userFavorites = await favoritosApi.getAll() as any[];
           const isFav = userFavorites.some((f: any) => String(f.id) === String(id));
           setIsFavorite(isFav);
@@ -296,14 +296,16 @@ export function EventDetailPage() {
 
           <div className="md:col-span-1">
             <div className="sticky top-24 space-y-4">
-              <Button
-                variant={isFavorite ? "default" : "outline"}
-                className={isFavorite ? "w-full bg-[#1D9E75] hover:bg-[#188c66] text-white" : "w-full"}
-                onClick={handleToggleFavorite}
-              >
-                <Star className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current" : ""}`} />
-                {isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
-              </Button>
+              {usuario?.rol !== 'admin' && (
+                <Button
+                  variant={isFavorite ? "default" : "outline"}
+                  className={isFavorite ? "w-full bg-[#1D9E75] hover:bg-[#188c66] text-white" : "w-full"}
+                  onClick={handleToggleFavorite}
+                >
+                  <Star className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current" : ""}`} />
+                  {isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
+                </Button>
+              )}
 
               <Button variant="outline" className="w-full" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />

@@ -11,12 +11,8 @@ export class FavoritosService {
 
   async findByUsuario(usuarioId: number) {
     const favoritos = await this.favoritoRepository.findByUsuarioId(usuarioId);
-    // Retornar solo los eventos (el usuario ya sabe que son sus favoritos)
-    return favoritos.map((f: any) => ({
-      id: f.id,
-      evento: f.evento,
-      created_at: f.created_at,
-    }));
+    // Retornar solo el objeto evento directamente para que el frontend lo lea sin problemas
+    return favoritos.map((f: any) => f.evento);
   }
 
   async agregar(usuarioId: number, eventoId: number) {
