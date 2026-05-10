@@ -54,7 +54,7 @@ export function LoginPage() {
     } catch (err: unknown) {
       const mensaje = err instanceof Error ? err.message : "Error al iniciar sesión";
       toast.error(mensaje);
-      
+
       // Si el error sugiere que falta verificación, podríamos mostrar el formulario de verificación
       if (mensaje.toLowerCase().includes("verificar") || mensaje.toLowerCase().includes("código")) {
         setEmailToVerify(signInEmail);
@@ -82,7 +82,7 @@ export function LoginPage() {
 
     try {
       const result = await register(registerName, registerEmail, registerPassword);
-      
+
       // Si es un objeto con mensaje (Uninorte)
       if (result && result.mensaje) {
         toast.info(result.mensaje);
@@ -96,7 +96,7 @@ export function LoginPage() {
     } catch (err: unknown) {
       const mensaje = err instanceof Error ? err.message : "Error al registrarse";
       toast.error(mensaje);
-      
+
       // Si el usuario ya existe (409), puede que falte verificar
       if (mensaje.includes("ya está registrado") || mensaje.includes("conflict")) {
         setEmailToVerify(registerEmail);
@@ -163,17 +163,17 @@ export function LoginPage() {
                   {isLoading ? "Verificando..." : "Verificar correo"}
                 </Button>
                 <div className="flex flex-col space-y-2 mt-4">
-                  <Button 
+                  <Button
                     type="button"
-                    variant="outline" 
-                    className="w-full" 
+                    variant="outline"
+                    className="w-full"
                     onClick={handleResendCode}
                   >
                     Reenviar código
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full" 
+                  <Button
+                    variant="ghost"
+                    className="w-full"
                     onClick={() => setShowVerify(false)}
                   >
                     Volver al inicio de sesión
@@ -249,21 +249,6 @@ export function LoginPage() {
                   >
                     {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
                   </Button>
-
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-                    <p className="mb-2" style={{ fontWeight: 600 }}>
-                      Cuentas de prueba (solo desarrollo):
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Organizador: fatima@uninorte.edu.co
-                      <br />
-                      Admin: admin@uninorte.edu.co
-                      <br />
-                      Miembro: juan@uninorte.edu.co
-                      <br />
-                      (Cualquier contraseña funciona)
-                    </p>
-                  </div>
                 </form>
               </TabsContent>
 

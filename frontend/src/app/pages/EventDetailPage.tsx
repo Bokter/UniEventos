@@ -119,7 +119,12 @@ export function EventDetailPage() {
   const imagenPortada = event.imagen_portada || event.coverImage || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000';
 
   const organizadores = event.organizadores || event.organizers || (event.organizador ? [event.organizador] : []);
-  const allOrganizers = [...organizadores, ...(event.coorganizadores || [])];
+  // Ensure unique organizers by ID to avoid duplicate key warnings
+  const allOrganizersMap = new Map();
+  [...organizadores, ...(event.coorganizadores || [])].forEach(o => {
+    if (o && o.id) allOrganizersMap.set(String(o.id), o);
+  });
+  const allOrganizers = Array.from(allOrganizersMap.values());
   const isOrganizer = !!usuario && allOrganizers.some((o: any) => String(o.id) === String(usuario.id));
   const myStream = event.transmisiones?.find((t: any) => String(t.organizador?.id) === String(usuario?.id));
 

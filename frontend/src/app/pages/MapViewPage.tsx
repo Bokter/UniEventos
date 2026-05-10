@@ -8,42 +8,49 @@ import { CategoryBadge } from "../components/CategoryBadge";
 import { Button } from "../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { InteractiveMap } from "../components/InteractiveMap";
-import { eventosApi } from "../services/api.service";
+import { eventosApi, categoriasApi } from "../services/api.service";
 import { toast } from "sonner";
 
 export function MapViewPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [events, setEvents] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const data = await eventosApi.getAll();
-        setEvents(data as any[]);
+        const [eventsData, categoriesData] = await Promise.all([
+          eventosApi.getAll(),
+          categoriasApi.getAll()
+        ]);
+        setEvents(eventsData as any[]);
+        setCategorias(categoriesData as any[]);
       } catch (error) {
-        console.error("Error fetching events for map:", error);
-        toast.error("Error al cargar eventos para el mapa");
+        console.error("Error fetching data for map:", error);
+        toast.error("Error al cargar datos para el mapa");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchEvents();
+    fetchData();
   }, []);
 
   // eventos filtrados
   const filteredEvents = events.filter(event => {
-    const categoria = event.categoria || event.category || "";
-    const matchesCategory = selectedCategory === "all" || categoria === selectedCategory;
+    // 1. Filtro por categoría (ID numérico o nombre)
+    const catId = event.categoria?.id ? String(event.categoria.id) : null;
+    const matchesCategory = selectedCategory === "all" || catId === selectedCategory;
 
-    const fechaInicioStr = event.fecha_inicio || event.dateStart;
+    // 2. Filtro por fecha
+    const fechaInicioStr = event.fecha || event.fecha_inicio || event.dateStart;
     if (!fechaInicioStr) return matchesCategory;
 
     const now = new Date();
     const eventDate = new Date(fechaInicioStr);
-    
+
     const matchesDate = dateFilter === "all" ||
       (dateFilter === "today" && format(eventDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd')) ||
       (dateFilter === "week" && eventDate >= now && eventDate <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)) ||
@@ -66,9 +73,9 @@ export function MapViewPage() {
 
   const center: [number, number] = validEvents.length > 0
     ? [
-        validEvents.reduce((sum, e) => sum + getCoords(e)[0], 0) / validEvents.length,
-        validEvents.reduce((sum, e) => sum + getCoords(e)[1], 0) / validEvents.length
-      ]
+      validEvents.reduce((sum, e) => sum + getCoords(e)[0], 0) / validEvents.length,
+      validEvents.reduce((sum, e) => sum + getCoords(e)[1], 0) / validEvents.length
+    ]
     : [10.9878, -74.8109]; // Coordenadas por defecto (ej. Barranquilla/Uninorte)
 
   return (
@@ -99,11 +106,9 @@ export function MapViewPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas las categorías</SelectItem>
-                    <SelectItem value="Cultural">Culturales</SelectItem>
-                    <SelectItem value="Academic">Académicos</SelectItem>
-                    <SelectItem value="Sports">Deportivos</SelectItem>
-                    <SelectItem value="Workshop">Talleres</SelectItem>
-                    <SelectItem value="Other">Otros</SelectItem>
+                    {categorias.map(cat => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>{cat.nombre}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -144,9 +149,15 @@ export function MapViewPage() {
                         <CategoryBadge category={event.categoria || event.category} />
                       </div>
                       <p className="text-xs text-muted-foreground capitalize">
-                        {event.fecha_inicio || event.dateStart 
-                          ? format(new Date(event.fecha_inicio || event.dateStart), "EEEE, d 'de' MMMM", { locale: es })
-                          : "Fecha no disponible"}
+                        {(() => {
+                          const fechaRaw = event.fecha || event.fecha_inicio || event.dateStart;
+                          if (!fechaRaw) return "Fecha no disponible";
+                          // Si es del backend y tiene hora, combinar
+                          const horaStr = event.hora_inicio || "";
+                          const finalDate = (event.fecha && horaStr) ? `${event.fecha}T${horaStr}` : fechaRaw;
+                          const d = new Date(finalDate);
+                          return isNaN(d.getTime()) ? "Fecha inválida" : format(d, "EEEE, d 'de' MMMM", { locale: es });
+                        })()}
                       </p>
                       <p className="text-xs text-muted-foreground line-clamp-1">
                         {event.lugar?.nombre || event.location?.name || "Ubicación no especificada"}

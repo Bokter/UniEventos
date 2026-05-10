@@ -18,6 +18,7 @@ function buildHeaders(extra?: Record<string, string>): Record<string, string> {
 }
 
 // Helper: lanza error con mensaje legible si la respuesta no es OK
+// Helper: lanza error con mensaje legible si la respuesta no es OK
 async function handleResponse<T = any>(res: Response): Promise<T> {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -26,77 +27,93 @@ async function handleResponse<T = any>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// Helper para reintentos en caso de errores de red (como ERR_EMPTY_RESPONSE)
+async function fetchWithRetry(url: string, options?: RequestInit, retries = 2): Promise<Response> {
+  try {
+    const response = await fetch(url, options);
+    // Si el servidor responde pero con un error de red (poco común en fetch, pero por si acaso)
+    return response;
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`Error de red detectado, reintentando... (${retries} intentos restantes)`);
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Esperar 1.5s
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    throw error;
+  }
+}
+
 // ── Eventos ──────────────────────────────────────────────────
 export const eventosApi = {
   getAll: (categoriaId?: number) => {
     const url = new URL(`${BASE_URL}/eventos`);
     if (categoriaId) url.searchParams.append('categoria', String(categoriaId));
-    return fetch(url.toString(), { headers: buildHeaders() }).then(handleResponse);
+    return fetchWithRetry(url.toString(), { headers: buildHeaders() }).then(handleResponse);
   },
 
   getPendientes: () =>
-    fetch(`${BASE_URL}/eventos/pendientes`, { headers: buildHeaders() }).then(handleResponse),
+    fetchWithRetry(`${BASE_URL}/eventos/pendientes`, { headers: buildHeaders() }).then(handleResponse),
 
   getMisEventos: () =>
-    fetch(`${BASE_URL}/eventos/mis-eventos`, { headers: buildHeaders() }).then(handleResponse),
+    fetchWithRetry(`${BASE_URL}/eventos/mis-eventos`, { headers: buildHeaders() }).then(handleResponse),
 
   getById: (id: number | string) =>
-    fetch(`${BASE_URL}/eventos/${id}`, { headers: buildHeaders() }).then(handleResponse),
+    fetchWithRetry(`${BASE_URL}/eventos/${id}`, { headers: buildHeaders() }).then(handleResponse),
 
   aprobar: (id: number | string) =>
-    fetch(`${BASE_URL}/eventos/${id}/aprobar`, {
+    fetchWithRetry(`${BASE_URL}/eventos/${id}/aprobar`, {
       method: 'PATCH',
       headers: buildHeaders(),
     }).then(handleResponse),
 
   rechazar: (id: number | string, observacion: string) =>
-    fetch(`${BASE_URL}/eventos/${id}/rechazar`, {
+    fetchWithRetry(`${BASE_URL}/eventos/${id}/rechazar`, {
       method: 'PATCH',
       headers: buildHeaders(),
       body: JSON.stringify({ observacion }),
     }).then(handleResponse),
 
   cancelar: (id: number | string) =>
-    fetch(`${BASE_URL}/eventos/${id}/cancelar`, {
+    fetchWithRetry(`${BASE_URL}/eventos/${id}/cancelar`, {
       method: 'PATCH',
       headers: buildHeaders(),
     }).then(handleResponse),
 
   registrarStream: (id: number | string, url: string) =>
-    fetch(`${BASE_URL}/eventos/${id}/stream`, {
+    fetchWithRetry(`${BASE_URL}/eventos/${id}/stream`, {
       method: 'POST',
       headers: buildHeaders(),
       body: JSON.stringify({ url }),
     }).then(handleResponse),
 
   eliminarStream: (id: number | string) =>
-    fetch(`${BASE_URL}/eventos/${id}/stream`, {
+    fetchWithRetry(`${BASE_URL}/eventos/${id}/stream`, {
       method: 'DELETE',
       headers: buildHeaders(),
     }).then(handleResponse),
 
   enviarRevision: (id: number | string) =>
-    fetch(`${BASE_URL}/eventos/${id}/enviar`, {
+    fetchWithRetry(`${BASE_URL}/eventos/${id}/enviar`, {
       method: 'PATCH',
       headers: buildHeaders(),
     }).then(handleResponse),
 
   create: (body: Record<string, unknown>) =>
-    fetch(`${BASE_URL}/eventos`, {
+    fetchWithRetry(`${BASE_URL}/eventos`, {
       method: 'POST',
       headers: buildHeaders(),
       body: JSON.stringify(body),
     }).then(handleResponse),
 
   update: (id: number | string, body: Record<string, unknown>) =>
-    fetch(`${BASE_URL}/eventos/${id}`, {
+    fetchWithRetry(`${BASE_URL}/eventos/${id}`, {
       method: 'PUT',
       headers: buildHeaders(),
       body: JSON.stringify(body),
     }).then(handleResponse),
 
   eliminar: (id: number | string) =>
-    fetch(`${BASE_URL}/eventos/${id}`, {
+    fetchWithRetry(`${BASE_URL}/eventos/${id}`, {
       method: 'DELETE',
       headers: buildHeaders(),
     }).then(res => { if (!res.ok) return handleResponse(res); }),
@@ -105,22 +122,22 @@ export const eventosApi = {
 // ── Usuarios ─────────────────────────────────────────────────
 export const usuariosApi = {
   getAll: () =>
-    fetch(`${BASE_URL}/usuarios`, { headers: buildHeaders() }).then(handleResponse),
+    fetchWithRetry(`${BASE_URL}/usuarios`, { headers: buildHeaders() }).then(handleResponse),
 
   activar: (id: number | string) =>
-    fetch(`${BASE_URL}/usuarios/${id}/activar`, {
+    fetchWithRetry(`${BASE_URL}/usuarios/${id}/activar`, {
       method: 'PATCH',
       headers: buildHeaders(),
     }).then(handleResponse),
 
   desactivar: (id: number | string) =>
-    fetch(`${BASE_URL}/usuarios/${id}/desactivar`, {
+    fetchWithRetry(`${BASE_URL}/usuarios/${id}/desactivar`, {
       method: 'PATCH',
       headers: buildHeaders(),
     }).then(handleResponse),
 
   cambiarRol: (id: number | string, rol: string) =>
-    fetch(`${BASE_URL}/usuarios/${id}/rol`, {
+    fetchWithRetry(`${BASE_URL}/usuarios/${id}/rol`, {
       method: 'PATCH',
       headers: buildHeaders(),
       body: JSON.stringify({ rol }),
@@ -130,20 +147,20 @@ export const usuariosApi = {
 // ── Categorías ────────────────────────────────────────────────
 export const categoriasApi = {
   getAll: () =>
-    fetch(`${BASE_URL}/categorias`, { headers: buildHeaders() }).then(handleResponse),
+    fetchWithRetry(`${BASE_URL}/categorias`, { headers: buildHeaders() }).then(handleResponse),
 
   getAllAdmin: () =>
-    fetch(`${BASE_URL}/categorias/todas`, { headers: buildHeaders() }).then(handleResponse),
+    fetchWithRetry(`${BASE_URL}/categorias/todas`, { headers: buildHeaders() }).then(handleResponse),
 
   create: (nombre: string) =>
-    fetch(`${BASE_URL}/categorias`, {
+    fetchWithRetry(`${BASE_URL}/categorias`, {
       method: 'POST',
       headers: buildHeaders(),
       body: JSON.stringify({ nombre }),
     }).then(handleResponse),
 
   update: (id: number | string, nombre?: string, activa?: boolean) =>
-    fetch(`${BASE_URL}/categorias/${id}`, {
+    fetchWithRetry(`${BASE_URL}/categorias/${id}`, {
       method: 'PUT',
       headers: buildHeaders(),
       body: JSON.stringify({ ...(nombre !== undefined && { nombre }), ...(activa !== undefined && { activa }) }),
@@ -153,10 +170,10 @@ export const categoriasApi = {
 // ── Lugares ──────────────────────────────────────────────────
 export const lugaresApi = {
   getAll: () =>
-    fetch(`${BASE_URL}/lugares`, { headers: buildHeaders() }).then(handleResponse),
+    fetchWithRetry(`${BASE_URL}/lugares`, { headers: buildHeaders() }).then(handleResponse),
 
   create: (body: { nombre: string; descripcion?: string; latitud?: number; longitud?: number }) =>
-    fetch(`${BASE_URL}/lugares`, {
+    fetchWithRetry(`${BASE_URL}/lugares`, {
       method: 'POST',
       headers: buildHeaders(),
       body: JSON.stringify(body),
@@ -166,16 +183,16 @@ export const lugaresApi = {
 // ── Favoritos ────────────────────────────────────────────────
 export const favoritosApi = {
   getAll: () =>
-    fetch(`${BASE_URL}/favoritos`, { headers: buildHeaders() }).then(handleResponse),
+    fetchWithRetry(`${BASE_URL}/favoritos`, { headers: buildHeaders() }).then(handleResponse),
 
   add: (eventoId: number | string) =>
-    fetch(`${BASE_URL}/favoritos/${eventoId}`, {
+    fetchWithRetry(`${BASE_URL}/favoritos/${eventoId}`, {
       method: 'POST',
       headers: buildHeaders(),
     }).then(handleResponse),
 
   remove: (eventoId: number | string) =>
-    fetch(`${BASE_URL}/favoritos/${eventoId}`, {
+    fetchWithRetry(`${BASE_URL}/favoritos/${eventoId}`, {
       method: 'DELETE',
       headers: buildHeaders(),
     }).then(handleResponse),
