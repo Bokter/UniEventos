@@ -12,6 +12,7 @@ const statusStyles: Record<string, { bg: string; text: string }> = {
   aprobado: { bg: 'bg-green-100', text: 'text-green-700' },
   rechazado: { bg: 'bg-red-100', text: 'text-red-700' },
   cancelado: { bg: 'bg-gray-100', text: 'text-gray-500' },
+  terminado: { bg: 'bg-blue-100', text: 'text-blue-700' },
   // Fallbacks por si acaso queda algo viejo:
   Draft: { bg: 'bg-gray-100', text: 'text-gray-700' },
   'In review': { bg: 'bg-amber-100', text: 'text-amber-700' },
@@ -26,6 +27,7 @@ const statusLabels: Record<string, string> = {
   aprobado: 'Aprobado',
   rechazado: 'Rechazado',
   cancelado: 'Cancelado',
+  terminado: 'Finalizado',
   Draft: 'Borrador',
   'In review': 'En revisión',
   Approved: 'Aprobado',

@@ -101,7 +101,6 @@ export function PublishEventPage() {
   const [categoryId, setCategoryId] = useState<string>("");
   const [dateStart, setDateStart] = useState("");
   const [timeStart, setTimeStart] = useState("");
-  const [dateEnd, setDateEnd] = useState("");
   const [timeEnd, setTimeEnd] = useState("");
   const [coverImage, setCoverImage] = useState("");
   const [locationName, setLocationName] = useState("");
@@ -143,7 +142,6 @@ export function PublishEventPage() {
           // Extraemos solo la parte YYYY-MM-DD para evitar errores de timezone
           const dateOnly = event.fecha.split('T')[0];
           setDateStart(dateOnly);
-          setDateEnd(dateOnly); // Si el backend no soporta fecha_fin, usamos la misma
           setTimeStart(event.hora_inicio || "");
           setTimeEnd(event.hora_fin || "");
         }
@@ -172,7 +170,7 @@ export function PublishEventPage() {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!title || !description || !categoryId || !dateStart || !timeStart || !dateEnd || !timeEnd) {
+      if (!title || !description || !categoryId || !dateStart || !timeStart || !timeEnd) {
         toast.error("Por favor, rellene todos los campos obligatorios.");
         return;
       }
@@ -347,12 +345,9 @@ export function PublishEventPage() {
               </div>
 
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div><Label htmlFor="date-start">Fecha *</Label><Input id="date-start" type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-2" required /></div>
                 <div><Label htmlFor="time-start">Hora de inicio *</Label><Input id="time-start" type="time" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className="mt-2" required /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label htmlFor="date-end">Fecha fin</Label><Input id="date-end" type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className="mt-2" /></div>
                 <div><Label htmlFor="time-end">Hora de finalización *</Label><Input id="time-end" type="time" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className="mt-2" required /></div>
               </div>
 

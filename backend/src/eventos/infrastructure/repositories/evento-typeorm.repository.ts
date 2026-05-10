@@ -103,4 +103,14 @@ export class EventoTypeormRepository implements IEventoRepository {
   async delete(id: number): Promise<void> {
     await this.repo.delete(id);
   }
+
+  async marcarTerminados(): Promise<void> {
+    // Actualiza a TERMINADO los eventos APROBADOS cuya fecha + hora_fin ya pasó en hora de Colombia
+    await this.repo.query(`
+      UPDATE eventos 
+      SET estado = $1 
+      WHERE estado = $2 
+      AND CAST(CONCAT(fecha, ' ', COALESCE(hora_fin, '23:59:59')) AS TIMESTAMP) < CURRENT_TIMESTAMP AT TIME ZONE 'America/Bogota'
+    `, [EstadoEvento.TERMINADO, EstadoEvento.APROBADO]);
+  }
 }

@@ -32,10 +32,23 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
     ? horaFin ? `${horaInicio} – ${horaFin}` : horaInicio
     : '';
 
-  // Determinar si el evento ya pasó
+  // Determinar si el evento ya pasó o está cancelado
+  const estado = typeof evento.estado === 'string' ? evento.estado.toLowerCase() : '';
+  const esCancelado = estado === 'cancelado';
+  const esTerminado = estado === 'terminado';
+  
+  // Como fallback para la preview en PublishEventPage que no tiene estado guardado
   const horaFinEvaluar = horaFin || '23:59';
   const fechaFinStr = fechaBruta ? `${fechaBruta.split('T')[0]}T${horaFinEvaluar}:00` : null;
-  const esPasado = fechaFinStr ? new Date(fechaFinStr) < new Date() : false;
+  const esPasado = esTerminado || (!estado && fechaFinStr ? new Date(fechaFinStr) < new Date() : false);
+
+  // Etiqueta a mostrar
+  let etiquetaEstado = null;
+  if (esCancelado) {
+    etiquetaEstado = <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 uppercase tracking-wide">Cancelado</span>;
+  } else if (esPasado) {
+    etiquetaEstado = <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide">Finalizado</span>;
+  }
 
   // Manejo de ubicación
   const lugarNombre = evento.lugar?.nombre || evento.location?.name || "Ubicación pendiente";
@@ -62,11 +75,7 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
             </h3>
             <div className="flex flex-col gap-1 items-end">
               <CategoryBadge category={categoria} />
-              {esPasado && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide">
-                  Finalizado
-                </span>
-              )}
+              {etiquetaEstado}
             </div>
           </div>
           <div className="space-y-1.5 text-sm text-muted-foreground">
@@ -77,7 +86,7 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
               </span>
             </div>
             {rangoHora && (
-              <div className="text-xs text-muted-foreground/70 pl-6">{rangoHora}</div>
+              <div className="text-xs text-muted-foreground/70 pl-6">Hora: {rangoHora}</div>
             )}
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 flex-shrink-0" />

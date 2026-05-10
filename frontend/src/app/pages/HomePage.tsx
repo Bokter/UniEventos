@@ -69,12 +69,6 @@ export function HomePage() {
     const fechaEvento = new Date(fechaParaParsear);
     fechaEvento.setHours(0, 0, 0, 0);
 
-    // 0. Ocultar eventos ya finalizados (fecha + hora_fin en el pasado)
-    const horaFinStr = evento.hora_fin || '23:59';
-    const fechaFinStr = fechaInicioStr ? `${fechaInicioStr.split('T')[0]}T${horaFinStr}:00` : null;
-    const esPasado = fechaFinStr ? new Date(fechaFinStr) < new Date() : false;
-    if (esPasado) return false;
-
     let coincideFecha = true;
     if (filtroFecha === "hoy") {
       coincideFecha = fechaEvento.getTime() === hoy.getTime();
