@@ -44,6 +44,9 @@ export class EventoOrmEntity {
   @Column({ type: 'text', nullable: true })
   observacion_admin: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  imagen_portada: string | null;
+
   @ManyToMany(() => UsuarioOrmEntity)
   @JoinTable({
     name: 'eventos_coorganizadores',

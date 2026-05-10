@@ -16,11 +16,7 @@ export function HomePage() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>("todas");
   const [filtroFecha, setFiltroFecha] = useState<string>("todas");
   const [eventos, setEventos] = useState<any[]>([]);
-<<<<<<< HEAD
-  const [categoriasLista, setCategoriasLista] = useState<any[]>([]);
-=======
   const [categorias, setCategorias] = useState<any[]>([]);
->>>>>>> 1ed9cad (homepage fix)
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -32,19 +28,10 @@ export function HomePage() {
     const fetchEventos = async () => {
       setIsLoading(true);
       try {
-<<<<<<< HEAD
-        const [eventosData, categoriasData] = await Promise.all([
-          eventosApi.getAll(),
-          categoriasApi.getAll()
-        ]);
-        setEventos(eventosData as any[]);
-        setCategoriasLista(categoriasData as any[]);
-=======
         // Pasar categoria_id numérico al backend si está seleccionada
         const categoriaId = categoriaSeleccionada !== "todas" ? Number(categoriaSeleccionada) : undefined;
         const data = await eventosApi.getAll(categoriaId);
         setEventos(data as any[]);
->>>>>>> 1ed9cad (homepage fix)
       } catch (error) {
         console.error("Error fetching events:", error);
         toast.error("Error al cargar los eventos");
@@ -57,21 +44,13 @@ export function HomePage() {
 
   // Filtrado local solo para búsqueda y fecha (la categoría ya viene filtrada del backend)
   const eventosFiltrados = eventos.filter(evento => {
-<<<<<<< HEAD
-    // 1. Filtro por búsqueda (Título o Descripción)
-    // El backend devuelve 'titulo' y 'descripcion'
-    const titulo = evento.titulo || evento.title || "";
-    const descripcion = evento.descripcion || evento.description || "";
-=======
     const titulo = evento.titulo || "";
     const descripcion = evento.descripcion || "";
->>>>>>> 1ed9cad (homepage fix)
 
     const coincideBusqueda = busqueda === "" ||
       titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
       descripcion.toLowerCase().includes(busqueda.toLowerCase());
 
-<<<<<<< HEAD
     // 2. Filtro por categoría
     // El backend devuelve 'categoria' como objeto {id, nombre, ...}
     const categoriaRaw = evento.categoria || evento.category || "";
@@ -89,14 +68,6 @@ export function HomePage() {
     // Ajustar si viene como YYYY-MM-DD puro para evitar desfase de timezone
     const fechaParaParsear = fechaInicioStr.includes('T') ? fechaInicioStr : `${fechaInicioStr}T12:00:00`;
     const fechaEvento = new Date(fechaParaParsear);
-=======
-    const fechaStr = evento.fecha;
-    if (!fechaStr) return coincideBusqueda;
-
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const fechaEvento = new Date(fechaStr);
->>>>>>> 1ed9cad (homepage fix)
     fechaEvento.setHours(0, 0, 0, 0);
 
     let coincideFecha = true;
@@ -150,14 +121,9 @@ export function HomePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas las categorías</SelectItem>
-<<<<<<< HEAD
-                {categoriasLista.map(cat => (
-                  <SelectItem key={cat.id} value={cat.nombre}>{cat.nombre}</SelectItem>
-=======
                 {/* Categorías dinámicas del backend — con su ID real */}
                 {categorias.map(cat => (
                   <SelectItem key={cat.id} value={String(cat.id)}>{cat.nombre}</SelectItem>
->>>>>>> 1ed9cad (homepage fix)
                 ))}
               </SelectContent>
             </Select>

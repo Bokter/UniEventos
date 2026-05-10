@@ -28,8 +28,11 @@ async function handleResponse<T = any>(res: Response): Promise<T> {
 
 // ── Eventos ──────────────────────────────────────────────────
 export const eventosApi = {
-  getAll: () =>
-    fetch(`${BASE_URL}/eventos`, { headers: buildHeaders() }).then(handleResponse),
+  getAll: (categoriaId?: number) => {
+    const url = new URL(`${BASE_URL}/eventos`);
+    if (categoriaId) url.searchParams.append('categoria', String(categoriaId));
+    return fetch(url.toString(), { headers: buildHeaders() }).then(handleResponse);
+  },
 
   getPendientes: () =>
     fetch(`${BASE_URL}/eventos/pendientes`, { headers: buildHeaders() }).then(handleResponse),
