@@ -40,14 +40,28 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
     if (!mapContainerRef.current || mapRef.current) return;
 
     try {
-      const map = L.map(mapContainerRef.current).setView([10.9878, -74.8109], 15);
+      // Coordenadas de la Universidad del Norte: 11.019, -74.851
+      const map = L.map(mapContainerRef.current).setView([11.019, -74.851], 16);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
 
       map.on('click', (e: L.LeafletMouseEvent) => {
-        setLocationCoords([e.latlng.lat, e.latlng.lng]);
+        const { lat, lng } = e.latlng;
+        
+        // Límites aproximados del campus de Uninorte
+        // (Ajustar si es necesario, estos valores cubren el campus principal)
+        const isInsideCampus = 
+          lat >= 11.0140 && lat <= 11.0240 &&
+          lng >= -74.8550 && lng <= -74.8460;
+
+        if (!isInsideCampus) {
+          toast.error("La ubicación del evento debe estar dentro del campus de la Universidad del Norte.");
+          return;
+        }
+
+        setLocationCoords([lat, lng]);
       });
 
       mapRef.current = map;
@@ -124,16 +138,14 @@ export function PublishEventPage() {
           if (cat) setCategoryId(String(cat.id));
         }
 
-        if (event.fecha_inicio) {
-          const date = new Date(event.fecha_inicio);
-          setDateStart(format(date, 'yyyy-MM-dd'));
-          setTimeStart(event.hora_inicio || format(date, 'HH:mm'));
-        }
-        if (event.fecha_fin || event.hora_fin) {
-          // Note: Backend might have fecha + hora_fin or fecha_fin
-          const date = event.fecha_fin ? new Date(event.fecha_fin) : new Date(event.fecha_inicio);
-          setDateEnd(format(date, 'yyyy-MM-dd'));
-          setTimeEnd(event.hora_fin || format(date, 'HH:mm'));
+        // El backend envía 'fecha', no 'fecha_inicio'
+        if (event.fecha) {
+          // Extraemos solo la parte YYYY-MM-DD para evitar errores de timezone
+          const dateOnly = event.fecha.split('T')[0];
+          setDateStart(dateOnly);
+          setDateEnd(dateOnly); // Si el backend no soporta fecha_fin, usamos la misma
+          setTimeStart(event.hora_inicio || "");
+          setTimeEnd(event.hora_fin || "");
         }
 
         if (event.lugar) {

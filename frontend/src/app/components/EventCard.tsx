@@ -17,7 +17,11 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
   const categoria = evento.categoria || evento.category || "General";
   
   // Manejo de fecha
-  const fechaBruta = evento.fecha_inicio || evento.dateStart;
+  let fechaBruta = evento.fecha_inicio || evento.dateStart;
+  if (!fechaBruta && evento.fecha) {
+    fechaBruta = `${evento.fecha}T${evento.hora_inicio || '00:00:00'}`;
+  }
+  
   const fechaObjeto = fechaBruta ? new Date(fechaBruta) : new Date();
   const fechaFormateada = format(fechaObjeto, 'MMM d, yyyy • h:mm a', { locale: es });
 

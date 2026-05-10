@@ -19,7 +19,7 @@ export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const usuario = obtenerUsuario();
-  
+
   const [event, setEvent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -37,9 +37,22 @@ export function EventDetailPage() {
       try {
         const data = await eventosApi.getById(id) as any;
         setEvent(data);
-        
-        // Fetch favorites to set initial state
-        if (usuario) {
+
+        // Check if current user is an organizer to set initial stream link
+        if (usuario && data.streams) {
+          const userStream = data.streams.find((s: any) => String(s.organizerId) === String(usuario.id));
+          if (userStream) {
+            setStreamLink(userStream.streamLink);
+          }
+        }
+
+        // Set first active stream if available
+        if (data.streams && data.streams.length > 0) {
+          setActiveStreamId(data.streams[0].organizerId);
+        }
+
+        // Fetch favorites to set initial state (solo para no-admins)
+        if (usuario && usuario.rol !== 'admin') {
           const userFavorites = await favoritosApi.getAll() as any[];
           const isFav = userFavorites.some((f: any) => String(f.id) === String(id));
           setIsFavorite(isFav);
@@ -94,13 +107,13 @@ export function EventDetailPage() {
     return d;
   };
 
-  const fechaInicio = parseSafeDate(event.fecha_inicio || event.dateStart);
-  const fechaFin = parseSafeDate(event.fecha_fin || event.dateEnd);
+  const fechaInicio = parseSafeDate(event.fecha || event.dateStart);
+  const fechaFin = parseSafeDate(event.fecha || event.dateEnd);
   const lugarNombre = event.lugar?.nombre || event.location?.name;
   const lat = event.lugar?.lat || event.location?.lat;
   const lng = event.lugar?.lng || event.location?.lng;
   const imagenPortada = event.imagen_portada || event.coverImage || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000';
-  
+
   const organizadores = event.organizadores || event.organizers || (event.organizador ? [event.organizador] : []);
   const allOrganizers = [...organizadores, ...(event.coorganizadores || [])];
   const isOrganizer = !!usuario && allOrganizers.some((o: any) => String(o.id) === String(usuario.id));
@@ -181,7 +194,7 @@ export function EventDetailPage() {
           text: descripcion,
           url: window.location.href,
         });
-      } catch (err) {}
+      } catch (err) { }
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast.success("Enlace copiado al portapapeles");
@@ -287,14 +300,16 @@ export function EventDetailPage() {
 
           <div className="md:col-span-1">
             <div className="sticky top-24 space-y-4">
-              <Button
-                variant={isFavorite ? "default" : "outline"}
-                className={isFavorite ? "w-full bg-[#1D9E75] hover:bg-[#188c66] text-white" : "w-full"}
-                onClick={handleToggleFavorite}
-              >
-                <Star className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current" : ""}`} />
-                {isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
-              </Button>
+              {usuario?.rol !== 'admin' && (
+                <Button
+                  variant={isFavorite ? "default" : "outline"}
+                  className={isFavorite ? "w-full bg-[#1D9E75] hover:bg-[#188c66] text-white" : "w-full"}
+                  onClick={handleToggleFavorite}
+                >
+                  <Star className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current" : ""}`} />
+                  {isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
+                </Button>
+              )}
 
               <Button variant="outline" className="w-full" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
