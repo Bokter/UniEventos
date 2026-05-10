@@ -21,12 +21,13 @@ import { toast } from "sonner";
 interface EventoBackend {
   id: number;
   titulo: string;
-  categoria: string;
-  fecha_inicio: string;
+  categoria: { id: number; nombre: string } | string;
+  fecha: string;
   estado: string;
   observacion?: string;
-  fecha_envio?: string;
-  organizadores?: { nombre_completo: string }[];
+  created_at?: string;
+  organizador?: { id: number; nombre_completo: string; email: string };
+  coorganizadores?: { id: number; nombre_completo: string; email: string }[];
   [key: string]: unknown;
 }
 
@@ -258,13 +259,15 @@ export function AdminPanelPage() {
                             </Link>
                           </TableCell>
                           <TableCell>
-                            {event.organizadores?.map(o => o.nombre_completo).join(', ') ?? '—'}
+                            {event.organizador?.nombre_completo ?? '—'}
+                            {event.coorganizadores && event.coorganizadores.length > 0 && 
+                              `, ${event.coorganizadores.map(c => c.nombre_completo).join(', ')}`}
                           </TableCell>
                           <TableCell>
                             <CategoryBadge category={event.categoria as any} />
                           </TableCell>
                           <TableCell>
-                            {event.fecha_envio ? format(new Date(event.fecha_envio), 'dd/MM/yyyy') : '—'}
+                            {event.created_at ? format(new Date(event.created_at), 'dd/MM/yyyy') : '—'}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -339,15 +342,17 @@ export function AdminPanelPage() {
                           </Link>
                         </TableCell>
                         <TableCell>
-                          {event.organizadores?.map(o => o.nombre_completo).join(', ') ?? '—'}
+                          {event.organizador?.nombre_completo ?? '—'}
+                          {event.coorganizadores && event.coorganizadores.length > 0 && 
+                            ` (+${event.coorganizadores.length})`}
                         </TableCell>
                         <TableCell>
                           <CategoryBadge category={event.categoria as any} />
                         </TableCell>
                           <TableCell>
                             {(() => {
-                              if (!event.fecha_inicio) return '—';
-                              const d = new Date(event.fecha_inicio);
+                              if (!event.fecha) return '—';
+                              const d = new Date(event.fecha);
                               return isNaN(d.getTime()) ? 'Fecha inválida' : format(d, 'dd/MM/yyyy');
                             })()}
                           </TableCell>
