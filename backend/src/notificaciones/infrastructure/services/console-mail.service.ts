@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IMailService } from '../../domain/services/mail.service.interface';
 
 @Injectable()
-export class ResendMailService implements IMailService {
-  private readonly logger = new Logger(ResendMailService.name);
+export class ConsoleMailService implements IMailService {
+  private readonly logger = new Logger(ConsoleMailService.name);
 
   async sendMail(to: string, subject: string, template: string, context: any): Promise<void> {
     const apiKey = process.env.RESEND_API_KEY;
