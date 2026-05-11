@@ -295,8 +295,15 @@
         }
 
         function registrarGPS(coords) {
+
             if (!esNumero(coords.latitude) || !esNumero(coords.longitude)) return;
             gpsAccuracy = coords.accuracy || 999;
+
+            // Ignorar primera lectura si es muy imprecisa
+            if (originLat === null && gpsAccuracy > 50) {
+                log(`GPS primera lectura ignorada: ±${gpsAccuracy.toFixed(0)}m — esperando mejor señal`);
+                return;
+            }
 
             if (originLat === null) {
                 originLat = coords.latitude;
@@ -422,14 +429,15 @@
             const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
             if (esIOS && esNumero(compassHeading)) {
-                // iOS: negamos el heading porque webkitCompassHeading es CW y Three.js es CCW
                 const headingRad = degToRad(compassHeading);
 
                 const qHeading = new THREE.Quaternion();
-                qHeading.setFromAxisAngle(new THREE.Vector3(0, 1, 0), headingRad); // sin negación
+                qHeading.setFromAxisAngle(new THREE.Vector3(0, 1, 0), headingRad);
 
+                // Usar beta real para el pitch pero suavizado
+                const pitchReal = degToRad((deviceBeta || 90) - 90);
                 const qPitch = new THREE.Quaternion();
-                qPitch.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+                qPitch.setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitchReal);
 
                 qTarget.copy(qHeading).multiply(qPitch);
             } else {
@@ -655,9 +663,11 @@
                 const anguloRad = degToRad(anguloRel);
                 const RADIO = 10;
 
+                const pitchRad = degToRad((deviceBeta || 90) - 90);
                 const x = Math.sin(anguloRad) * RADIO;
                 const z = -Math.cos(anguloRad) * RADIO;
-                mesh.position.set(x, 0, z);
+                const y = Math.sin(pitchRad) * RADIO * -1;
+                mesh.position.set(x, y, z);
                 mesh.lookAt(0, 0, 0);
 
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
