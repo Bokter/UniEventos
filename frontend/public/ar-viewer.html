@@ -235,6 +235,14 @@
         const qTarget = new THREE.Quaternion();
         const tmpVec3 = new THREE.Vector3();
 
+        // iOS: quaternions separados para NO mezclar pitch con yaw.
+        // El yaw viene de la brújula y el pitch viene de beta.
+        // No usamos gamma/roll porque en iOS suele contaminar el eje horizontal.
+        const iosAxisY = new THREE.Vector3(0, 1, 0);
+        const iosAxisX = new THREE.Vector3(1, 0, 0);
+        const iosQYaw = new THREE.Quaternion();
+        const iosQPitch = new THREE.Quaternion();
+
         function $(id) { return document.getElementById(id); }
         function log(msg) {
             const d = $('debug');
@@ -511,11 +519,20 @@
                 smoothCompassHeading = iosYawDeg;
             }
 
-            // Pitch FIJO en 0 — no seguir el movimiento vertical del celular
-            const yawRad = degToRad(-iosYawDeg);
+            // Pitch real de iOS: si lo dejamos fijo en 0, el indicador queda pegado a la pantalla
+            // cuando el usuario mueve el celular arriba/abajo. Lo filtramos separado del yaw.
+            const targetPitchDeg = calcularPitchIOS();
+            if (iosPitchDeg === null) iosPitchDeg = targetPitchDeg;
+            else iosPitchDeg += (targetPitchDeg - iosPitchDeg) * IOS_PITCH_ALPHA;
 
-            orientationEuler.set(0, yawRad, 0, 'YXZ');
-            qTarget.setFromEuler(orientationEuler);
+            // Composición desacoplada:
+            // - yaw: mundo horizontal, desde brújula iOS
+            // - pitch: inclinación vertical, desde beta
+            // - roll/gamma: ignorado en iOS para evitar deriva horizontal falsa
+            iosQYaw.setFromAxisAngle(iosAxisY, degToRad(-iosYawDeg));
+            iosQPitch.setFromAxisAngle(iosAxisX, degToRad(iosPitchDeg));
+            qTarget.copy(iosQYaw).multiply(iosQPitch);
+
             camera.quaternion.slerp(qTarget, IOS_CAMERA_SLERP);
             lastHeadingDeg = iosYawDeg;
         }
