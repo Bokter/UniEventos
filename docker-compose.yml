@@ -18,9 +18,10 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_NAME=unieventos
-      - JWT_SECRET=dev_secret_cambiar_en_produccion
-      - MAIL_FROM=noreply@unieventos.com
-      - RESEND_API_KEY=re_48BbvmEj_ugyASSqDGbXDgWkWPQdjuQhj
+      - JWT_SECRET=${JWT_SECRET}
+      - BREVO_LOGIN=${BREVO_LOGIN}
+      - BREVO_SMTP_KEY=${BREVO_SMTP_KEY}
+      - MAIL_FROM=${MAIL_FROM}
     depends_on:
       db:
         condition: service_healthy
