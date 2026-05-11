@@ -705,6 +705,7 @@
                     ? (compassHeading ? compassHeading.toFixed(0) : '?')
                     : lastHeadingDeg.toFixed(0);
                 setStatus(`GPS ${acc} · ${heading}° · ${orientationSource}`);
+                log(`iOS cam rot: x=${camera.rotation.x.toFixed(2)} y=${camera.rotation.y.toFixed(2)} z=${camera.rotation.z.toFixed(2)}`);
             }
             renderer.render(scene, camera);
         }
