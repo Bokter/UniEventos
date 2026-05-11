@@ -211,8 +211,22 @@
         let llegadaTimer = null;
         let llegadaEventoId = null;
 
+        // iOS: brújula y pitch filtrados por separado.
+        // Esto evita que al inclinar arriba/abajo se contamine el yaw horizontal.
+        let rawCompassHeading = null;
         let smoothCompassHeading = null;
-        const EMA_IOS = 0.08; // suavizado — más bajo = más suave
+        let iosYawDeg = null;
+        let iosPitchDeg = null;
+        let iosLastRawHeadingDeg = null;
+        let iosLastHeadingSampleMs = 0;
+
+        const IOS_YAW_ALPHA_MIN = 0.10;      // quieto: más estable
+        const IOS_YAW_ALPHA_MAX = 0.58;      // giro rápido: menos lag
+        const IOS_YAW_FULL_SPEED_DEG = 55;   // a partir de aquí responde rápido
+        const IOS_PITCH_ALPHA = 0.24;
+        const IOS_CAMERA_SLERP = 0.68;
+        const IOS_PITCH_CENTER_DEG = 90;     // iPhone en vertical mirando al horizonte ≈ beta 90
+        const IOS_MAX_PITCH_DEG = 72;
 
         const zee = new THREE.Vector3(0, 0, 1);
         const orientationEuler = new THREE.Euler();
@@ -414,17 +428,11 @@
             orientationAvailable = true;
             orientationSource = isAbsolute ? 'absolute' : 'relative';
             if (hasIOSCompass) {
-                const raw = wrap360(e.webkitCompassHeading);
-                if (smoothCompassHeading === null) {
-                    smoothCompassHeading = raw;
-                } else {
-                    // EMA circular
-                    let diff = raw - smoothCompassHeading;
-                    if (diff > 180) diff -= 360;
-                    if (diff < -180) diff += 360;
-                    smoothCompassHeading = wrap360(smoothCompassHeading + EMA_IOS * diff);
-                }
-                compassHeading = smoothCompassHeading;
+                // En iOS NO filtramos aquí con un EMA fijo: produce lag.
+                // Guardamos la brújula cruda y el filtro adaptativo se aplica en actualizarOrientacionCamaraIOS().
+                rawCompassHeading = wrap360(e.webkitCompassHeading);
+                compassHeading = rawCompassHeading;
+                iosLastHeadingSampleMs = now;
                 orientationSource = 'iOS compass';
             }
         }
@@ -454,24 +462,80 @@
             } catch (err) { log('GyroNorm exc: ' + err.message); }
         }
 
+        function diffAngDeg(a, b) {
+            return ((a - b + 540) % 360) - 180;
+        }
+
+        function suavizarAnguloDeg(actual, objetivo, alpha) {
+            if (!esNumero(actual)) return wrap360(objetivo);
+            const d = diffAngDeg(objetivo, actual);
+            return wrap360(actual + d * alpha);
+        }
+
+        function calcularAlphaYawIOS(diffAbs) {
+            // Filtro adaptativo: quieto filtra fuerte, girando rápido responde más rápido.
+            const t = clamp(diffAbs / IOS_YAW_FULL_SPEED_DEG, 0, 1);
+            return IOS_YAW_ALPHA_MIN + (IOS_YAW_ALPHA_MAX - IOS_YAW_ALPHA_MIN) * t;
+        }
+
+        function calcularPitchIOS() {
+            if (!esNumero(deviceBeta)) return iosPitchDeg ?? 0;
+
+            // En portrait, beta≈90 es horizonte. Convertimos a pitch de cámara Three.js.
+            // No usamos gamma/roll para iOS: gamma mete desplazamiento horizontal al inclinar.
+            let pitch = -(deviceBeta - IOS_PITCH_CENTER_DEG);
+
+            // Si el usuario gira físicamente el teléfono a landscape, degradamos a pitch cero
+            // para no mezclar ejes y producir saltos horizontales. La app está pensada en portrait.
+            const orient = ((screenOrientationDeg % 360) + 360) % 360;
+            if (orient === 90 || orient === 270) pitch = 0;
+
+            return clamp(pitch, -IOS_MAX_PITCH_DEG, IOS_MAX_PITCH_DEG);
+        }
+
+        function actualizarOrientacionCamaraIOS() {
+            if (!esNumero(rawCompassHeading)) return;
+
+            const rawYaw = wrap360(rawCompassHeading);
+
+            if (iosYawDeg === null) {
+                iosYawDeg = rawYaw;
+                smoothCompassHeading = rawYaw;
+                iosLastRawHeadingDeg = rawYaw;
+            } else {
+                const diffRaw = Math.abs(diffAngDeg(rawYaw, iosLastRawHeadingDeg ?? rawYaw));
+                iosLastRawHeadingDeg = rawYaw;
+
+                // Saltos absurdos de magnetómetro: no los ignoramos totalmente, pero los amortiguamos.
+                const diffToSmooth = Math.abs(diffAngDeg(rawYaw, iosYawDeg));
+                const alphaYaw = diffRaw > 80 ? IOS_YAW_ALPHA_MIN : calcularAlphaYawIOS(diffToSmooth);
+
+                iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, alphaYaw);
+                smoothCompassHeading = iosYawDeg;
+            }
+
+            const rawPitch = calcularPitchIOS();
+            if (iosPitchDeg === null) iosPitchDeg = rawPitch;
+            else iosPitchDeg += (rawPitch - iosPitchDeg) * IOS_PITCH_ALPHA;
+
+            // Rotación iOS desacoplada:
+            // - Yaw = brújula horizontal filtrada.
+            // - Pitch = inclinación vertical filtrada.
+            // - Roll = 0 para que al subir/bajar no haya movimiento horizontal.
+            const yawRad = degToRad(-iosYawDeg);
+            const pitchRad = degToRad(iosPitchDeg);
+
+            orientationEuler.set(pitchRad, yawRad, 0, 'YXZ');
+            qTarget.setFromEuler(orientationEuler);
+            camera.quaternion.slerp(qTarget, IOS_CAMERA_SLERP);
+            lastHeadingDeg = iosYawDeg;
+        }
+
         function actualizarOrientacionCamara() {
             if (!camera || !orientationAvailable) return;
 
             if (esIOS) {
-                if (!esNumero(compassHeading)) return;
-
-                const beta = degToRad(deviceBeta || 0);
-                const gamma = degToRad(deviceGamma || 0);
-                const orient = degToRad(screenOrientationDeg || 0);
-                // iOS: convertir compassHeading a alpha equivalente
-                const alpha = degToRad(360 - compassHeading);
-
-                orientationEuler.set(beta, alpha, -gamma, 'YXZ');
-                qTarget.setFromEuler(orientationEuler);
-                qTarget.multiply(q1);
-                qTarget.multiply(q0.setFromAxisAngle(zee, -orient));
-                camera.quaternion.slerp(qTarget, 0.05); 
-
+                actualizarOrientacionCamaraIOS();
             } else {
                 // Android — no se toca
                 const alpha = degToRad(deviceAlpha || 0);
@@ -721,7 +785,7 @@
             if (frameCount % 60 === 0) {
                 const acc = gpsAccuracy < 999 ? `±${gpsAccuracy.toFixed(0)}m` : 'sin GPS';
                 const heading = esIOS
-                    ? (compassHeading ? compassHeading.toFixed(0) : '?')
+                    ? (smoothCompassHeading !== null ? smoothCompassHeading.toFixed(0) : (compassHeading ? compassHeading.toFixed(0) : '?'))
                     : lastHeadingDeg.toFixed(0);
                 setStatus(`GPS ${acc} · ${heading}° · ${orientationSource}`);
                 log(`iOS cam rot: x=${camera.rotation.x.toFixed(2)} y=${camera.rotation.y.toFixed(2)} z=${camera.rotation.z.toFixed(2)}`);
