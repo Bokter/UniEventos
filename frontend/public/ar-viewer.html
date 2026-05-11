@@ -220,13 +220,13 @@
         let iosLastRawHeadingDeg = null;
         let iosLastHeadingSampleMs = 0;
 
-        const IOS_YAW_ALPHA_MIN = 0.10;      // quieto: más estable
-        const IOS_YAW_ALPHA_MAX = 0.58;      // giro rápido: menos lag
-        const IOS_YAW_FULL_SPEED_DEG = 55;   // a partir de aquí responde rápido
-        const IOS_PITCH_ALPHA = 0.24;
-        const IOS_CAMERA_SLERP = 0.68;
-        const IOS_PITCH_CENTER_DEG = 90;     // iPhone en vertical mirando al horizonte ≈ beta 90
-        const IOS_MAX_PITCH_DEG = 72;
+        const IOS_YAW_ALPHA_MIN = 0.06;      // quieto: más estable
+        const IOS_YAW_ALPHA_MAX = 0.42;      // giro rápido: menos lag sin sobre-reaccionar
+        const IOS_YAW_FULL_SPEED_DEG = 45;   // a partir de aquí responde más rápido
+        const IOS_PITCH_ALPHA = 0.58;        // pitch debe seguir rápido al movimiento vertical
+        const IOS_CAMERA_SLERP = 0.82;
+        const IOS_MAX_PITCH_DEG = 78;
+        const IOS_FREEZE_YAW_PITCH_SPEED = 32; // deg/s: al inclinar arriba/abajo, congelamos yaw para evitar desplazamiento lateral
 
         const zee = new THREE.Vector3(0, 0, 1);
         const orientationEuler = new THREE.Euler();
@@ -235,13 +235,18 @@
         const qTarget = new THREE.Quaternion();
         const tmpVec3 = new THREE.Vector3();
 
-        // iOS: quaternions separados para NO mezclar pitch con yaw.
-        // El yaw viene de la brújula y el pitch viene de beta.
-        // No usamos gamma/roll porque en iOS suele contaminar el eje horizontal.
+        // iOS: el pitch sale del quaternion oficial del navegador, no de una fórmula manual beta-90.
+        // El yaw sale de webkitCompassHeading y se congela mientras el usuario inclina el celular,
+        // porque en iOS la brújula puede cambiar falsamente al mover arriba/abajo.
         const iosAxisY = new THREE.Vector3(0, 1, 0);
         const iosAxisX = new THREE.Vector3(1, 0, 0);
+        const iosQRaw = new THREE.Quaternion();
         const iosQYaw = new THREE.Quaternion();
         const iosQPitch = new THREE.Quaternion();
+        let iosLastRawPitchDeg = null;
+        let iosLastPitchMs = 0;
+        let iosPitchSpeedDegS = 0;
+        let iosYawFrozen = false;
 
         function $(id) { return document.getElementById(id); }
         function log(msg) {
@@ -486,23 +491,46 @@
             return IOS_YAW_ALPHA_MIN + (IOS_YAW_ALPHA_MAX - IOS_YAW_ALPHA_MIN) * t;
         }
 
-        function calcularPitchIOS() {
-            if (!esNumero(deviceBeta)) return iosPitchDeg ?? 0;
-
-            // En portrait, beta≈90 es horizonte. Convertimos a pitch de cámara Three.js.
-            // No usamos gamma/roll para iOS: gamma mete desplazamiento horizontal al inclinar.
-            let pitch = -(deviceBeta - IOS_PITCH_CENTER_DEG);
-
-            // Si el usuario gira físicamente el teléfono a landscape, degradamos a pitch cero
-            // para no mezclar ejes y producir saltos horizontales. La app está pensada en portrait.
-            const orient = ((screenOrientationDeg % 360) + 360) % 360;
-            if (orient === 90 || orient === 270) pitch = 0;
-
+        function calcularPitchDesdeQuaternionIOS(q) {
+            // Extraemos SOLO la elevación vertical real de la cámara usando el mapeo oficial
+            // de DeviceOrientationControls. Así evitamos depender de beta≈90, que falla entre iPhones.
+            tmpVec3.set(0, 0, -1).applyQuaternion(q);
+            const pitch = radToDeg(Math.asin(clamp(tmpVec3.y, -1, 1)));
             return clamp(pitch, -IOS_MAX_PITCH_DEG, IOS_MAX_PITCH_DEG);
+        }
+
+        function construirQuaternionRawIOS() {
+            // Misma conversión que DeviceOrientationControls de Three.js r128.
+            // Esto da un pitch/roll físicamente consistente con la cámara del dispositivo.
+            const alpha = degToRad(deviceAlpha || 0);
+            const beta = degToRad(deviceBeta || 0);
+            const gamma = degToRad(deviceGamma || 0);
+            const orient = degToRad(screenOrientationDeg || 0);
+
+            orientationEuler.set(beta, alpha, -gamma, 'YXZ');
+            iosQRaw.setFromEuler(orientationEuler);
+            iosQRaw.multiply(q1);
+            iosQRaw.multiply(q0.setFromAxisAngle(zee, -orient));
+            return iosQRaw;
         }
 
         function actualizarOrientacionCamaraIOS() {
             if (!esNumero(rawCompassHeading)) return;
+            if (!esNumero(deviceAlpha) || !esNumero(deviceBeta) || !esNumero(deviceGamma)) return;
+
+            const now = performance.now();
+            const qRaw = construirQuaternionRawIOS();
+            const rawPitchDeg = calcularPitchDesdeQuaternionIOS(qRaw);
+
+            if (iosPitchDeg === null) iosPitchDeg = rawPitchDeg;
+            else iosPitchDeg += (rawPitchDeg - iosPitchDeg) * IOS_PITCH_ALPHA;
+
+            if (iosLastRawPitchDeg !== null) {
+                const dt = Math.max(0.001, (now - iosLastPitchMs) / 1000);
+                iosPitchSpeedDegS = Math.abs(rawPitchDeg - iosLastRawPitchDeg) / dt;
+            }
+            iosLastRawPitchDeg = rawPitchDeg;
+            iosLastPitchMs = now;
 
             const rawYaw = wrap360(rawCompassHeading);
 
@@ -511,24 +539,29 @@
                 smoothCompassHeading = rawYaw;
                 iosLastRawHeadingDeg = rawYaw;
             } else {
-                const diffRaw = Math.abs(diffAngDeg(rawYaw, iosLastRawHeadingDeg ?? rawYaw));
-                iosLastRawHeadingDeg = rawYaw;
                 const diffToSmooth = Math.abs(diffAngDeg(rawYaw, iosYawDeg));
-                const alphaYaw = diffRaw > 80 ? IOS_YAW_ALPHA_MIN : calcularAlphaYawIOS(diffToSmooth);
-                iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, alphaYaw);
+
+                // Clave del bug: al mover el iPhone arriba/abajo, webkitCompassHeading puede variar
+                // aunque el usuario NO haya girado horizontalmente. Si dejamos entrar esa variación,
+                // el indicador se desplaza con el movimiento vertical. Por eso congelamos el yaw
+                // mientras el pitch está cambiando rápido. El pitch sí sigue activo.
+                iosYawFrozen = iosPitchSpeedDegS > IOS_FREEZE_YAW_PITCH_SPEED;
+
+                if (!iosYawFrozen) {
+                    const alphaYaw = calcularAlphaYawIOS(diffToSmooth);
+                    iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, alphaYaw);
+                } else {
+                    // Corrección casi imperceptible para evitar deriva larga sin crear movimiento lateral.
+                    iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, 0.008);
+                }
+
                 smoothCompassHeading = iosYawDeg;
+                iosLastRawHeadingDeg = rawYaw;
             }
 
-            // Pitch real de iOS: si lo dejamos fijo en 0, el indicador queda pegado a la pantalla
-            // cuando el usuario mueve el celular arriba/abajo. Lo filtramos separado del yaw.
-            const targetPitchDeg = calcularPitchIOS();
-            if (iosPitchDeg === null) iosPitchDeg = targetPitchDeg;
-            else iosPitchDeg += (targetPitchDeg - iosPitchDeg) * IOS_PITCH_ALPHA;
-
-            // Composición desacoplada:
-            // - yaw: mundo horizontal, desde brújula iOS
-            // - pitch: inclinación vertical, desde beta
-            // - roll/gamma: ignorado en iOS para evitar deriva horizontal falsa
+            // Composición estable:
+            // yaw horizontal desde brújula iOS, pitch vertical desde quaternion oficial,
+            // roll ignorado para que inclinar/ladear no mueva el indicador en horizontal.
             iosQYaw.setFromAxisAngle(iosAxisY, degToRad(-iosYawDeg));
             iosQPitch.setFromAxisAngle(iosAxisX, degToRad(iosPitchDeg));
             qTarget.copy(iosQYaw).multiply(iosQPitch);
@@ -796,7 +829,8 @@
                     ? (smoothCompassHeading !== null ? smoothCompassHeading.toFixed(0) : (compassHeading ? compassHeading.toFixed(0) : '?'))
                     : lastHeadingDeg.toFixed(0);
                 setStatus(`GPS ${acc} · ${heading}° · ${orientationSource}`);
-                log(`iOS cam rot: x=${camera.rotation.x.toFixed(2)} y=${camera.rotation.y.toFixed(2)} z=${camera.rotation.z.toFixed(2)}`);
+                if (esIOS) log(`iOS yaw=${(iosYawDeg ?? 0).toFixed(0)} pitch=${(iosPitchDeg ?? 0).toFixed(0)} speed=${iosPitchSpeedDegS.toFixed(0)} frozen=${iosYawFrozen ? 'sí' : 'no'}`);
+                else log(`Android cam rot: x=${camera.rotation.x.toFixed(2)} y=${camera.rotation.y.toFixed(2)} z=${camera.rotation.z.toFixed(2)}`);
             }
             renderer.render(scene, camera);
         }
