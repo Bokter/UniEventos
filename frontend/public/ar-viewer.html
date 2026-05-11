@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
@@ -7,37 +8,158 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gyronorm@2.0.6/dist/gyronorm.complete.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: black; overscroll-behavior: none; touch-action: none; }
-        #video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-        #canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-        #ui { position: fixed; top: 0; left: 0; right: 0; padding: 12px 16px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); z-index: 10; color: white; font-family: system-ui, sans-serif; pointer-events: none; }
-        #titulo { font-weight: 800; font-size: 18px; }
-        #status { margin-top: 4px; font-size: 12px; opacity: 0.9; }
-        #btn-iniciar { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #6c63ff; color: white; border: none; border-radius: 16px; padding: 20px 34px; font-size: 18px; font-weight: 800; z-index: 40; cursor: pointer; font-family: system-ui, sans-serif; box-shadow: 0 18px 50px rgba(0,0,0,0.45); }
-        #loading {
-            position: fixed; top: 50%; left: 50%;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: black;
+            overscroll-behavior: none;
+            touch-action: none;
+        }
+
+        #video {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+
+        #canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 16px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent);
+            z-index: 10;
+            color: white;
+            font-family: system-ui, sans-serif;
+            pointer-events: none;
+        }
+
+        #titulo {
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        #status {
+            margin-top: 4px;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        #btn-iniciar {
+            position: fixed;
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
-            color: white; font-family: system-ui, sans-serif;
-            font-size: 16px; font-weight: 600;
-            text-align: center; z-index: 35;
+            background: #6c63ff;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 20px 34px;
+            font-size: 18px;
+            font-weight: 800;
+            z-index: 40;
+            cursor: pointer;
+            font-family: system-ui, sans-serif;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-family: system-ui, sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            z-index: 35;
             display: none;
         }
+
         #loading-bar {
-            width: 200px; height: 6px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 3px; margin: 10px auto 0;
+            width: 200px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin: 10px auto 0;
         }
+
         #loading-fill {
-            height: 100%; width: 0%;
-            background: #6c63ff; border-radius: 3px;
+            height: 100%;
+            width: 0%;
+            background: #6c63ff;
+            border-radius: 3px;
             transition: width 0.3s ease;
         }
-        #llegada { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,255,136,0.15); border: 2px solid #00ff88; border-radius: 20px; padding: 24px 36px; color: #00ff88; font-family: system-ui, sans-serif; font-size: 24px; font-weight: 800; text-align: center; z-index: 35; display: none; animation: pulsar 0.5s ease-in-out infinite alternate; }
-        @keyframes pulsar { from { box-shadow: 0 0 10px #00ff88; } to { box-shadow: 0 0 30px #00ff88; } }
-        #debug { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.86); color: #78ff78; font-family: monospace; font-size: 10px; padding: 6px; z-index: 99; max-height: 22vh; overflow-y: auto; }
+
+        #llegada {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 255, 136, 0.15);
+            border: 2px solid #00ff88;
+            border-radius: 20px;
+            padding: 24px 36px;
+            color: #00ff88;
+            font-family: system-ui, sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            text-align: center;
+            z-index: 35;
+            display: none;
+            animation: pulsar 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulsar {
+            from {
+                box-shadow: 0 0 10px #00ff88;
+            }
+
+            to {
+                box-shadow: 0 0 30px #00ff88;
+            }
+        }
+
+        #debug {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.86);
+            color: #78ff78;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 6px;
+            z-index: 99;
+            max-height: 22vh;
+            overflow-y: auto;
+        }
     </style>
 </head>
+
 <body>
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
@@ -48,7 +170,9 @@
     <button id="btn-iniciar">🎯 Iniciar UniEventos AR</button>
     <div id="loading">
         📡 Obteniendo ubicación...<br>
-        <div id="loading-bar"><div id="loading-fill"></div></div>
+        <div id="loading-bar">
+            <div id="loading-fill"></div>
+        </div>
     </div>
     <div id="llegada"></div>
     <div id="debug"></div>
@@ -129,11 +253,11 @@
         }
 
         function roundRectPath(ctx, x, y, w, h, r) {
-            const rr = Math.min(r, w/2, h/2);
+            const rr = Math.min(r, w / 2, h / 2);
             ctx.beginPath();
-            ctx.moveTo(x+rr, y); ctx.arcTo(x+w, y, x+w, y+h, rr);
-            ctx.arcTo(x+w, y+h, x, y+h, rr); ctx.arcTo(x, y+h, x, y, rr);
-            ctx.arcTo(x, y, x+w, y, rr); ctx.closePath();
+            ctx.moveTo(x + rr, y); ctx.arcTo(x + w, y, x + w, y + h, rr);
+            ctx.arcTo(x + w, y + h, x, y + h, rr); ctx.arcTo(x, y + h, x, y, rr);
+            ctx.arcTo(x, y, x + w, y, rr); ctx.closePath();
         }
 
         async function solicitarPermisosSensores() {
@@ -144,7 +268,7 @@
             }
             if (typeof DeviceMotionEvent !== 'undefined' &&
                 typeof DeviceMotionEvent.requestPermission === 'function') {
-                try { await DeviceMotionEvent.requestPermission(); } catch(_) {}
+                try { await DeviceMotionEvent.requestPermission(); } catch (_) { }
             }
         }
 
@@ -158,14 +282,14 @@
                     audio: false
                 });
                 video.srcObject = stream;
-                await video.play().catch(() => {});
+                await video.play().catch(() => { });
                 log('Cámara OK');
-            } catch(e) {
+            } catch (e) {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment' }, audio: false
                 });
                 video.srcObject = stream;
-                await video.play().catch(() => {});
+                await video.play().catch(() => { });
                 log('Cámara fallback OK');
             }
         }
@@ -178,7 +302,7 @@
                 log(`GPS ERR ${err.code}: ${err.message}`);
                 if (err.code !== 1) {
                     navigator.geolocation.getCurrentPosition(
-                        p => registrarGPS(p.coords), () => {},
+                        p => registrarGPS(p.coords), () => { },
                         { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 }
                     );
                 }
@@ -234,9 +358,9 @@
         }
 
         function distanciaEntre(lat1, lng1, lat2, lng2) {
-            const dLat = degToRad(lat2-lat1), dLng = degToRad(lng2-lng1);
-            const a = Math.sin(dLat/2)**2 + Math.cos(degToRad(lat1))*Math.cos(degToRad(lat2))*Math.sin(dLng/2)**2;
-            return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const dLat = degToRad(lat2 - lat1), dLng = degToRad(lng2 - lng1);
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(degToRad(lat1)) * Math.cos(degToRad(lat2)) * Math.sin(dLng / 2) ** 2;
+            return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
         function calcularDistancia(lat2, lng2) {
@@ -249,7 +373,7 @@
             const dLng = degToRad(lng2 - miLng);
             const lat1r = degToRad(miLat), lat2r = degToRad(lat2);
             const y = Math.sin(dLng) * Math.cos(lat2r);
-            const x = Math.cos(lat1r)*Math.sin(lat2r) - Math.sin(lat1r)*Math.cos(lat2r)*Math.cos(dLng);
+            const x = Math.cos(lat1r) * Math.sin(lat2r) - Math.sin(lat1r) * Math.cos(lat2r) * Math.cos(dLng);
             return wrap360(radToDeg(Math.atan2(y, x)));
         }
 
@@ -304,7 +428,7 @@
                 }).then(() => {
                     gnInstance.start(data => {
                         if (!data?.do) return;
-                        if (!esNumero(data.do.alpha)||!esNumero(data.do.beta)||!esNumero(data.do.gamma)) return;
+                        if (!esNumero(data.do.alpha) || !esNumero(data.do.beta) || !esNumero(data.do.gamma)) return;
                         if (performance.now() - lastAbsoluteOrientationMs < 900) return;
                         deviceAlpha = data.do.alpha;
                         deviceBeta = data.do.beta;
@@ -314,7 +438,7 @@
                     });
                     log('GyroNorm OK');
                 }).catch(err => log('GyroNorm err: ' + err.message));
-            } catch(err) { log('GyroNorm exc: ' + err.message); }
+            } catch (err) { log('GyroNorm exc: ' + err.message); }
         }
 
         function actualizarOrientacionCamara() {
@@ -361,23 +485,23 @@
             const w = 512, h = 280;
             ctx.clearRect(0, 0, w, h);
             const cerca = dist !== null && dist < 60;
-            const titulo = evento.titulo.length > 28 ? evento.titulo.slice(0,25)+'...' : evento.titulo;
-            const lugar = evento.lugar_nombre.length > 32 ? evento.lugar_nombre.slice(0,29)+'...' : evento.lugar_nombre;
+            const titulo = evento.titulo.length > 28 ? evento.titulo.slice(0, 25) + '...' : evento.titulo;
+            const lugar = evento.lugar_nombre.length > 32 ? evento.lugar_nombre.slice(0, 29) + '...' : evento.lugar_nombre;
 
             ctx.save();
             ctx.shadowColor = 'rgba(0,0,0,0.45)';
             ctx.shadowBlur = 18;
-            roundRectPath(ctx, 6, 6, w-12, h-12, 24);
+            roundRectPath(ctx, 6, 6, w - 12, h - 12, 24);
             ctx.fillStyle = 'rgba(15,15,46,0.94)';
             ctx.fill();
             ctx.restore();
 
-            roundRectPath(ctx, 6, 6, w-12, h-12, 24);
+            roundRectPath(ctx, 6, 6, w - 12, h - 12, 24);
             ctx.strokeStyle = cerca ? '#00ff88' : '#6c63ff';
             ctx.lineWidth = 5;
             ctx.stroke();
 
-            roundRectPath(ctx, 6, 6, w-12, 20, 10);
+            roundRectPath(ctx, 6, 6, w - 12, 20, 10);
             ctx.fillStyle = cerca ? '#00ff88' : '#6c63ff';
             ctx.fill();
 
@@ -385,22 +509,22 @@
             ctx.font = 'bold 34px system-ui, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(titulo, w/2, 68);
+            ctx.fillText(titulo, w / 2, 68);
 
             ctx.fillStyle = '#a8a6ff';
             ctx.font = '23px system-ui, sans-serif';
-            ctx.fillText(`📍 ${lugar}`, w/2, 113);
+            ctx.fillText(`📍 ${lugar}`, w / 2, 113);
 
             ctx.fillStyle = '#82ffd0';
             ctx.font = '21px system-ui, sans-serif';
-            ctx.fillText(`🕐 ${evento.hora_inicio.slice(0,5)} - ${evento.hora_fin.slice(0,5)}`, w/2, 154);
+            ctx.fillText(`🕐 ${evento.hora_inicio.slice(0, 5)} - ${evento.hora_fin.slice(0, 5)}`, w / 2, 154);
 
             ctx.fillStyle = '#ffcc00';
             ctx.font = 'bold 30px system-ui, sans-serif';
             const txt = dist === null ? 'Buscando GPS...'
                 : dist < 1000 ? `${Math.round(dist)} m`
-                : `${(dist/1000).toFixed(1)} km`;
-            ctx.fillText(txt, w/2, 208);
+                    : `${(dist / 1000).toFixed(1)} km`;
+            ctx.fillText(txt, w / 2, 208);
         }
 
         function crearIndicadores() {
@@ -527,8 +651,10 @@
                 mesh.position.z += (targetZ - mesh.position.z) * 0.1;
                 mesh.position.y += (0 - mesh.position.y) * 0.1;
 
-                mesh.lookAt(camera.position);
-
+                const dx = camera.position.x - mesh.position.x;
+                const dz = camera.position.z - mesh.position.z;
+                mesh.rotation.set(0, Math.atan2(dx, dz), 0);
+                
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
                 mesh.scale.setScalar(1.5 - t * 1.2);
 
@@ -600,7 +726,7 @@
                 btn.style.display = 'none';
                 if (!animacionIniciada) { animacionIniciada = true; animar(); }
                 log('Listo ✓');
-            } catch(err) {
+            } catch (err) {
                 btn.disabled = false;
                 btn.textContent = 'Reintentar';
                 setStatus('Error: ' + err.message);
@@ -611,4 +737,5 @@
         $('btn-iniciar').addEventListener('click', iniciar);
     </script>
 </body>
+
 </html>
