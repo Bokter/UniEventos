@@ -36,14 +36,23 @@
             position: fixed; inset: 0; background: #0f0f2e;
             z-index: 50; display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 20px;
-            animation: splashFade 0.5s ease forwards;
-            animation-delay: 2.5s;
+            transition: opacity 0.35s ease;
         }
+        #splash.oculto { opacity: 0; pointer-events: none; }
         @keyframes splashFade { to { opacity: 0; pointer-events: none; } }
         #splash-logo { font-size: 64px; animation: logoPulse 1s ease-in-out infinite alternate; }
         @keyframes logoPulse { from { transform: scale(0.95); } to { transform: scale(1.05); } }
         #splash-titulo { color: white; font-family: system-ui, sans-serif; font-size: 24px; font-weight: 800; }
-        #splash-sub { color: rgba(255,255,255,0.6); font-family: system-ui, sans-serif; font-size: 14px; }
+        #splash-sub { color: rgba(255,255,255,0.6); font-family: system-ui, sans-serif; font-size: 14px; max-width: 280px; text-align: center; }
+        #btn-iniciar-ar {
+            background: #6c63ff; color: white; border: none;
+            border-radius: 16px; padding: 16px 28px;
+            font-size: 17px; font-weight: 800;
+            font-family: system-ui, sans-serif; cursor: pointer;
+            box-shadow: 0 18px 50px rgba(0,0,0,0.45);
+            min-width: 210px;
+        }
+        #btn-iniciar-ar:disabled { opacity: 0.65; cursor: wait; }
         #splash-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; overflow: hidden; }
         #splash-bar-fill { height: 100%; width: 0%; background: #6c63ff; border-radius: 2px; animation: barFill 2s ease forwards; }
         @keyframes barFill { to { width: 100%; } }
@@ -145,14 +154,15 @@
     <div id="splash">
         <div id="splash-logo">🎯</div>
         <div id="splash-titulo">UniEventos AR</div>
-        <div id="splash-sub">Iniciando realidad aumentada...</div>
-        <div id="splash-bar"><div id="splash-bar-fill"></div></div>
+        <div id="splash-sub">En iPhone debes tocar el botón para permitir cámara, ubicación y orientación.</div>
+        <button id="btn-iniciar-ar" type="button">🎯 Iniciar AR</button>
+        <div id="splash-bar" style="display:none"><div id="splash-bar-fill"></div></div>
     </div>
 
     <div id="ui">
         <div id="ui-left">
             <div id="titulo">🎯 UniEventos AR</div>
-            <div id="status">Iniciando...</div>
+            <div id="status">Toca para iniciar</div>
         </div>
         <button id="btn-dev">DEV</button>
     </div>
@@ -348,12 +358,19 @@
 
         // ── Permisos ──
         async function solicitarPermisosSensores() {
+            // iOS/Safari exige que requestPermission() se ejecute directamente
+            // dentro de un gesto del usuario: click/touch. Por eso iniciar()
+            // se llama desde el botón #btn-iniciar-ar, no desde setTimeout.
             if (typeof DeviceOrientationEvent !== 'undefined' &&
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
-                const r = await DeviceOrientationEvent.requestPermission();
+                const r = await DeviceOrientationEvent.requestPermission(true);
                 if (r !== 'granted') throw new Error('Permiso de orientación denegado');
             }
-            if (typeof DeviceMotionEvent !== 'undefined' &&
+
+            // En iOS no usamos devicemotion para la rama actual; pedirlo después
+            // puede perder la activación de usuario y disparar NotAllowedError.
+            // En Android normalmente este método no existe, pero dejamos el fallback.
+            if (!esIOS && typeof DeviceMotionEvent !== 'undefined' &&
                 typeof DeviceMotionEvent.requestPermission === 'function') {
                 try { await DeviceMotionEvent.requestPermission(); } catch(_) {}
             }
@@ -817,24 +834,44 @@
         }
 
         async function iniciar() {
-            log('Iniciando AR...');
+            const btn = $('btn-iniciar-ar');
+            if (btn.disabled) return;
+            btn.disabled = true;
+            btn.textContent = 'Solicitando permisos...';
+            $('splash-bar').style.display = 'block';
+            setStatus('Solicitando permisos...');
+            log('Iniciando AR por gesto de usuario...');
             try {
+                // Esta llamada debe seguir siendo la primera acción async importante
+                // dentro del click para que iOS conserve la activación de usuario.
                 await solicitarPermisosSensores();
+
+                btn.textContent = 'Abriendo cámara...';
+                setStatus('Abriendo cámara...');
                 await iniciarCamara();
+
                 iniciarThree();
                 iniciarGPS();
                 await iniciarOrientacion();
+
+                btn.textContent = 'Cargando eventos...';
+                setStatus('Cargando eventos...');
                 await cargarEventos();
                 crearIndicadores();
+
+                $('splash').classList.add('oculto');
                 if (!animacionIniciada) { animacionIniciada = true; animar(); }
                 log('Listo ✓');
             } catch(err) {
+                btn.disabled = false;
+                btn.textContent = 'Reintentar AR';
+                $('splash-bar').style.display = 'none';
                 setStatus('Error: ' + err.message);
                 log('ERROR: ' + err.message);
             }
         }
 
-        setTimeout(() => { iniciar(); }, 2800);
+        $('btn-iniciar-ar').addEventListener('click', iniciar, { passive: true });
     </script>
 </body>
 </html>
