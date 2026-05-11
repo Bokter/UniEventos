@@ -52,6 +52,10 @@
         let originLat = null, originLng = null;
         let ultimoLogGPS = 0;
 
+        // Buffer para estabilizar GPS al inicio
+        let gpsBuffer = [];
+        const GPS_BUFFER_SIZE = 5; // esperar 5 lecturas antes de fijar origen
+
         // Orientación
         let orientationAvailable = false;
         let lastAbsoluteOrientationMs = 0;
@@ -66,7 +70,6 @@
         let llegadaTimer = null;
         let llegadaEventoId = null;
 
-        // Three.js reutilizables
         const zee = new THREE.Vector3(0, 0, 1);
         const orientationEuler = new THREE.Euler();
         const q0 = new THREE.Quaternion();
@@ -85,7 +88,6 @@
         function setStatus(msg) { $('status').textContent = msg; }
         function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
         function wrap360(a) { return ((a % 360) + 360) % 360; }
-        function diffAngDeg(a, b) { return ((a - b + 540) % 360) - 180; }
         function degToRad(d) { return d * Math.PI / 180; }
         function radToDeg(r) { return r * 180 / Math.PI; }
         function esNumero(n) { return typeof n === 'number' && Number.isFinite(n); }
@@ -112,15 +114,11 @@
         function roundRectPath(ctx, x, y, w, h, r) {
             const rr = Math.min(r, w/2, h/2);
             ctx.beginPath();
-            ctx.moveTo(x+rr, y);
-            ctx.arcTo(x+w, y, x+w, y+h, rr);
-            ctx.arcTo(x+w, y+h, x, y+h, rr);
-            ctx.arcTo(x, y+h, x, y, rr);
-            ctx.arcTo(x, y, x+w, y, rr);
-            ctx.closePath();
+            ctx.moveTo(x+rr, y); ctx.arcTo(x+w, y, x+w, y+h, rr);
+            ctx.arcTo(x+w, y+h, x, y+h, rr); ctx.arcTo(x, y+h, x, y, rr);
+            ctx.arcTo(x, y, x+w, y, rr); ctx.closePath();
         }
 
-        // ── Permisos ──
         async function solicitarPermisosSensores() {
             if (typeof DeviceOrientationEvent !== 'undefined' &&
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -133,7 +131,6 @@
             }
         }
 
-        // ── Cámara ──
         async function iniciarCamara() {
             if (!navigator.mediaDevices?.getUserMedia)
                 throw new Error('getUserMedia no disponible. Usa HTTPS.');
@@ -156,7 +153,6 @@
             }
         }
 
-        // ── GPS ──
         function iniciarGPS() {
             if (!navigator.geolocation) { log('GPS no soportado'); return; }
             navigator.geolocation.watchPosition(pos => {
@@ -169,7 +165,7 @@
                         { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 }
                     );
                 }
-            }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 30000 });
+            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
         }
 
         function registrarGPS(coords) {
@@ -177,24 +173,36 @@
             gpsAccuracy = coords.accuracy || 999;
 
             if (originLat === null) {
-                // Aceptar primera lectura sin importar precisión
-                // pero esperar al menos 2 segundos para que el GPS se estabilice
-                originLat = coords.latitude;
-                originLng = coords.longitude;
-                miLat = originLat;
-                miLng = originLng;
-                log(`Origen GPS: ±${gpsAccuracy.toFixed(0)}m`);
+                // Acumular lecturas en buffer para estabilizar
+                gpsBuffer.push({ lat: coords.latitude, lng: coords.longitude, acc: gpsAccuracy });
+                log(`GPS buffer: ${gpsBuffer.length}/${GPS_BUFFER_SIZE} ±${gpsAccuracy.toFixed(0)}m`);
+
+                if (gpsBuffer.length < GPS_BUFFER_SIZE) return;
+
+                // Promediar las lecturas del buffer para obtener posición estable
+                const avgLat = gpsBuffer.reduce((s, p) => s + p.lat, 0) / gpsBuffer.length;
+                const avgLng = gpsBuffer.reduce((s, p) => s + p.lng, 0) / gpsBuffer.length;
+                const avgAcc = gpsBuffer.reduce((s, p) => s + p.acc, 0) / gpsBuffer.length;
+
+                originLat = avgLat;
+                originLng = avgLng;
+                miLat = avgLat;
+                miLng = avgLng;
+                gpsAccuracy = avgAcc;
+                gpsBuffer = [];
+
+                log(`Origen GPS fijado (promedio 5): ±${gpsAccuracy.toFixed(0)}m`);
                 posicionarTodosLosIndicadores();
                 return;
             }
 
+            // Actualizar posición con filtro de movimiento mínimo
             const salto = distanciaEntre(miLat, miLng, coords.latitude, coords.longitude);
             const minMove = Math.max(2.5, gpsAccuracy * 0.35);
             if (salto > minMove) {
                 const alpha = clamp(salto / 40, 0.10, 0.45);
                 miLat += (coords.latitude - miLat) * alpha;
                 miLng += (coords.longitude - miLng) * alpha;
-                // Reposicionar indicadores cuando el usuario se mueve
                 posicionarTodosLosIndicadores();
             }
 
@@ -207,7 +215,7 @@
 
         function distanciaEntre(lat1, lng1, lat2, lng2) {
             const dLat = degToRad(lat2-lat1), dLng = degToRad(lng2-lng1);
-            const a = Math.sin(dLat/2)**2 + Math.cos(degToRad(lat1)) * Math.cos(degToRad(lat2)) * Math.sin(dLng/2)**2;
+            const a = Math.sin(dLat/2)**2 + Math.cos(degToRad(lat1))*Math.cos(degToRad(lat2))*Math.sin(dLng/2)**2;
             return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
@@ -221,7 +229,7 @@
             const dLng = degToRad(lng2 - miLng);
             const lat1r = degToRad(miLat), lat2r = degToRad(lat2);
             const y = Math.sin(dLng) * Math.cos(lat2r);
-            const x = Math.cos(lat1r) * Math.sin(lat2r) - Math.sin(lat1r) * Math.cos(lat2r) * Math.cos(dLng);
+            const x = Math.cos(lat1r)*Math.sin(lat2r) - Math.sin(lat1r)*Math.cos(lat2r)*Math.cos(dLng);
             return wrap360(radToDeg(Math.atan2(y, x)));
         }
 
@@ -233,7 +241,6 @@
             return new THREE.Vector3(x, y, z);
         }
 
-        // ── Orientación ──
         async function iniciarOrientacion() {
             screenOrientationDeg = getScreenOrientationDeg();
             window.addEventListener('orientationchange', () => {
@@ -277,7 +284,7 @@
                 }).then(() => {
                     gnInstance.start(data => {
                         if (!data?.do) return;
-                        if (!esNumero(data.do.alpha) || !esNumero(data.do.beta) || !esNumero(data.do.gamma)) return;
+                        if (!esNumero(data.do.alpha)||!esNumero(data.do.beta)||!esNumero(data.do.gamma)) return;
                         if (performance.now() - lastAbsoluteOrientationMs < 900) return;
                         deviceAlpha = data.do.alpha;
                         deviceBeta = data.do.beta;
@@ -290,11 +297,9 @@
             } catch(err) { log('GyroNorm exc: ' + err.message); }
         }
 
-        // Android: rota la cámara con deviceorientation
-        // iOS: NO rota la cámara — los indicadores se posicionan con bearing relativo
         function actualizarOrientacionCamara() {
             if (!camera || !orientationAvailable) return;
-            if (esIOS) return; // iOS no rota la cámara Three.js
+            if (esIOS) return; // iOS no rota la cámara
 
             const alpha = degToRad(deviceAlpha || 0);
             const beta = degToRad(deviceBeta || 0);
@@ -314,7 +319,6 @@
             return wrap360(radToDeg(Math.atan2(tmpVec3.x, -tmpVec3.z)));
         }
 
-        // ── Three.js ──
         function iniciarThree() {
             const canvas = $('canvas');
             renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
@@ -333,7 +337,6 @@
             log('Three.js OK');
         }
 
-        // ── Textura ──
         function dibujarCard(ctx, evento, dist) {
             const w = 512, h = 280;
             ctx.clearRect(0, 0, w, h);
@@ -380,7 +383,6 @@
             ctx.fillText(txt, w/2, 208);
         }
 
-        // ── Indicadores ──
         function crearIndicadores() {
             indicadores.forEach(mesh => {
                 scene.remove(mesh);
@@ -422,11 +424,7 @@
         function posicionarTodosLosIndicadores() {
             if (originLat === null || !scene) return;
             indicadores.forEach(mesh => {
-                const pos = latLngToWorld(
-                    mesh.userData.evento.latitud,
-                    mesh.userData.evento.longitud,
-                    1.70
-                );
+                const pos = latLngToWorld(mesh.userData.evento.latitud, mesh.userData.evento.longitud, 1.70);
                 mesh.position.copy(pos);
                 mesh.userData.gpsPositioned = true;
                 log(`Indicador: x=${pos.x.toFixed(1)} z=${pos.z.toFixed(1)}`);
@@ -439,9 +437,7 @@
             else actualizarIndicadoresAndroid();
         }
 
-        // Android: indicadores en mundo GPS, cámara rota con brújula
         function actualizarIndicadoresAndroid() {
-            // Posición cámara en mundo GPS
             if (miLat !== null) {
                 const p = latLngToWorld(miLat, miLng, 1.60);
                 camera.position.copy(p);
@@ -451,8 +447,9 @@
                 const { evento, texture, ctx } = mesh.userData;
                 const dist = calcularDistancia(evento.latitud, evento.longitud);
 
-                if (!mesh.userData.gpsPositioned) { mesh.visible = false; return; }
-                if (dist === null || dist > DIST_MAXIMA) { mesh.visible = false; return; }
+                if (!mesh.userData.gpsPositioned || dist === null || dist > DIST_MAXIMA) {
+                    mesh.visible = false; return;
+                }
 
                 if (dist < DIST_LLEGADA) {
                     mesh.visible = false;
@@ -465,8 +462,9 @@
                 mesh.visible = true;
                 mesh.lookAt(camera.position);
 
+                // Escala: 1.5 cerca (20m), 0.3 lejos (500m)
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
-                mesh.scale.setScalar(5.0 - t * 4.0);
+                mesh.scale.setScalar(1.5 - t * 1.2);
 
                 const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
                 if (distCambio > 2) {
@@ -477,11 +475,10 @@
             });
         }
 
-        // iOS: cámara fija, indicadores en radio fijo según bearing vs compass
         function actualizarIndicadoresIOS() {
             if (!esNumero(compassHeading) || miLat === null) return;
 
-            const RADIO = 10;
+            const RADIO = 8;
 
             indicadores.forEach(mesh => {
                 const { evento, texture, ctx } = mesh.userData;
@@ -499,22 +496,19 @@
 
                 mesh.visible = true;
 
-                // Bearing del evento relativo al norte
                 const bearing = calcularBearing(evento.latitud, evento.longitud);
-                // Ángulo relativo a donde apunta el usuario (compass)
                 const anguloRel = wrap360(bearing - compassHeading);
                 const anguloRad = degToRad(anguloRel);
 
-                // Posición en radio fijo — cámara en origen siempre
+                // Y fijo en 0 — sin pitch para evitar que se vaya arriba
                 const x = Math.sin(anguloRad) * RADIO;
                 const z = -Math.cos(anguloRad) * RADIO;
                 mesh.position.set(x, 0, z);
-
-                // Indicador siempre mira al origen (donde está la cámara)
                 mesh.lookAt(0, 0, 0);
 
+                // Escala: 1.5 cerca (20m), 0.3 lejos (500m)
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
-                mesh.scale.setScalar(5.0 - t * 4.0);
+                mesh.scale.setScalar(1.5 - t * 1.2);
 
                 const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
                 if (distCambio > 2) {
@@ -541,7 +535,6 @@
             llegadaTimer = null;
         }
 
-        // ── API ──
         async function cargarEventos() {
             log('Cargando eventos...');
             const res = await fetch(API_URL, { cache: 'no-store' });
@@ -553,7 +546,6 @@
             if (eventosData.length === 0) setStatus('Sin eventos hoy');
         }
 
-        // ── Loop ──
         function animar() {
             requestAnimationFrame(animar);
             frameCount++;
@@ -561,13 +553,14 @@
             actualizarIndicadores();
             if (frameCount % 60 === 0) {
                 const acc = gpsAccuracy < 999 ? `±${gpsAccuracy.toFixed(0)}m` : 'sin GPS';
-                const heading = esIOS ? (compassHeading ? compassHeading.toFixed(0) : '?') : lastHeadingDeg.toFixed(0);
+                const heading = esIOS
+                    ? (compassHeading ? compassHeading.toFixed(0) : '?')
+                    : lastHeadingDeg.toFixed(0);
                 setStatus(`GPS ${acc} · ${heading}° · ${orientationSource}`);
             }
             renderer.render(scene, camera);
         }
 
-        // ── Init ──
         async function iniciar() {
             const btn = $('btn-iniciar');
             btn.disabled = true;
