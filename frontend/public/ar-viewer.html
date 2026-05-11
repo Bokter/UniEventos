@@ -154,6 +154,7 @@
         const COMPASS_CORRECTION_GAIN = 0.012;
         const MAX_COMPASS_JUMP = 35;
         const EARTH_RADIUS = 6378137;
+        const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
         // Limpiar calibración guardada — causa offset en iOS
         localStorage.removeItem('unieventos_alphaOffsetRad');
@@ -572,18 +573,73 @@
         }
 
         function posicionarTodosLosIndicadores() {
-            log('Indicadores listos');
+            if (originLat === null || !scene) return;
+            indicadores.forEach(mesh => {
+                const pos = latLngToWorld(mesh.userData.evento.latitud, mesh.userData.evento.longitud, ALTURA_INDICADOR);
+                mesh.position.copy(pos);
+                mesh.userData.gpsPositioned = true;
+                log(`Indicador: x=${pos.x.toFixed(1)} z=${pos.z.toFixed(1)}`);
+            });
         }
+
 
         function actualizarIndicadores() {
             if (!camera) return;
+            if (esIOS) {
+                actualizarIndicadoresIOS();
+            } else {
+                actualizarIndicadoresAndroid();
+            }
+        }
+
+        function actualizarIndicadoresAndroid() {
             indicadores.forEach(mesh => {
                 const { evento, texture, ctx } = mesh.userData;
                 const dist = calcularDistancia(evento.latitud, evento.longitud);
 
-                if (dist !== null && dist > DIST_MAXIMA) { mesh.visible = false; return; }
+                if (!mesh.userData.gpsPositioned && originLat !== null) {
+                    const pos = latLngToWorld(evento.latitud, evento.longitud, ALTURA_INDICADOR);
+                    mesh.position.copy(pos);
+                    mesh.userData.gpsPositioned = true;
+                }
 
-                if (dist !== null && dist < DIST_LLEGADA) {
+                if (!mesh.userData.gpsPositioned || dist === null) { mesh.visible = false; return; }
+                if (dist > DIST_MAXIMA) { mesh.visible = false; return; }
+
+                if (dist < DIST_LLEGADA) {
+                    mesh.visible = false;
+                    mostrarLlegada(evento, dist);
+                    return;
+                } else if (llegadaEventoId === evento.id) {
+                    ocultarLlegada();
+                }
+
+                mesh.visible = true;
+                mesh.lookAt(camera.position);
+
+                const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
+                mesh.scale.setScalar(5.0 - t * 4.0);
+
+                const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
+                if (distCambio > 2) {
+                    mesh.userData.lastDist = dist;
+                    dibujarCard(ctx, evento, dist);
+                    texture.needsUpdate = true;
+                }
+            });
+        }
+
+        function actualizarIndicadoresIOS() {
+            if (!esNumero(compassHeading)) return;
+
+            indicadores.forEach(mesh => {
+                const { evento, texture, ctx } = mesh.userData;
+                const dist = calcularDistancia(evento.latitud, evento.longitud);
+
+                if (dist === null) { mesh.visible = false; return; }
+                if (dist > DIST_MAXIMA) { mesh.visible = false; return; }
+
+                if (dist < DIST_LLEGADA) {
                     mesh.visible = false;
                     mostrarLlegada(evento, dist);
                     return;
@@ -593,19 +649,21 @@
 
                 mesh.visible = true;
 
-                // Posición fija frente a la cámara — radio fijo de 10 unidades
+                // En iOS posicionamos con bearing relativo al compass
+                const bearing = calcularBearing(evento.latitud, evento.longitud);
+                const anguloRel = wrap360(bearing - compassHeading);
+                const anguloRad = degToRad(anguloRel);
                 const RADIO = 10;
-                mesh.position.set(0, 0, -RADIO);
-                mesh.position.applyQuaternion(camera.quaternion);
-                mesh.position.add(camera.position);
-                mesh.lookAt(camera.position);
 
-                // Escala por distancia
-                const t = dist === null ? 0.5 : clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
+                const x = Math.sin(anguloRad) * RADIO;
+                const z = -Math.cos(anguloRad) * RADIO;
+                mesh.position.set(x, 0, z);
+                mesh.lookAt(0, 0, 0);
+
+                const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
                 mesh.scale.setScalar(5.0 - t * 4.0);
 
-                // Actualizar textura si cambió la distancia
-                const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs((dist || 0) - (mesh.userData.lastDist || 0));
+                const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
                 if (distCambio > 2) {
                     mesh.userData.lastDist = dist;
                     dibujarCard(ctx, evento, dist);
@@ -613,6 +671,18 @@
                 }
             });
         }
+
+        function calcularBearing(lat2, lng2) {
+            if (miLat === null) return 0;
+            const dLng = degToRad(lng2 - miLng);
+            const lat1r = degToRad(miLat);
+            const lat2r = degToRad(lat2);
+            const y = Math.sin(dLng) * Math.cos(lat2r);
+            const x = Math.cos(lat1r) * Math.sin(lat2r) - Math.sin(lat1r) * Math.cos(lat2r) * Math.cos(dLng);
+            return wrap360(radToDeg(Math.atan2(y, x)));
+        }
+
+
 
         function mostrarLlegada(evento, dist) {
             // No mostrar si ya está mostrando para este evento
