@@ -803,7 +803,7 @@
 
             mesh.visible = true;
 
-            const escala = dist <= 50 ? 4.0 : 2.8;
+            const escala = dist <= 50 ? 6: 4;
 
             const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
             if (distCambio > 2) {
