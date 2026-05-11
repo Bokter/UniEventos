@@ -757,7 +757,7 @@
             mesh.visible = true;
 
             // Escala grande cerca, legible lejos
-            const escala = dist <= 50 ? 8 : 5;
+            const escala = dist <= 50 ? 5.6 : 3.5;
             mesh.scale.setScalar(escala);
 
             const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
