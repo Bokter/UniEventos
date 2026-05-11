@@ -572,13 +572,7 @@
         }
 
         function posicionarTodosLosIndicadores() {
-            if (originLat === null || !scene) return;
-            indicadores.forEach(mesh => {
-                const pos = latLngToWorld(mesh.userData.evento.latitud, mesh.userData.evento.longitud, ALTURA_INDICADOR);
-                mesh.position.copy(pos);
-                mesh.userData.gpsPositioned = true;
-                log(`Indicador posicionado: x=${pos.x.toFixed(1)} z=${pos.z.toFixed(1)}`);
-            });
+            log('Indicadores listos');
         }
 
         function actualizarIndicadores() {
@@ -587,47 +581,31 @@
                 const { evento, texture, ctx } = mesh.userData;
                 const dist = calcularDistancia(evento.latitud, evento.longitud);
 
-                if (!mesh.userData.gpsPositioned && originLat !== null) {
-                    const pos = latLngToWorld(evento.latitud, evento.longitud, ALTURA_INDICADOR);
-                    mesh.position.copy(pos);
-                    mesh.userData.gpsPositioned = true;
-                }
+                if (dist !== null && dist > DIST_MAXIMA) { mesh.visible = false; return; }
 
-                if (!mesh.userData.gpsPositioned) { mesh.visible = false; return; }
-                if (dist === null) {
-                    // GPS aún no listo — mostrar indicador al frente
-                    mesh.visible = true;
-                    mesh.lookAt(camera.position);
-                    const t = 0.5; // escala media mientras espera GPS
-                    mesh.scale.setScalar(5.0 - t * 4.0);
-                    return;
-                }
-                if (dist > DIST_MAXIMA) { mesh.visible = false; return; }
-
-                if (dist < DIST_LLEGADA) {
+                if (dist !== null && dist < DIST_LLEGADA) {
                     mesh.visible = false;
                     mostrarLlegada(evento, dist);
                     return;
-                } else {
-                    if (llegadaEventoId === evento.id) {
-                        ocultarLlegada();
-                    }
-                    mesh.visible = true;
+                } else if (llegadaEventoId === evento.id) {
+                    ocultarLlegada();
                 }
 
+                mesh.visible = true;
+
+                // Posición fija frente a la cámara — radio fijo de 10 unidades
+                const RADIO = 10;
+                mesh.position.set(0, 0, -RADIO);
+                mesh.position.applyQuaternion(camera.quaternion);
+                mesh.position.add(camera.position);
                 mesh.lookAt(camera.position);
 
-                // Escala correcta: cerca = grande, lejos = pequeño
-                // dist 20m → escala 3.0, dist 500m → escala 0.5
-                const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
-                const escala = 5.0 - t * 4.0;
-                mesh.scale.setScalar(escala);
+                // Escala por distancia
+                const t = dist === null ? 0.5 : clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
+                mesh.scale.setScalar(5.0 - t * 4.0);
 
-                // Actualizar textura si la distancia cambió más de 2m
-                const distCambio = mesh.userData.lastDist === null
-                    ? 999
-                    : Math.abs(dist - mesh.userData.lastDist);
-
+                // Actualizar textura si cambió la distancia
+                const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs((dist || 0) - (mesh.userData.lastDist || 0));
                 if (distCambio > 2) {
                     mesh.userData.lastDist = dist;
                     dibujarCard(ctx, evento, dist);
