@@ -711,43 +711,31 @@
             });
         }
 
-        function actualizarIndicadoresIOS() {
-            if (miLat === null) return;
+        function actualizarOrientacionCamaraIOS() {
+            if (!esNumero(rawCompassHeading)) return;
 
-            if (miLat !== null) {
-                const p = latLngToWorld(miLat, miLng, 1.60);
-                camera.position.copy(p);
+            const rawYaw = wrap360(rawCompassHeading);
+
+            if (iosYawDeg === null) {
+                iosYawDeg = rawYaw;
+                smoothCompassHeading = rawYaw;
+                iosLastRawHeadingDeg = rawYaw;
+            } else {
+                const diffRaw = Math.abs(diffAngDeg(rawYaw, iosLastRawHeadingDeg ?? rawYaw));
+                iosLastRawHeadingDeg = rawYaw;
+                const diffToSmooth = Math.abs(diffAngDeg(rawYaw, iosYawDeg));
+                const alphaYaw = diffRaw > 80 ? IOS_YAW_ALPHA_MIN : calcularAlphaYawIOS(diffToSmooth);
+                iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, alphaYaw);
+                smoothCompassHeading = iosYawDeg;
             }
 
-            indicadores.forEach(mesh => {
-                const { evento, texture, ctx } = mesh.userData;
-                const dist = calcularDistancia(evento.latitud, evento.longitud);
+            // Pitch FIJO en 0 — no seguir el movimiento vertical del celular
+            const yawRad = degToRad(-iosYawDeg);
 
-                if (!mesh.userData.gpsPositioned || dist === null || dist > DIST_MAXIMA) {
-                    mesh.visible = false; return;
-                }
-
-                if (dist < DIST_LLEGADA) {
-                    mesh.visible = false;
-                    mostrarLlegada(evento);
-                    return;
-                } else if (llegadaEventoId === evento.id) {
-                    ocultarLlegada();
-                }
-
-                mesh.visible = true;
-                mesh.lookAt(camera.position);
-
-                const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
-                mesh.scale.setScalar(1.5 - t * 1.2);
-
-                const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
-                if (distCambio > 2) {
-                    mesh.userData.lastDist = dist;
-                    dibujarCard(ctx, evento, dist);
-                    texture.needsUpdate = true;
-                }
-            });
+            orientationEuler.set(0, yawRad, 0, 'YXZ');
+            qTarget.setFromEuler(orientationEuler);
+            camera.quaternion.slerp(qTarget, IOS_CAMERA_SLERP);
+            lastHeadingDeg = iosYawDeg;
         }
 
         function mostrarLlegada(evento) {
