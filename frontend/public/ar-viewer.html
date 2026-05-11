@@ -959,8 +959,10 @@
 
             mesh.visible = true;
 
-            // Escala grande cerca, legible lejos
-            const escala = dist <= 50 ? 5.0 : 5.0 * Math.pow(50 / dist, 0.4);
+            const escala = esIOS
+                ? (dist <= 50 ? 5.0 : 5.0 * Math.pow(50 / dist, 0.4))
+                : (dist <= 50 ? 7.0 : 7.0 * Math.pow(50 / dist, 0.4));
+                
             mesh.scale.setScalar(escala);
 
             const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
