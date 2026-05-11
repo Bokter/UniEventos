@@ -803,8 +803,7 @@
 
             mesh.visible = true;
 
-            const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
-            mesh.scale.setScalar(1.5 - t * 1.2);
+            const escala = dist <= 50 ? 1.5 : 1.0;
 
             const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
             if (distCambio > 2) {
