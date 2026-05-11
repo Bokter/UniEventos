@@ -15,6 +15,24 @@
         #titulo { font-weight: 800; font-size: 18px; }
         #status { margin-top: 4px; font-size: 12px; opacity: 0.9; }
         #btn-iniciar { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #6c63ff; color: white; border: none; border-radius: 16px; padding: 20px 34px; font-size: 18px; font-weight: 800; z-index: 40; cursor: pointer; font-family: system-ui, sans-serif; box-shadow: 0 18px 50px rgba(0,0,0,0.45); }
+        #loading {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: white; font-family: system-ui, sans-serif;
+            font-size: 16px; font-weight: 600;
+            text-align: center; z-index: 35;
+            display: none;
+        }
+        #loading-bar {
+            width: 200px; height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px; margin: 10px auto 0;
+        }
+        #loading-fill {
+            height: 100%; width: 0%;
+            background: #6c63ff; border-radius: 3px;
+            transition: width 0.3s ease;
+        }
         #llegada { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,255,136,0.15); border: 2px solid #00ff88; border-radius: 20px; padding: 24px 36px; color: #00ff88; font-family: system-ui, sans-serif; font-size: 24px; font-weight: 800; text-align: center; z-index: 35; display: none; animation: pulsar 0.5s ease-in-out infinite alternate; }
         @keyframes pulsar { from { box-shadow: 0 0 10px #00ff88; } to { box-shadow: 0 0 30px #00ff88; } }
         #debug { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.86); color: #78ff78; font-family: monospace; font-size: 10px; padding: 6px; z-index: 99; max-height: 22vh; overflow-y: auto; }
@@ -28,6 +46,10 @@
         <div id="status">Toca para iniciar</div>
     </div>
     <button id="btn-iniciar">🎯 Iniciar UniEventos AR</button>
+    <div id="loading">
+        📡 Obteniendo ubicación...<br>
+        <div id="loading-bar"><div id="loading-fill"></div></div>
+    </div>
     <div id="llegada"></div>
     <div id="debug"></div>
 
@@ -40,6 +62,7 @@
         const EARTH_RADIUS = 6378137;
         const ORIENTATION_SLERP = 0.15;
         const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const GPS_BUFFER_SIZE = 5;
 
         localStorage.removeItem('unieventos_alphaOffsetRad');
 
@@ -47,16 +70,11 @@
         let eventosData = [], indicadores = [];
         let frameCount = 0, animacionIniciada = false;
 
-        // GPS
         let miLat = null, miLng = null, gpsAccuracy = 999;
         let originLat = null, originLng = null;
         let ultimoLogGPS = 0;
-
-        // Buffer para estabilizar GPS al inicio
         let gpsBuffer = [];
-        const GPS_BUFFER_SIZE = 5; // esperar 5 lecturas antes de fijar origen
 
-        // Orientación
         let orientationAvailable = false;
         let lastAbsoluteOrientationMs = 0;
         let orientationSource = 'sin orientación';
@@ -66,7 +84,6 @@
         let gnInstance = null;
         let lastHeadingDeg = 0;
 
-        // Llegada
         let llegadaTimer = null;
         let llegadaEventoId = null;
 
@@ -173,13 +190,16 @@
             gpsAccuracy = coords.accuracy || 999;
 
             if (originLat === null) {
-                // Acumular lecturas en buffer para estabilizar
                 gpsBuffer.push({ lat: coords.latitude, lng: coords.longitude, acc: gpsAccuracy });
+
+                const loading = $('loading');
+                loading.style.display = 'block';
+                const pct = (gpsBuffer.length / GPS_BUFFER_SIZE) * 100;
+                $('loading-fill').style.width = pct + '%';
                 log(`GPS buffer: ${gpsBuffer.length}/${GPS_BUFFER_SIZE} ±${gpsAccuracy.toFixed(0)}m`);
 
                 if (gpsBuffer.length < GPS_BUFFER_SIZE) return;
 
-                // Promediar las lecturas del buffer para obtener posición estable
                 const avgLat = gpsBuffer.reduce((s, p) => s + p.lat, 0) / gpsBuffer.length;
                 const avgLng = gpsBuffer.reduce((s, p) => s + p.lng, 0) / gpsBuffer.length;
                 const avgAcc = gpsBuffer.reduce((s, p) => s + p.acc, 0) / gpsBuffer.length;
@@ -191,12 +211,12 @@
                 gpsAccuracy = avgAcc;
                 gpsBuffer = [];
 
-                log(`Origen GPS fijado (promedio 5): ±${gpsAccuracy.toFixed(0)}m`);
+                loading.style.display = 'none';
+                log(`Origen GPS fijado: ±${gpsAccuracy.toFixed(0)}m`);
                 posicionarTodosLosIndicadores();
                 return;
             }
 
-            // Actualizar posición con filtro de movimiento mínimo
             const salto = distanciaEntre(miLat, miLng, coords.latitude, coords.longitude);
             const minMove = Math.max(2.5, gpsAccuracy * 0.35);
             if (salto > minMove) {
@@ -299,7 +319,7 @@
 
         function actualizarOrientacionCamara() {
             if (!camera || !orientationAvailable) return;
-            if (esIOS) return; // iOS no rota la cámara
+            if (esIOS) return;
 
             const alpha = degToRad(deviceAlpha || 0);
             const beta = degToRad(deviceBeta || 0);
@@ -462,7 +482,6 @@
                 mesh.visible = true;
                 mesh.lookAt(camera.position);
 
-                // Escala: 1.5 cerca (20m), 0.3 lejos (500m)
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
                 mesh.scale.setScalar(1.5 - t * 1.2);
 
@@ -500,13 +519,16 @@
                 const anguloRel = wrap360(bearing - compassHeading);
                 const anguloRad = degToRad(anguloRel);
 
-                // Y fijo en 0 — sin pitch para evitar que se vaya arriba
-                const x = Math.sin(anguloRad) * RADIO;
-                const z = -Math.cos(anguloRad) * RADIO;
-                mesh.position.set(x, 0, z);
+                const targetX = Math.sin(anguloRad) * RADIO;
+                const targetZ = -Math.cos(anguloRad) * RADIO;
+
+                // Lerp suave para evitar saltos bruscos
+                mesh.position.x += (targetX - mesh.position.x) * 0.1;
+                mesh.position.z += (targetZ - mesh.position.z) * 0.1;
+                mesh.position.y += (0 - mesh.position.y) * 0.1;
+
                 mesh.lookAt(0, 0, 0);
 
-                // Escala: 1.5 cerca (20m), 0.3 lejos (500m)
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
                 mesh.scale.setScalar(1.5 - t * 1.2);
 
