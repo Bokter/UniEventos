@@ -211,6 +211,9 @@
         let llegadaTimer = null;
         let llegadaEventoId = null;
 
+        let smoothCompassHeading = null;
+        const EMA_IOS = 0.08; // suavizado — más bajo = más suave
+
         const zee = new THREE.Vector3(0, 0, 1);
         const orientationEuler = new THREE.Euler();
         const q0 = new THREE.Quaternion();
@@ -411,7 +414,17 @@
             orientationAvailable = true;
             orientationSource = isAbsolute ? 'absolute' : 'relative';
             if (hasIOSCompass) {
-                compassHeading = wrap360(e.webkitCompassHeading);
+                const raw = wrap360(e.webkitCompassHeading);
+                if (smoothCompassHeading === null) {
+                    smoothCompassHeading = raw;
+                } else {
+                    // EMA circular
+                    let diff = raw - smoothCompassHeading;
+                    if (diff > 180) diff -= 360;
+                    if (diff < -180) diff += 360;
+                    smoothCompassHeading = wrap360(smoothCompassHeading + EMA_IOS * diff);
+                }
+                compassHeading = smoothCompassHeading;
                 orientationSource = 'iOS compass';
             }
         }
@@ -457,7 +470,7 @@
                 qTarget.setFromEuler(orientationEuler);
                 qTarget.multiply(q1);
                 qTarget.multiply(q0.setFromAxisAngle(zee, -orient));
-                camera.quaternion.slerp(qTarget, ORIENTATION_SLERP);
+                camera.quaternion.slerp(qTarget, 0.05); 
 
             } else {
                 // Android — no se toca
