@@ -646,15 +646,14 @@
                 const targetX = Math.sin(anguloRad) * RADIO;
                 const targetZ = -Math.cos(anguloRad) * RADIO;
 
-                // Lerp suave para evitar saltos bruscos
+                // Lerp suave solo en X y Z — Y completamente fijo en 0
                 mesh.position.x += (targetX - mesh.position.x) * 0.1;
                 mesh.position.z += (targetZ - mesh.position.z) * 0.1;
-                mesh.position.y += (0 - mesh.position.y) * 0.1;
+                mesh.position.y = 0;
 
-                const dx = camera.position.x - mesh.position.x;
-                const dz = camera.position.z - mesh.position.z;
-                mesh.rotation.set(0, Math.atan2(dx, dz), 0);
-                
+                // Rotación solo en Y — no sigue el pitch del celular
+                mesh.rotation.set(0, Math.atan2(targetX, targetZ), 0);
+
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
                 mesh.scale.setScalar(1.5 - t * 1.2);
 
