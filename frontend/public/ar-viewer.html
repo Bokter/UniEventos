@@ -443,7 +443,17 @@
 
         function actualizarOrientacionCamara() {
             if (!camera || !orientationAvailable) return;
-            if (esIOS) return;
+
+            if (esIOS) {
+                // iOS: rotar cámara SOLO en Y con compassHeading
+                // No usar beta/pitch — causa el seguimiento vertical
+                if (!esNumero(compassHeading)) return;
+                const headingRad = degToRad(compassHeading);
+                const qHeading = new THREE.Quaternion();
+                qHeading.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -headingRad);
+                camera.quaternion.slerp(qHeading, ORIENTATION_SLERP);
+                return;
+            }
 
             const alpha = degToRad(deviceAlpha || 0);
             const beta = degToRad(deviceBeta || 0);
@@ -639,20 +649,20 @@
 
                 mesh.visible = true;
 
+                // Posición fija en el mundo con bearing absoluto
                 const bearing = calcularBearing(evento.latitud, evento.longitud);
-                const anguloRel = wrap360(bearing - compassHeading);
-                const anguloRad = degToRad(anguloRel);
+                const bearingRad = degToRad(bearing);
 
-                const targetX = Math.sin(anguloRad) * RADIO;
-                const targetZ = -Math.cos(anguloRad) * RADIO;
+                const x = Math.sin(bearingRad) * RADIO;
+                const z = -Math.cos(bearingRad) * RADIO;
 
-                // Lerp suave solo en X y Z — Y completamente fijo en 0
-                mesh.position.x += (targetX - mesh.position.x) * 0.1;
-                mesh.position.z += (targetZ - mesh.position.z) * 0.1;
+                // Lerp suave solo X y Z, Y fijo en 0
+                mesh.position.x += (x - mesh.position.x) * 0.1;
+                mesh.position.z += (z - mesh.position.z) * 0.1;
                 mesh.position.y = 0;
 
-                // Rotación solo en Y — no sigue el pitch del celular
-                mesh.rotation.set(0, Math.atan2(targetX, targetZ), 0);
+                // Siempre mira a la cámara
+                mesh.lookAt(camera.position);
 
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
                 mesh.scale.setScalar(1.5 - t * 1.2);
