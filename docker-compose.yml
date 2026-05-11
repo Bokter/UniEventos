@@ -19,11 +19,8 @@ services:
       - DB_PASSWORD=password
       - DB_NAME=unieventos
       - JWT_SECRET=dev_secret_cambiar_en_produccion
-<<<<<<< HEAD
-=======
       - MAIL_FROM=noreply@unieventos.com
       - RESEND_API_KEY=re_48BbvmEj_ugyASSqDGbXDgWkWPQdjuQhj
->>>>>>> 6ec075e (Notification Update)
     depends_on:
       db:
         condition: service_healthy
@@ -36,7 +33,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: unieventos
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d unieventos"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d unieventos" ]
       interval: 5s
       timeout: 5s
       retries: 5
