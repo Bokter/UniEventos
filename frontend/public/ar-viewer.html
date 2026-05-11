@@ -445,13 +445,21 @@
             if (!camera || !orientationAvailable) return;
 
             if (esIOS) {
+
+                if (!esNumero(compassHeading) || deviceBeta === null) return;
                 // iOS: rotar cámara SOLO en Y con compassHeading
                 // No usar beta/pitch — causa el seguimiento vertical
-                if (!esNumero(compassHeading)) return;
                 const headingRad = degToRad(compassHeading);
-                const qHeading = new THREE.Quaternion();
-                qHeading.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -headingRad);
-                camera.quaternion.slerp(qHeading, ORIENTATION_SLERP);
+                const betaRad = degToRad(deviceBeta || 0);
+                const gammaRad = degToRad(deviceGamma || 0);
+                const orient = degToRad(screenOrientationDeg || 0);
+
+                // Usar la misma conversión que Android pero con heading de brújula iOS
+                orientationEuler.set(betaRad, headingRad, -gammaRad, 'YXZ');
+                qTarget.setFromEuler(orientationEuler);
+                qTarget.multiply(q1);
+                qTarget.multiply(q0.setFromAxisAngle(zee, -orient));
+                camera.quaternion.slerp(qTarget, ORIENTATION_SLERP);
                 return;
             }
 
@@ -631,13 +639,19 @@
         function actualizarIndicadoresIOS() {
             if (!esNumero(compassHeading) || miLat === null) return;
 
-            const RADIO = 8;
+            // Mover cámara con GPS igual que Android
+            if (miLat !== null) {
+                const p = latLngToWorld(miLat, miLng, 1.60);
+                camera.position.copy(p);
+            }
 
             indicadores.forEach(mesh => {
                 const { evento, texture, ctx } = mesh.userData;
                 const dist = calcularDistancia(evento.latitud, evento.longitud);
 
-                if (dist === null || dist > DIST_MAXIMA) { mesh.visible = false; return; }
+                if (!mesh.userData.gpsPositioned || dist === null || dist > DIST_MAXIMA) {
+                    mesh.visible = false; return;
+                }
 
                 if (dist < DIST_LLEGADA) {
                     mesh.visible = false;
@@ -648,20 +662,6 @@
                 }
 
                 mesh.visible = true;
-
-                // Posición fija en el mundo con bearing absoluto
-                const bearing = calcularBearing(evento.latitud, evento.longitud);
-                const bearingRad = degToRad(bearing);
-
-                const x = Math.sin(bearingRad) * RADIO;
-                const z = -Math.cos(bearingRad) * RADIO;
-
-                // Lerp suave solo X y Z, Y fijo en 0
-                mesh.position.x += (x - mesh.position.x) * 0.1;
-                mesh.position.z += (z - mesh.position.z) * 0.1;
-                mesh.position.y = 0;
-
-                // Siempre mira a la cámara
                 mesh.lookAt(camera.position);
 
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
