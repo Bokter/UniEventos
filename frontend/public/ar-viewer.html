@@ -527,7 +527,7 @@
                 mesh.position.z += (targetZ - mesh.position.z) * 0.1;
                 mesh.position.y += (0 - mesh.position.y) * 0.1;
 
-                mesh.lookAt(0, 0, 0);
+                mesh.lookAt(camera.position);
 
                 const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
                 mesh.scale.setScalar(1.5 - t * 1.2);
