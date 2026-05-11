@@ -505,27 +505,16 @@
             } else {
                 const diffRaw = Math.abs(diffAngDeg(rawYaw, iosLastRawHeadingDeg ?? rawYaw));
                 iosLastRawHeadingDeg = rawYaw;
-
-                // Saltos absurdos de magnetómetro: no los ignoramos totalmente, pero los amortiguamos.
                 const diffToSmooth = Math.abs(diffAngDeg(rawYaw, iosYawDeg));
                 const alphaYaw = diffRaw > 80 ? IOS_YAW_ALPHA_MIN : calcularAlphaYawIOS(diffToSmooth);
-
                 iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, alphaYaw);
                 smoothCompassHeading = iosYawDeg;
             }
 
-            const rawPitch = calcularPitchIOS();
-            if (iosPitchDeg === null) iosPitchDeg = rawPitch;
-            else iosPitchDeg += (rawPitch - iosPitchDeg) * IOS_PITCH_ALPHA;
-
-            // Rotación iOS desacoplada:
-            // - Yaw = brújula horizontal filtrada.
-            // - Pitch = inclinación vertical filtrada.
-            // - Roll = 0 para que al subir/bajar no haya movimiento horizontal.
+            // Pitch FIJO en 0 — no seguir el movimiento vertical del celular
             const yawRad = degToRad(-iosYawDeg);
-            const pitchRad = degToRad(iosPitchDeg);
 
-            orientationEuler.set(pitchRad, yawRad, 0, 'YXZ');
+            orientationEuler.set(0, yawRad, 0, 'YXZ');
             qTarget.setFromEuler(orientationEuler);
             camera.quaternion.slerp(qTarget, IOS_CAMERA_SLERP);
             lastHeadingDeg = iosYawDeg;
@@ -711,31 +700,43 @@
             });
         }
 
-        function actualizarOrientacionCamaraIOS() {
-            if (!esNumero(rawCompassHeading)) return;
+        function actualizarIndicadoresIOS() {
+            if (miLat === null) return;
 
-            const rawYaw = wrap360(rawCompassHeading);
-
-            if (iosYawDeg === null) {
-                iosYawDeg = rawYaw;
-                smoothCompassHeading = rawYaw;
-                iosLastRawHeadingDeg = rawYaw;
-            } else {
-                const diffRaw = Math.abs(diffAngDeg(rawYaw, iosLastRawHeadingDeg ?? rawYaw));
-                iosLastRawHeadingDeg = rawYaw;
-                const diffToSmooth = Math.abs(diffAngDeg(rawYaw, iosYawDeg));
-                const alphaYaw = diffRaw > 80 ? IOS_YAW_ALPHA_MIN : calcularAlphaYawIOS(diffToSmooth);
-                iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, alphaYaw);
-                smoothCompassHeading = iosYawDeg;
+            if (miLat !== null) {
+                const p = latLngToWorld(miLat, miLng, 1.60);
+                camera.position.copy(p);
             }
 
-            // Pitch FIJO en 0 — no seguir el movimiento vertical del celular
-            const yawRad = degToRad(-iosYawDeg);
+            indicadores.forEach(mesh => {
+                const { evento, texture, ctx } = mesh.userData;
+                const dist = calcularDistancia(evento.latitud, evento.longitud);
 
-            orientationEuler.set(0, yawRad, 0, 'YXZ');
-            qTarget.setFromEuler(orientationEuler);
-            camera.quaternion.slerp(qTarget, IOS_CAMERA_SLERP);
-            lastHeadingDeg = iosYawDeg;
+                if (!mesh.userData.gpsPositioned || dist === null || dist > DIST_MAXIMA) {
+                    mesh.visible = false; return;
+                }
+
+                if (dist < DIST_LLEGADA) {
+                    mesh.visible = false;
+                    mostrarLlegada(evento);
+                    return;
+                } else if (llegadaEventoId === evento.id) {
+                    ocultarLlegada();
+                }
+
+                mesh.visible = true;
+                mesh.lookAt(camera.position);
+
+                const t = clamp((dist - DIST_LLEGADA) / (DIST_MAXIMA - DIST_LLEGADA), 0, 1);
+                mesh.scale.setScalar(1.5 - t * 1.2);
+
+                const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
+                if (distCambio > 2) {
+                    mesh.userData.lastDist = dist;
+                    dibujarCard(ctx, evento, dist);
+                    texture.needsUpdate = true;
+                }
+            });
         }
 
         function mostrarLlegada(evento) {
