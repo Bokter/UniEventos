@@ -11,8 +11,6 @@
         html, body { width: 100%; height: 100%; overflow: hidden; background: black; overscroll-behavior: none; touch-action: none; }
         #video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
         #canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-
-        /* UI superior */
         #ui {
             position: fixed; top: 0; left: 0; right: 0;
             padding: 12px 16px;
@@ -33,8 +31,6 @@
             padding: 6px 10px; font-size: 11px;
             cursor: pointer; font-family: system-ui, sans-serif;
         }
-
-        /* Pantalla de inicio animada */
         #splash {
             position: fixed; inset: 0;
             background: #0f0f2e;
@@ -45,39 +41,14 @@
             animation: splashFade 0.5s ease forwards;
             animation-delay: 2.5s;
         }
-        @keyframes splashFade {
-            to { opacity: 0; pointer-events: none; }
-        }
-        #splash-logo {
-            font-size: 64px;
-            animation: logoPulse 1s ease-in-out infinite alternate;
-        }
-        @keyframes logoPulse {
-            from { transform: scale(0.95); }
-            to { transform: scale(1.05); }
-        }
-        #splash-titulo {
-            color: white; font-family: system-ui, sans-serif;
-            font-size: 24px; font-weight: 800;
-        }
-        #splash-sub {
-            color: rgba(255,255,255,0.6);
-            font-family: system-ui, sans-serif;
-            font-size: 14px;
-        }
-        #splash-bar {
-            width: 200px; height: 4px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 2px; overflow: hidden;
-        }
-        #splash-bar-fill {
-            height: 100%; width: 0%;
-            background: #6c63ff; border-radius: 2px;
-            animation: barFill 2s ease forwards;
-        }
+        @keyframes splashFade { to { opacity: 0; pointer-events: none; } }
+        #splash-logo { font-size: 64px; animation: logoPulse 1s ease-in-out infinite alternate; }
+        @keyframes logoPulse { from { transform: scale(0.95); } to { transform: scale(1.05); } }
+        #splash-titulo { color: white; font-family: system-ui, sans-serif; font-size: 24px; font-weight: 800; }
+        #splash-sub { color: rgba(255,255,255,0.6); font-family: system-ui, sans-serif; font-size: 14px; }
+        #splash-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; overflow: hidden; }
+        #splash-bar-fill { height: 100%; width: 0%; background: #6c63ff; border-radius: 2px; animation: barFill 2s ease forwards; }
         @keyframes barFill { to { width: 100%; } }
-
-        /* Loading GPS */
         #loading {
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -87,8 +58,6 @@
         }
         #loading-bar { width: 200px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin: 10px auto 0; }
         #loading-fill { height: 100%; width: 0%; background: #6c63ff; border-radius: 3px; transition: width 0.3s ease; }
-
-        /* Panel de eventos */
         #panel-eventos {
             position: fixed; bottom: 0; left: 0; right: 0;
             z-index: 20;
@@ -110,8 +79,7 @@
         #panel-titulo-eventos {
             color: white; font-family: system-ui, sans-serif;
             font-size: 14px; font-weight: 700;
-            padding: 0 16px 10px;
-            opacity: 0.7;
+            padding: 0 16px 10px; opacity: 0.7;
         }
         #lista-eventos {
             overflow-y: auto;
@@ -129,26 +97,20 @@
             transition: all 0.2s ease;
             color: white; font-family: system-ui, sans-serif;
         }
-        .evento-item.seleccionado {
-            border-color: #6c63ff;
-            background: rgba(108,99,255,0.2);
+        .evento-item.navegando {
+            border-color: #00ff88;
+            background: rgba(0,255,136,0.1);
         }
         .evento-item-info { flex: 1; }
         .evento-item-nombre { font-size: 14px; font-weight: 700; }
         .evento-item-lugar { font-size: 12px; color: #a8a6ff; margin-top: 2px; }
         .evento-item-dist { font-size: 13px; font-weight: 700; color: #ffcc00; margin-left: 10px; white-space: nowrap; }
-        #btn-ir {
-            position: fixed; bottom: 30px; right: 16px;
-            background: #6c63ff; color: white;
-            border: none; border-radius: 14px;
-            padding: 14px 24px; font-size: 16px; font-weight: 800;
-            z-index: 25; cursor: pointer;
-            font-family: system-ui, sans-serif;
-            display: none;
-            box-shadow: 0 8px 24px rgba(108,99,255,0.4);
+        .evento-item-badge {
+            font-size: 11px; font-weight: 700;
+            background: #00ff88; color: #0f0f2e;
+            border-radius: 6px; padding: 2px 8px;
+            margin-left: 8px; white-space: nowrap;
         }
-
-        /* Llegada */
         #llegada {
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -160,12 +122,7 @@
             text-align: center; z-index: 35; display: none;
             animation: pulsar 0.5s ease-in-out infinite alternate;
         }
-        @keyframes pulsar {
-            from { box-shadow: 0 0 10px #00ff88; }
-            to { box-shadow: 0 0 30px #00ff88; }
-        }
-
-        /* Debug */
+        @keyframes pulsar { from { box-shadow: 0 0 10px #00ff88; } to { box-shadow: 0 0 30px #00ff88; } }
         #debug {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: rgba(0,0,0,0.86); color: #78ff78;
@@ -180,7 +137,6 @@
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
 
-    <!-- Splash de inicio -->
     <div id="splash">
         <div id="splash-logo">🎯</div>
         <div id="splash-titulo">UniEventos AR</div>
@@ -201,14 +157,12 @@
         <div id="loading-bar"><div id="loading-fill"></div></div>
     </div>
 
-    <!-- Panel de eventos -->
     <div id="panel-eventos">
         <div id="panel-handle"></div>
         <div id="panel-titulo-eventos">EVENTOS CERCANOS</div>
         <div id="lista-eventos"></div>
     </div>
 
-    <button id="btn-ir">📍 Ir al evento</button>
     <div id="llegada"></div>
     <div id="debug"></div>
 
@@ -246,8 +200,7 @@
         let llegadaTimer = null;
         let llegadaEventoId = null;
 
-        // Evento seleccionado
-        let eventoSeleccionado = null;
+        // Navegación — sin botón IR, click directo en evento
         let navegandoA = null;
 
         // iOS
@@ -281,6 +234,11 @@
         let iosLastPitchMs = 0;
         let iosPitchSpeedDegS = 0;
         let iosYawFrozen = false;
+
+        // iOS offset de corrección horizontal
+        // Si el indicador aparece a la izquierda, aumentar este valor (positivo)
+        // Si aparece a la derecha, disminuirlo (negativo)
+        const IOS_YAW_OFFSET_DEG = 0;
 
         function $(id) { return document.getElementById(id); }
         function log(msg) {
@@ -341,36 +299,44 @@
         function actualizarPanel() {
             const lista = $('lista-eventos');
             lista.innerHTML = '';
-
             eventosData.forEach(evento => {
                 const dist = calcularDistancia(evento.latitud, evento.longitud);
+                const estaNavegando = navegandoA?.id === evento.id;
                 const item = document.createElement('div');
-                item.className = 'evento-item' + (eventoSeleccionado?.id === evento.id ? ' seleccionado' : '');
+                item.className = 'evento-item' + (estaNavegando ? ' navegando' : '');
                 item.innerHTML = `
                     <div class="evento-item-info">
                         <div class="evento-item-nombre">${evento.titulo}</div>
                         <div class="evento-item-lugar">📍 ${evento.lugar_nombre}</div>
                     </div>
-                    <div class="evento-item-dist">${formatDist(dist)}</div>
+                    <div style="display:flex;align-items:center">
+                        <div class="evento-item-dist">${formatDist(dist)}</div>
+                        ${estaNavegando ? '<div class="evento-item-badge">Navegando</div>' : ''}
+                    </div>
                 `;
-                item.addEventListener('click', () => seleccionarEvento(evento));
+                // Click directo navega al evento
+                item.addEventListener('click', () => {
+                    if (navegandoA?.id === evento.id) {
+                        // Cancelar navegación si ya estaba navegando a ese
+                        navegandoA = null;
+                    } else {
+                        navegandoA = evento;
+                        // Cerrar panel al seleccionar
+                        panelExpandido = false;
+                        $('panel-eventos').classList.remove('expandido');
+                    }
+                    actualizarPanel();
+                    actualizarOpacidadIndicadores();
+                });
                 lista.appendChild(item);
             });
         }
 
-        function seleccionarEvento(evento) {
-            eventoSeleccionado = eventoSeleccionado?.id === evento.id ? null : evento;
-            $('btn-ir').style.display = eventoSeleccionado ? 'block' : 'none';
-            actualizarPanel();
-            actualizarOpacidadIndicadores();
-        }
-
         function actualizarOpacidadIndicadores() {
             indicadores.forEach(mesh => {
-                if (!eventoSeleccionado) {
+                if (!navegandoA) {
                     mesh.material.opacity = 1;
-                    mesh.material.transparent = true;
-                } else if (mesh.userData.evento.id === eventoSeleccionado.id) {
+                } else if (mesh.userData.evento.id === navegandoA.id) {
                     mesh.material.opacity = 1;
                 } else {
                     mesh.material.opacity = 0.25;
@@ -385,17 +351,7 @@
             $('debug').style.display = devVisible ? 'block' : 'none';
         });
 
-        // ── Panel handle ──
         $('panel-handle').addEventListener('click', togglePanel);
-
-        // ── Botón Ir ──
-        $('btn-ir').addEventListener('click', () => {
-            if (!eventoSeleccionado) return;
-            navegandoA = eventoSeleccionado;
-            togglePanel();
-            panelExpandido = false;
-            $('panel-eventos').classList.remove('expandido');
-        });
 
         // ── Permisos ──
         async function solicitarPermisosSensores() {
@@ -410,7 +366,6 @@
             }
         }
 
-        // ── Cámara ──
         async function iniciarCamara() {
             if (!navigator.mediaDevices?.getUserMedia)
                 throw new Error('getUserMedia no disponible. Usa HTTPS.');
@@ -433,7 +388,6 @@
             }
         }
 
-        // ── GPS ──
         function iniciarGPS() {
             if (!navigator.geolocation) { log('GPS no soportado'); return; }
             navigator.geolocation.watchPosition(pos => {
@@ -520,7 +474,6 @@
             return new THREE.Vector3(x, y, z);
         }
 
-        // ── Orientación ──
         async function iniciarOrientacion() {
             screenOrientationDeg = getScreenOrientationDeg();
             window.addEventListener('orientationchange', () => { screenOrientationDeg = getScreenOrientationDeg(); });
@@ -619,19 +572,21 @@
                 const diffToSmooth = Math.abs(diffAngDeg(rawYaw, iosYawDeg));
                 iosYawFrozen = iosPitchSpeedDegS > IOS_FREEZE_YAW_PITCH_SPEED;
                 if (!iosYawFrozen) {
-                    const alphaYaw = calcularAlphaYawIOS(diffToSmooth);
-                    iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, alphaYaw);
+                    iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, calcularAlphaYawIOS(diffToSmooth));
                 } else {
                     iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, 0.008);
                 }
                 smoothCompassHeading = iosYawDeg;
                 iosLastRawHeadingDeg = rawYaw;
             }
-            iosQYaw.setFromAxisAngle(iosAxisY, degToRad(-iosYawDeg));
+
+            // Aplicar offset de corrección horizontal iOS
+            const yawConOffset = wrap360(iosYawDeg + IOS_YAW_OFFSET_DEG);
+            iosQYaw.setFromAxisAngle(iosAxisY, degToRad(-yawConOffset));
             iosQPitch.setFromAxisAngle(iosAxisX, degToRad(iosPitchDeg));
             qTarget.copy(iosQYaw).multiply(iosQPitch);
             camera.quaternion.slerp(qTarget, IOS_CAMERA_SLERP);
-            lastHeadingDeg = iosYawDeg;
+            lastHeadingDeg = yawConOffset;
         }
 
         function actualizarOrientacionCamara() {
@@ -657,7 +612,6 @@
             return wrap360(radToDeg(Math.atan2(tmpVec3.x, -tmpVec3.z)));
         }
 
-        // ── Three.js ──
         function iniciarThree() {
             const canvas = $('canvas');
             renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
@@ -784,15 +738,14 @@
                 mesh.visible = false; return;
             }
 
-            // Si estamos navegando a un evento, solo mostrar ese
             if (navegandoA) {
                 if (evento.id !== navegandoA.id) { mesh.visible = false; return; }
                 if (dist < DIST_LLEGADA) {
                     mesh.visible = false;
                     mostrarLlegada(evento);
                     navegandoA = null;
-                    eventoSeleccionado = null;
-                    $('btn-ir').style.display = 'none';
+                    actualizarPanel();
+                    actualizarOpacidadIndicadores();
                     return;
                 }
             } else if (dist < DIST_LLEGADA) {
@@ -803,7 +756,9 @@
 
             mesh.visible = true;
 
-            const escala = dist <= 50 ? 6: 4;
+            // Escala grande cerca, legible lejos
+            const escala = dist <= 50 ? 8 : 5;
+            mesh.scale.setScalar(escala);
 
             const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
             if (distCambio > 2) {
@@ -899,7 +854,6 @@
             }
         }
 
-        // Iniciar automáticamente después del splash
         setTimeout(() => { iniciar(); }, 2800);
     </script>
 </body>
