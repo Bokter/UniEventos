@@ -15,6 +15,7 @@ import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
 import { useAuth } from "../../context/AuthContext";
 import { eventosApi, favoritosApi } from "../services/api.service";
 import { toast } from "sonner";
+import { notificationService } from "../services/notification.service";
 
 // Tipo local para eventos que llegan del backend
 interface EventoBackend {
@@ -92,11 +93,31 @@ export function OrganizerDashboardPage() {
   };
 
   const handleCancel = async (eventId: number) => {
-    if (!confirm("¿Estás seguro de que quieres cancelar este evento? Esta acción no se puede deshacer.")) {
+    const event = organizerEvents.find(e => e.id === eventId);
+    if (!confirm(`¿Estás seguro de que quieres cancelar "${event?.titulo}"? Esta acción no se puede deshacer.`)) {
       return;
     }
     try {
       await eventosApi.cancelar(eventId);
+      
+      // Obtener interesados y notificarles
+      try {
+        const emails = await favoritosApi.getInteresados(eventId) as string[];
+        if (emails && emails.length > 0 && event) {
+          toast.info(`Notificando a ${emails.length} seguidores...`);
+          // Enviar correos a cada seguidor
+          emails.forEach((email: string) => {
+            notificationService.sendEmail({
+              usuario: { nombre_completo: "Seguidor de UniEventos" },
+              event: { titulo: event.titulo, estado: 'CANCELADO' },
+              to_email: email
+            });
+          });
+        }
+      } catch (err) {
+        console.error("Error al notificar a seguidores:", err);
+      }
+
       toast.success("Evento cancelado exitosamente");
       setOrganizerEvents(prev =>
         prev.map(e => e.id === eventId ? { ...e, estado: 'cancelado' } : e)

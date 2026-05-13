@@ -196,4 +196,7 @@ export const favoritosApi = {
       method: 'DELETE',
       headers: buildHeaders(),
     }).then(handleResponse),
+
+  getInteresados: (eventoId: number | string) =>
+    fetchWithRetry(`${BASE_URL}/favoritos/${eventoId}/interesados`, { headers: buildHeaders() }).then(handleResponse),
 };

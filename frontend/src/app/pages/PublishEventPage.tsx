@@ -13,6 +13,7 @@ import { CategoryBadge } from "../components/CategoryBadge";
 import { useAuth } from "../../context/AuthContext";
 import { eventosApi, categoriasApi, lugaresApi, usuariosApi } from "../services/api.service";
 import { toast } from "sonner";
+import { notificationService } from "../services/notification.service";
 
 // Fix for default marker icon
 try {
@@ -225,6 +226,15 @@ export function PublishEventPage() {
       // 3. Send to review if requested
       if (targetStatus === 'In review') {
         await eventosApi.enviarRevision(editId || eventResponse?.id);
+        
+        // Notificar al organizador
+        if (usuario) {
+          await notificationService.sendEmail({
+            usuario: { nombre_completo: usuario.nombre_completo },
+            event: { titulo: title, estado: 'En revisión' },
+            to_email: usuario.email
+          });
+        }
       }
 
       toast.success(targetStatus === 'Draft' ? "¡Guardado como borrador!" : "¡Enviado para revisión!");

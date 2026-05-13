@@ -17,6 +17,7 @@ import { useAuth } from "../../context/AuthContext";
 import { eventosApi, usuariosApi, categoriasApi } from "../services/api.service";
 import { UserRole } from "../data/mockData";
 import { toast } from "sonner";
+import { notificationService } from "../services/notification.service";
 
 interface EventoBackend {
   id: number;
@@ -102,7 +103,18 @@ export function AdminPanelPage() {
 
   const handleApprove = async (eventId: number) => {
     try {
+      const event = pendingEvents.find(e => e.id === eventId);
       await eventosApi.aprobar(eventId);
+      
+      // Enviar notificación por correo
+      if (event && event.organizador) {
+        await notificationService.sendEmail({
+          usuario: { nombre_completo: event.organizador.nombre_completo },
+          event: { titulo: event.titulo, estado: 'Aprobado' },
+          to_email: event.organizador.email // Variable útil para configurar el destinatario en EmailJS
+        });
+      }
+
       toast.success("Evento aprobado");
       setPendingEvents(prev => prev.filter(e => e.id !== eventId));
     } catch (error: unknown) {
@@ -128,6 +140,20 @@ export function AdminPanelPage() {
     }
     try {
       await eventosApi.rechazar(selectedEvent.id, rejectionReason);
+      
+      // Enviar notificación por correo
+      if (selectedEvent.organizador) {
+        await notificationService.sendEmail({
+          usuario: { nombre_completo: selectedEvent.organizador.nombre_completo },
+          event: { 
+            titulo: selectedEvent.titulo, 
+            estado: 'Rechazado'
+          },
+          observacion: rejectionReason,
+          to_email: selectedEvent.organizador.email
+        });
+      }
+
       toast.success(`Evento "${selectedEvent.titulo}" rechazado`);
       setPendingEvents(prev => prev.filter(e => e.id !== selectedEvent.id));
     } catch (error: unknown) {

@@ -33,4 +33,11 @@ export class FavoritosController {
   eliminar(@Param('eventoId', ParseIntPipe) eventoId: number, @Req() req: any) {
     return this.favoritosService.eliminar(req.user.id, eventoId);
   }
+
+  @Get(':eventoId/interesados')
+  @Roles(RolUsuario.ORGANIZADOR, RolUsuario.ADMIN)
+  @ApiOperation({ summary: 'Obtiene los correos de los usuarios que marcaron un evento como favorito' })
+  obtenerInteresados(@Param('eventoId', ParseIntPipe) eventoId: number) {
+    return this.favoritosService.obtenerInteresados(eventoId);
+  }
 }

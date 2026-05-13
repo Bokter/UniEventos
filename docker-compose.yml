@@ -19,9 +19,6 @@ services:
       - DB_PASSWORD=password
       - DB_NAME=unieventos
       - JWT_SECRET=${JWT_SECRET}
-      - BREVO_LOGIN=${BREVO_LOGIN}
-      - BREVO_SMTP_KEY=${BREVO_SMTP_KEY}
-      - MAIL_FROM=${MAIL_FROM}
     depends_on:
       db:
         condition: service_healthy
