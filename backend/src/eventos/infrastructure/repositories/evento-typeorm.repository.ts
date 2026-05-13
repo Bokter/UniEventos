@@ -106,11 +106,12 @@ export class EventoTypeormRepository implements IEventoRepository {
 
   async marcarTerminados(): Promise<void> {
     // Actualiza a TERMINADO los eventos APROBADOS cuya fecha + hora_fin ya pasó en hora de Colombia
+    // Se convierte el timestamp naive a zona de Bogotá explícitamente antes de comparar
     await this.repo.query(`
       UPDATE eventos 
       SET estado = $1 
       WHERE estado = $2 
-      AND CAST(CONCAT(fecha, ' ', COALESCE(hora_fin, '23:59:59')) AS TIMESTAMP) < CURRENT_TIMESTAMP AT TIME ZONE 'America/Bogota'
+      AND (CONCAT(fecha, ' ', COALESCE(hora_fin, '23:59:59'))::TIMESTAMP AT TIME ZONE 'America/Bogota') < NOW()
     `, [EstadoEvento.TERMINADO, EstadoEvento.APROBADO]);
   }
 }

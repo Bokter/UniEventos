@@ -2,7 +2,7 @@
 // auth.service.ts — Servicio de autenticación para UniEventos
 // ============================================================
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'https://unieventos-s25a.onrender.com';
 
 // ── Tipos ────────────────────────────────────────────────────
 export type Rol = 'miembro' | 'organizador' | 'admin';

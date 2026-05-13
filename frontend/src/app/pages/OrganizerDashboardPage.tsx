@@ -236,7 +236,11 @@ export function OrganizerDashboardPage() {
                             <CategoryBadge category={event.categoria as any} />
                           </TableCell>
                           <TableCell>
-                            {event.fecha ? format(new Date(event.fecha), 'dd/MM/yyyy') : '—'}
+                            {event.fecha ? (() => {
+                              // Parsear YYYY-MM-DD como fecha LOCAL para evitar el desfase UTC
+                              const [y, m, d] = event.fecha.split('-').map(Number);
+                              return format(new Date(y, m - 1, d), 'dd/MM/yyyy');
+                            })() : '—'}
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={event.estado as any} />

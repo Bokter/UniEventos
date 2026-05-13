@@ -1,11 +1,11 @@
 // ============================================================
 // api.service.ts — Servicio centralizado de llamadas al backend
-// BASE_URL: http://localhost:3000
+// BASE_URL: https://unieventos-s25a.onrender.com
 // ============================================================
 
 import { obtenerToken } from './auth.service';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'https://unieventos-s25a.onrender.com';
 
 // Helper: construye headers con Authorization si hay token
 function buildHeaders(extra?: Record<string, string>): Record<string, string> {
