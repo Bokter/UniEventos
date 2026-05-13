@@ -29,6 +29,7 @@ interface EventoBackend {
   estado: string;
   observacion_admin?: string;
   streams?: { organizerId: string; streamLink: string }[];
+  coorganizadores?: { id: number; nombre_completo: string; email: string }[];
   [key: string]: unknown;
 }
 
@@ -102,20 +103,25 @@ export function OrganizerDashboardPage() {
       
       // Obtener interesados y notificarles
       try {
-        const emails = await favoritosApi.getInteresados(eventId) as string[];
-        if (emails && emails.length > 0 && event) {
-          toast.info(`Notificando a ${emails.length} seguidores...`);
-          // Enviar correos a cada seguidor
-          emails.forEach((email: string) => {
+        const followers = await favoritosApi.getInteresados(eventId) as string[];
+        const coOrganizers = (event?.coorganizadores || []).map(c => c.email);
+        
+        // Unir listas de correos y eliminar duplicados
+        const allEmails = Array.from(new Set([...followers, ...coOrganizers]));
+
+        if (allEmails.length > 0 && event) {
+          toast.info(`Notificando a ${allEmails.length} personas (seguidores y colaboradores)...`);
+          // Enviar correos
+          allEmails.forEach((email: string) => {
             notificationService.sendEmail({
-              usuario: { nombre_completo: "Seguidor de UniEventos" },
+              usuario: { nombre_completo: "Colaborador/Seguidor de UniEventos" },
               event: { titulo: event.titulo, estado: 'CANCELADO' },
               to_email: email
             });
           });
         }
       } catch (err) {
-        console.error("Error al notificar a seguidores:", err);
+        console.error("Error al notificar a interesados:", err);
       }
 
       toast.success("Evento cancelado exitosamente");
