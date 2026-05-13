@@ -15,6 +15,7 @@ import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
 import { useAuth } from "../../context/AuthContext";
 import { eventosApi, favoritosApi } from "../services/api.service";
 import { toast } from "sonner";
+import { notificationService } from "../services/notification.service";
 
 // Tipo local para eventos que llegan del backend
 interface EventoBackend {
@@ -28,6 +29,7 @@ interface EventoBackend {
   estado: string;
   observacion_admin?: string;
   streams?: { organizerId: string; streamLink: string }[];
+  coorganizadores?: { id: number; nombre_completo: string; email: string }[];
   [key: string]: unknown;
 }
 
@@ -92,11 +94,36 @@ export function OrganizerDashboardPage() {
   };
 
   const handleCancel = async (eventId: number) => {
-    if (!confirm("¿Estás seguro de que quieres cancelar este evento? Esta acción no se puede deshacer.")) {
+    const event = organizerEvents.find(e => e.id === eventId);
+    if (!confirm(`¿Estás seguro de que quieres cancelar "${event?.titulo}"? Esta acción no se puede deshacer.`)) {
       return;
     }
     try {
       await eventosApi.cancelar(eventId);
+      
+      // Obtener interesados y notificarles
+      try {
+        const followers = await favoritosApi.getInteresados(eventId) as string[];
+        const coOrganizers = (event?.coorganizadores || []).map(c => c.email);
+        
+        // Unir listas de correos y eliminar duplicados
+        const allEmails = Array.from(new Set([...followers, ...coOrganizers]));
+
+        if (allEmails.length > 0 && event) {
+          toast.info(`Notificando a ${allEmails.length} personas (seguidores y colaboradores)...`);
+          // Enviar correos
+          allEmails.forEach((email: string) => {
+            notificationService.sendEmail({
+              usuario: { nombre_completo: "Colaborador/Seguidor de UniEventos" },
+              event: { titulo: event.titulo, estado: 'CANCELADO' },
+              to_email: email
+            });
+          });
+        }
+      } catch (err) {
+        console.error("Error al notificar a interesados:", err);
+      }
+
       toast.success("Evento cancelado exitosamente");
       setOrganizerEvents(prev =>
         prev.map(e => e.id === eventId ? { ...e, estado: 'cancelado' } : e)
