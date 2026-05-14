@@ -11,9 +11,10 @@ export class EventoOrmEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => UsuarioOrmEntity)
+  @ManyToOne(() => UsuarioOrmEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'organizador_id' })
   organizador: UsuarioOrmEntity;
+
 
   @ManyToOne(() => CategoriaOrmEntity)
   @JoinColumn({ name: 'categoria_id' })

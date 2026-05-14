@@ -5,7 +5,7 @@
 
 import { obtenerToken } from './auth.service';
 
-const BASE_URL = 'https://unieventos-s25a.onrender.com';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://unieventos-s25a.onrender.com';
 
 // Helper: construye headers con Authorization si hay token
 function buildHeaders(extra?: Record<string, string>): Record<string, string> {
@@ -18,10 +18,10 @@ function buildHeaders(extra?: Record<string, string>): Record<string, string> {
 }
 
 // Helper: lanza error con mensaje legible si la respuesta no es OK
-// Helper: lanza error con mensaje legible si la respuesta no es OK
 async function handleResponse<T = any>(res: Response): Promise<T> {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    console.error(`API Error [${res.status}] ${res.url}:`, err);
     throw new Error((err as any).message || `Error ${res.status}`);
   }
   return res.json() as Promise<T>;

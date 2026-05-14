@@ -52,10 +52,13 @@ export class UsuariosService {
   }
 
   async eliminar(id: number) {
+    console.log(`[UsuariosService] Intento de eliminación para usuario ID: ${id}`);
     const usuario = await this.usuarioRepository.findById(id);
     if (!usuario) {
+      console.warn(`[UsuariosService] Usuario con ID ${id} no encontrado en la base de datos.`);
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
+
 
     // 1. Eliminar de Roble si es cuenta de uninorte
     if (usuario.email && usuario.email.endsWith('@uninorte.edu.co')) {

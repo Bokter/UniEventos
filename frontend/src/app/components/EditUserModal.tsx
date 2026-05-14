@@ -2,27 +2,33 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { User, UserRole } from "../data/mockData";
+interface UsuarioBackend {
+  id: number;
+  nombre_completo: string;
+  email: string;
+  rol: string;
+  activo: boolean;
+}
 
 interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User | null;
-  onSave: (userId: string, newRole: UserRole) => void;
+  user: UsuarioBackend | null;
+  onSave: (userId: string, newRole: string) => void;
 }
 
 export function EditUserModal({ isOpen, onClose, user, onSave }: EditUserModalProps) {
-  const [role, setRole] = useState<UserRole>('Attendee');
+  const [role, setRole] = useState<string>('miembro');
 
   useEffect(() => {
     if (user) {
-      setRole(user.role);
+      setRole(user.rol);
     }
   }, [user]);
 
   const handleSave = () => {
     if (user) {
-      onSave(user.id, role);
+      onSave(String(user.id), role);
       onClose();
     }
   };
@@ -38,7 +44,7 @@ export function EditUserModal({ isOpen, onClose, user, onSave }: EditUserModalPr
         <div className="py-4 space-y-4">
           <div>
             <p className="text-sm font-medium">Nombre</p>
-            <p className="text-sm text-muted-foreground">{user.name}</p>
+            <p className="text-sm text-muted-foreground">{user.nombre_completo}</p>
           </div>
           <div>
             <p className="text-sm font-medium">Email</p>
@@ -46,14 +52,14 @@ export function EditUserModal({ isOpen, onClose, user, onSave }: EditUserModalPr
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium">Rol</p>
-            <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
+            <Select value={role} onValueChange={(value) => setRole(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar rol" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Admin">Administrador</SelectItem>
-                <SelectItem value="Organizer">Organizador</SelectItem>
-                <SelectItem value="Attendee">Miembro</SelectItem>
+                <SelectItem value="admin">Administrador</SelectItem>
+                <SelectItem value="organizador">Organizador</SelectItem>
+                <SelectItem value="miembro">Miembro</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -66,3 +72,4 @@ export function EditUserModal({ isOpen, onClose, user, onSave }: EditUserModalPr
     </Dialog>
   );
 }
+

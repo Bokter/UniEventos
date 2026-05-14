@@ -9,9 +9,10 @@ export class FavoritoOrmEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => UsuarioOrmEntity)
+  @ManyToOne(() => UsuarioOrmEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'usuario_id' })
   usuario: UsuarioOrmEntity;
+
 
   @ManyToOne(() => EventoOrmEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'evento_id' })

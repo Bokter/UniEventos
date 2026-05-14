@@ -15,8 +15,8 @@ import { EditUserModal } from "../components/EditUserModal";
 import { EditCategoryModal } from "../components/EditCategoryModal";
 import { useAuth } from "../../context/AuthContext";
 import { eventosApi, usuariosApi, categoriasApi } from "../services/api.service";
-import { UserRole } from "../data/mockData";
 import { toast } from "sonner";
+
 import { notificationService } from "../services/notification.service";
 
 interface EventoBackend {
@@ -177,23 +177,18 @@ export function AdminPanelPage() {
     setEditUserDialogOpen(true);
   };
 
-  const handleSaveUserRole = async (userId: string, newRole: UserRole) => {
-    // Map frontend UserRole enum to backend rol string
-    const rolMap: Record<UserRole, string> = {
-      Admin: 'admin',
-      Organizer: 'organizador',
-      Attendee: 'miembro',
-    };
+  const handleSaveUserRole = async (userId: string, newRole: string) => {
     try {
-      await usuariosApi.cambiarRol(userId, rolMap[newRole]);
+      await usuariosApi.cambiarRol(userId, newRole);
       toast.success("Rol de usuario actualizado");
       setUsuarios(prev =>
-        prev.map(u => u.id === Number(userId) ? { ...u, rol: rolMap[newRole] } : u)
+        prev.map(u => u.id === Number(userId) ? { ...u, rol: newRole } : u)
       );
     } catch (error: unknown) {
       toast.error((error as Error).message || "Error al actualizar el rol");
     }
   };
+
 
   const handleEditCategoryClick = (category: CategoriaBackend) => {
     setSelectedCategoryToEdit(category);
@@ -218,16 +213,6 @@ export function AdminPanelPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar permanentemente a este usuario? Esta acción no se puede deshacer.")) return;
-    try {
-      await usuariosApi.eliminar(userId);
-      toast.success("Usuario eliminado exitosamente");
-      setUsuarios(prev => prev.filter(u => u.id !== userId));
-    } catch (error: unknown) {
-      toast.error((error as Error).message || "No se pudo eliminar el usuario");
-    }
-  };
 
   const handleToggleCategoryStatus = async (categoryId: number, isActive: boolean) => {
     try {
@@ -434,14 +419,6 @@ export function AdminPanelPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="border-destructive text-destructive hover:bg-destructive/10 active:scale-95 transition-all"
-                            >
-                              Eliminar
-                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
