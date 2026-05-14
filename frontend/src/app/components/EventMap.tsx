@@ -14,6 +14,14 @@ export function EventMap({ lat, lng, locationName }: EventMapProps) {
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
+    // Solucionar problema de iconos de Leaflet en compilaciones (Vite/Webpack)
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    });
+
     // TODO: Manejar errores de carga de Leaflet y tiles de OpenStreetMap
     try {
       // Initialize map
@@ -29,8 +37,11 @@ export function EventMap({ lat, lng, locationName }: EventMapProps) {
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
-      // Add marker
-      L.marker([lat, lng]).addTo(map);
+      // Add marker con popup opcional
+      L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup(locationName || "Ubicación del evento")
+        .openPopup();
 
       mapInstanceRef.current = map;
     } catch (error) {

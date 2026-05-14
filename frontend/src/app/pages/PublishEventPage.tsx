@@ -385,7 +385,7 @@ export function PublishEventPage() {
             <div className="space-y-6">
               <div>
                 <Label>Ubicación del evento *</Label>
-                <div className="h-96 rounded-lg overflow-hidden border border-gray-300 mt-4">
+                <div className="h-96 rounded-lg overflow-hidden border border-gray-300 mt-4 relative z-0">
                   <LocationMap locationCoords={locationCoords} setLocationCoords={setLocationCoords} />
                 </div>
               </div>

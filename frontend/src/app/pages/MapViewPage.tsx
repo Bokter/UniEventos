@@ -61,9 +61,9 @@ export function MapViewPage() {
 
   // centro de los marcadores
   const getCoords = (e: any): [number, number] => {
-    if (e.lugar) return [e.lugar.lat, e.lugar.lng];
-    if (e.location) return [e.location.lat, e.location.lng];
-    return [0, 0];
+    const lat = Number(e.lugar?.latitud || e.lugar?.lat || e.location?.lat || 0);
+    const lng = Number(e.lugar?.longitud || e.lugar?.lng || e.location?.lng || 0);
+    return [lat, lng];
   };
 
   const validEvents = filteredEvents.filter(e => {
@@ -174,7 +174,7 @@ export function MapViewPage() {
           </div>
         </div>
         {/* mapa */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative z-0">
           {!isLoading && validEvents.length > 0 ? (
             <InteractiveMap events={validEvents} center={center} />
           ) : isLoading ? (

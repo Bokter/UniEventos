@@ -27,8 +27,13 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
       console.error("Error limpiando mapa anterior:", error);
     }
 
-    // Clean up existing markers
-    markersRef.current = [];
+    // Solucionar problema de iconos de Leaflet en compilaciones
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    });
 
     // TODO: Manejar errores de carga de Leaflet y tiles de OpenStreetMap
     try {
@@ -39,28 +44,35 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
         scrollWheelZoom: true,
       });
 
-      // Add tile layer - Puede fallar si OpenStreetMap no responde
+      // Add tile layer
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
       // Add markers for each event
-      events.forEach((event) => {
+      events.forEach((event: any) => {
         try {
-          const marker = L.marker([event.location.lat, event.location.lng]).addTo(
-            map
-          );
+          const lat = Number(event.lugar?.latitud || event.lugar?.lat || event.location?.lat);
+          const lng = Number(event.lugar?.longitud || event.lugar?.lng || event.location?.lng);
+
+          if (isNaN(lat) || isNaN(lng)) return;
+
+          const marker = L.marker([lat, lng]).addTo(map);
 
           // Create popup content
+          const titulo = event.titulo || event.title;
+          const fechaStr = event.fecha || event.dateStart;
+          const d = new Date(fechaStr);
+          
           const popupContent = `
             <div class="p-2">
-              <h3 class="mb-1 font-semibold">${event.title}</h3>
+              <h3 class="mb-1 font-semibold">${titulo}</h3>
               <p class="text-sm text-muted-foreground mb-2">
-                ${format(event.dateStart, "MMM d, yyyy • h:mm a")}
+                ${isNaN(d.getTime()) ? "" : format(d, "MMM d, yyyy")}
               </p>
-              <a href="/event/${event.id}" class="text-sm text-accent hover:underline">
-                See details →
+              <a href="/event/${event.id}" class="text-sm text-accent hover:underline" style="color: #1D9E75; font-weight: 600;">
+                Ver detalles →
               </a>
             </div>
           `;
@@ -69,7 +81,6 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
           markersRef.current.push(marker);
         } catch (error) {
           console.error(`Error creando marcador para evento ${event.id}:`, error);
-          // Continuar con el siguiente evento
         }
       });
 
