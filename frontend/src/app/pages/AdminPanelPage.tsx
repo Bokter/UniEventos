@@ -379,7 +379,8 @@ export function AdminPanelPage() {
                           <TableCell>
                             {(() => {
                               if (!event.fecha) return '—';
-                              const d = new Date(event.fecha);
+                              const fechaStr = event.fecha.includes('T') ? event.fecha : `${event.fecha}T12:00:00`;
+                              const d = new Date(fechaStr);
                               return isNaN(d.getTime()) ? 'Fecha inválida' : format(d, 'dd/MM/yyyy');
                             })()}
                           </TableCell>
