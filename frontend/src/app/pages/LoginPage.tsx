@@ -124,8 +124,8 @@ export function LoginPage() {
   // ─── Pantalla de verificación ───────────────────────────────
   if (showVerify) {
     return (
-      <div style={pageStyle}>
-        <div style={cardStyle}>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e8f5ed] via-[#d4ecdd] to-[#c8e8d4] p-6">
+        <div className="bg-white rounded-[20px] shadow-[0_8px_40px_rgba(41,50,65,0.12)] p-8 md:p-10 w-full max-w-[420px] flex flex-col items-center">
           <div style={iconCircle}>
             <ShieldCheck size={28} color="#EE6C4D" />
           </div>
@@ -134,7 +134,7 @@ export function LoginPage() {
             Ingresa el código que enviamos a<br />
             <strong style={{ color: '#293241' }}>{emailToVerify}</strong>
           </p>
-          <form onSubmit={handleVerify} style={{ width: '100%' }}>
+          <form onSubmit={handleVerify} className="w-full">
             <div style={fieldGroup}>
               <Label htmlFor="verify-code" style={labelStyle}>Código de verificación</Label>
               <Input
@@ -143,13 +143,14 @@ export function LoginPage() {
                 value={verifyCode}
                 onChange={(e) => setVerifyCode(e.target.value)}
                 required
-                style={{ ...inputStyle, textAlign: 'center', fontSize: '1.4rem', letterSpacing: '0.3em' }}
+                className="text-center text-2xl tracking-[0.3em] h-14"
+                style={inputStyle}
               />
             </div>
             <button type="submit" disabled={isLoading} style={btnPrimaryStyle}>
               {isLoading ? "Verificando..." : "Verificar correo"}
             </button>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <div className="flex flex-col gap-2 mt-3">
               <button type="button" onClick={handleResendCode} style={btnOutlineStyle}>
                 Reenviar código
               </button>
@@ -165,22 +166,22 @@ export function LoginPage() {
 
   // ─── Pantalla principal de login ────────────────────────────
   return (
-    <div style={pageStyle}>
+    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-[#e8f5ed] via-[#d4ecdd] to-[#c8e8d4]">
       {/* Panel izquierdo decorativo */}
-      <div style={heroPanelStyle}>
+      <div className="hidden md:flex md:w-[40%] bg-gradient-to-br from-[#293241] to-[#3D5A80] items-center justify-center p-12 relative overflow-hidden">
         <div style={heroContentStyle}>
           <div style={logoBadgeStyle}>UN</div>
-          <h1 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: 800, margin: '1.5rem 0 0.75rem', letterSpacing: '0.02em', lineHeight: 1.2 }}>
+          <h1 className="text-white text-[2.2rem] font-extrabold mt-6 mb-3 tracking-tight leading-[1.2]">
             UniEventos
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '1rem', fontWeight: 300, lineHeight: 1.7, maxWidth: '260px' }}>
+          <p className="text-white/75 text-base font-light leading-[1.7] max-w-[260px]">
             Descubre, organiza y vive los eventos de tu comunidad universitaria.
           </p>
-          <div style={{ marginTop: '2.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className="mt-10 flex flex-col gap-3">
             {['Eventos en tiempo real', 'Visor AR interactivo', 'Comunidad universitaria'].map(f => (
-              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#A4D4B4' }} />
-                <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', fontWeight: 300 }}>{f}</span>
+              <div key={f} className="flex items-center gap-[0.6rem]">
+                <div className="w-2 h-2 rounded-full bg-[#A4D4B4]" />
+                <span className="text-white/85 text-[0.9rem] font-light">{f}</span>
               </div>
             ))}
           </div>
@@ -188,8 +189,8 @@ export function LoginPage() {
       </div>
 
       {/* Panel derecho con formulario */}
-      <div style={formPanelStyle}>
-        <div style={cardStyle}>
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12">
+        <div className="bg-white rounded-[20px] shadow-[0_8px_40px_rgba(41,50,65,0.12)] p-8 md:p-10 w-full max-w-[420px] flex flex-col items-center">
           {/* Tabs */}
           <div style={tabsContainerStyle}>
             <button

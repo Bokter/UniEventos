@@ -93,22 +93,22 @@ export function HomePage() {
       <Navbar showSearch={true} onSearchChange={setBusqueda} searchValue={busqueda} />
 
       <div
-        className="text-white py-20"
+        className="text-white py-12 md:py-20"
         style={{
           background: 'linear-gradient(135deg, #1d2635 0%, #293241 60%, #3D5A80 100%)'
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center md:items-start text-center md:text-left">
           <div className="max-w-2xl">
-            <h1 className="text-5xl font-medium mb-6 leading-tight" style={{ letterSpacing: '0.02em' }}>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight" style={{ letterSpacing: '0.02em' }}>
               Todos los eventos universitarios en un solo lugar
             </h1>
-            <p className="text-xl mb-10" style={{ color: 'rgba(229,229,229,0.85)', fontWeight: 300 }}>
+            <p className="text-base md:text-lg lg:text-xl mb-10" style={{ color: 'rgba(229,229,229,0.85)', fontWeight: 300 }}>
               Descubre, asiste y organiza eventos en tu campus. Mantente conectado con tu comunidad universitaria.
             </p>
             <Button
               size="lg"
-              className="text-lg px-8 py-6 rounded-md transition-all shadow-lg"
+              className="text-lg px-8 py-6 rounded-md transition-all shadow-lg mx-auto md:mx-0 block md:inline-block"
               style={{
                 background: '#EE6C4D',
                 color: '#FFFFFF',
@@ -156,7 +156,7 @@ export function HomePage() {
       </div>
 
       <main id="seccion-eventos" className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <h2 className="text-2xl font-bold text-gray-800">
             {isLoading ? "Cargando eventos..." : `Próximos Eventos (${eventosFiltrados.length})`}
           </h2>
@@ -193,45 +193,30 @@ export function HomePage() {
       {/* Modal de advertencia AR */}
       {arModalOpen && (
         <div
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            zIndex: 8000, display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}
+          className="fixed inset-0 bg-black/60 z-[8000] flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setArModalOpen(false); }}
         >
-          <div style={{
-            background: '#293241', border: '1px solid #EE6C4D',
-            borderRadius: '12px', padding: '2rem', maxWidth: '360px',
-            margin: '1rem', textAlign: 'center', fontFamily: "'Outfit', sans-serif"
-          }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📱</div>
-            <h3 style={{ color: '#EE6C4D', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.02em' }}>
+          <div className="bg-[#293241] border border-[#EE6C4D] rounded-xl p-8 max-w-[360px] w-full text-center shadow-2xl">
+            <div className="text-4xl mb-4">📱</div>
+            <h3 className="text-[#EE6C4D] font-bold text-xl mb-2 tracking-wide">
               Experiencia Móvil
             </h3>
-            <p style={{ color: '#E0FBFC', fontWeight: 300, lineHeight: 1.6, marginBottom: '1.5rem' }}>
+            <p className="text-[#E0FBFC] font-light leading-relaxed mb-6">
               El visor AR está optimizado para dispositivos móviles.<br />
               Para la mejor experiencia, ábrelo desde tu celular.
             </p>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+            <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setArModalOpen(false)}
-                style={{
-                  padding: '0.5rem 1.25rem', border: '1px solid #98C1D9',
-                  background: 'transparent', color: '#98C1D9', borderRadius: '8px',
-                  fontFamily: "'Outfit', sans-serif", cursor: 'pointer'
-                }}
+                className="px-5 py-2 border border-[#98C1D9] bg-transparent text-[#98C1D9] rounded-lg hover:bg-[#98C1D9]/10 transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => window.location.href = '/ar-viewer.html'}
-                style={{
-                  padding: '0.5rem 1.25rem', border: 'none',
-                  background: '#EE6C4D', color: '#FFFFFF', borderRadius: '8px',
-                  fontFamily: "'Outfit', sans-serif", fontWeight: 700, cursor: 'pointer'
-                }}
+                className="px-5 py-2 border-none bg-[#EE6C4D] text-white rounded-lg font-bold hover:bg-[#EE6C4D]/90 transition-colors cursor-pointer"
               >
-                Continuar de todas formas
+                Continuar
               </button>
             </div>
           </div>
