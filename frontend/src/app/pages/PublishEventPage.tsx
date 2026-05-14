@@ -445,11 +445,11 @@ export function PublishEventPage() {
                 Siguiente<ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Button onClick={() => handleSubmit('Draft')} variant="outline" disabled={isSubmitting} className="w-full">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
+                <Button onClick={() => handleSubmit('Draft')} variant="outline" disabled={isSubmitting} className="w-full sm:w-32">
                   {isSubmitting ? "Guardando..." : "Borrador"}
                 </Button>
-                <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66] w-full" disabled={isSubmitting}>
+                <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66] w-full sm:w-auto px-6" disabled={isSubmitting}>
                   {isSubmitting ? "Enviando..." : "Enviar a revisión"}
                 </Button>
               </div>
