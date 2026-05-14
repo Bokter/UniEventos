@@ -223,6 +223,23 @@ export function PublishEventPage() {
         eventResponse = await eventosApi.create(eventData);
       }
 
+      const eventId = editId || eventResponse?.id;
+
+      // Registrar o actualizar el stream si se proporcionó
+      if (streamUrl && eventId) {
+        try {
+          await eventosApi.registrarStream(eventId, streamUrl);
+        } catch (e) {
+          console.error("Error registrando stream:", e);
+        }
+      } else if (editId && !streamUrl) {
+        try {
+          await eventosApi.eliminarStream(eventId);
+        } catch (e) {
+          // Ignorar error si no tenía stream previamente
+        }
+      }
+
       // 3. Send to review if requested
       if (targetStatus === 'In review') {
         await eventosApi.enviarRevision(editId || eventResponse?.id);
