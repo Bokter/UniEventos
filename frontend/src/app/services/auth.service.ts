@@ -54,12 +54,8 @@ export const login = async (
   password: string
 ): Promise<RespuestaAuth> => {
   const cleanEmail = email.trim().toLowerCase();
-  // Uninorte users use the Roble endpoint
-  const endpoint = cleanEmail.endsWith('@uninorte.edu.co')
-    ? `${BASE_URL}/auth/login-uninorte`
-    : `${BASE_URL}/auth/login`;
-
-  const res = await fetch(endpoint, {
+  
+  const res = await fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: cleanEmail, password }),
@@ -76,13 +72,10 @@ export const register = async (
   nombre_completo: string,
   email: string,
   password: string
-): Promise<RespuestaAuth> => {
+): Promise<any> => {
   const cleanEmail = email.trim().toLowerCase();
-  const endpoint = cleanEmail.endsWith('@uninorte.edu.co')
-    ? `${BASE_URL}/auth/register-uninorte`
-    : `${BASE_URL}/auth/register`;
 
-  const res = await fetch(endpoint, {
+  const res = await fetch(`${BASE_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nombre_completo, email: cleanEmail, password }),
