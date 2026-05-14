@@ -251,12 +251,12 @@ export function AdminPanelPage() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
       <Navbar showSearch={false} />
 
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         {/* Sidebar */}
         <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} pendingEventsCount={pendingEvents.length} />
 
         {/* Main Content */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4 sm:p-6 md:p-8">
           {activeTab === 'pending' && (
             <>
               <div className="mb-6">
@@ -303,23 +303,24 @@ export function AdminPanelPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleApprove(event.id)}
-                                style={{ background: '#A4D4B4', color: '#293241', fontWeight: 700, border: 'none' }}
-                              >
-                                <Check className="h-4 w-4 mr-1" />
-                                Aprobar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleRejectClick(event)}
-                                className="border-destructive text-destructive hover:bg-destructive/10"
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Rechazar
-                              </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApprove(event.id)}
+                                  className="hover:opacity-90 active:scale-95 transition-all"
+                                  style={{ background: '#A4D4B4', color: '#293241', fontWeight: 700, border: 'none' }}
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Aprobar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleRejectClick(event)}
+                                  className="border-destructive text-destructive hover:bg-destructive/10 active:scale-95 transition-all"
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Rechazar
+                                </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -437,22 +438,26 @@ export function AdminPanelPage() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleToggleUserStatus(user.id, user.activo)}
-                            style={{ borderColor: '#A4D4B4', color: '#293241', fontWeight: 600 }}
-                          >
-                            {user.activo ? 'Desactivar' : 'Activar'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditUserClick(user)}
-                            style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
-                          >
-                            Editar
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleToggleUserStatus(user.id, user.activo)}
+                              className="hover:bg-[#A4D4B4]/10 active:scale-95 transition-all"
+                              style={{ borderColor: '#A4D4B4', color: '#293241', fontWeight: 600 }}
+                            >
+                              {user.activo ? 'Desactivar' : 'Activar'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditUserClick(user)}
+                              className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
+                              style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                            >
+                              Editar
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -472,7 +477,7 @@ export function AdminPanelPage() {
                   </p>
                 </div>
                 <Button
-                  className="text-white font-bold"
+                  className="text-white font-bold hover:opacity-90 active:scale-95 transition-all"
                   style={{ background: 'linear-gradient(135deg, #EE6C4D 0%, #e05a3c 100%)', border: 'none' }}
                   onClick={() => {
                     setSelectedCategoryToEdit(null);
@@ -503,22 +508,26 @@ export function AdminPanelPage() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleToggleCategoryStatus(category.id, category.activa)}
-                            style={{ borderColor: '#A4D4B4', color: '#293241', fontWeight: 600 }}
-                          >
-                            {category.activa ? 'Desactivar' : 'Activar'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditCategoryClick(category)}
-                            style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
-                          >
-                            Editar
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleToggleCategoryStatus(category.id, category.activa)}
+                              className="hover:bg-[#A4D4B4]/10 active:scale-95 transition-all"
+                              style={{ borderColor: '#A4D4B4', color: '#293241', fontWeight: 600 }}
+                            >
+                              {category.activa ? 'Desactivar' : 'Activar'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditCategoryClick(category)}
+                              className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
+                              style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                            >
+                              Editar
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -566,6 +575,7 @@ export function AdminPanelPage() {
           <DialogFooter>
             <Button
               variant="outline"
+              className="hover:bg-gray-100 active:scale-95 transition-all"
               onClick={() => {
                 setRejectDialogOpen(false);
                 setRejectionReason("");
@@ -575,7 +585,7 @@ export function AdminPanelPage() {
             </Button>
             <Button
               onClick={handleRejectConfirm}
-              className="bg-destructive hover:bg-destructive/90 text-white"
+              className="bg-destructive hover:bg-destructive/90 text-white active:scale-95 transition-all"
             >
               Confirmar Rechazo
             </Button>

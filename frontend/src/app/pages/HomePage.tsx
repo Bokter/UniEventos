@@ -108,7 +108,7 @@ export function HomePage() {
             </p>
             <Button
               size="lg"
-              className="text-lg px-8 h-14 flex items-center justify-center rounded-md transition-all shadow-lg mx-auto md:mx-0"
+              className="text-lg px-8 h-14 flex items-center justify-center rounded-md shadow-lg mx-auto md:mx-0 transition-all hover:bg-[#d45d3f] active:scale-95"
               style={{
                 background: '#EE6C4D',
                 color: '#FFFFFF',

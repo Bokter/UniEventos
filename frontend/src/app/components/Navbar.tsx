@@ -58,7 +58,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                 {usuario.rol === 'organizador' && (
                   <Button
                     onClick={() => navigate("/organizer/publish")}
-                    className="text-white"
+                    className="text-white hover:bg-[#d45d3f] active:scale-95 transition-all"
                     style={{ background: '#EE6C4D', color: '#FFFFFF', fontWeight: 700 }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
@@ -69,6 +69,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   <Button
                     onClick={() => navigate("/admin")}
                     variant="outline"
+                    className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
                     style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
                   >
                     Panel Admin
@@ -78,6 +79,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   <Button
                     onClick={() => navigate("/organizer/dashboard")}
                     variant="outline"
+                    className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
                     style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
                   >
                     Dashboard
@@ -87,6 +89,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   <Button
                     onClick={() => navigate("/user/dashboard")}
                     variant="outline"
+                    className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
                     style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
                   >
                     Mi Panel
@@ -122,6 +125,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                 <Button
                   onClick={() => navigate("/login")}
                   variant="outline"
+                  className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
                   style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
                 >
                   <LogIn className="h-4 w-4 mr-2" />
@@ -129,7 +133,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                 </Button>
                 <Button
                   onClick={() => navigate("/login")}
-                  className="hidden sm:flex"
+                  className="hidden sm:flex hover:bg-[#d45d3f] active:scale-95 transition-all"
                   style={{ background: '#EE6C4D', color: '#FFFFFF', fontWeight: 700 }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
