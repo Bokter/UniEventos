@@ -31,6 +31,40 @@ h1, h2, h3, h4 {
 ::-webkit-scrollbar-thumb { background: var(--color-navy, #3D5A80); border-radius: 99px; }
 
 /* ══════════════════════════════════════════════════
+   EFECTOS GLOBALES DE BOTONES
+   Aplican a todos los [data-slot="button"] del sistema
+   independientemente del color que tengan en style={}
+══════════════════════════════════════════════════ */
+
+[data-slot="button"] {
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease !important;
+  position: relative;
+}
+
+/* Hover: ligero brillo y sombra sutil */
+[data-slot="button"]:not(:disabled):hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Active (clic): hundido y sin sombra */
+[data-slot="button"]:not(:disabled):active {
+  filter: brightness(0.95);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transform: translateY(0) scale(0.97);
+}
+
+/* Deshabilitado: sin efectos */
+[data-slot="button"]:disabled {
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ══════════════════════════════════════════════════
    LOADING SCREEN
 ══════════════════════════════════════════════════ */
 
