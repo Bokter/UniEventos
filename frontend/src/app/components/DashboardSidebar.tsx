@@ -60,7 +60,7 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "events"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
@@ -82,7 +82,7 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "notifications"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
@@ -96,7 +96,7 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "favorites"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
@@ -110,7 +110,7 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "profile"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
@@ -134,14 +134,14 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "pending"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
           <FileText className="h-4 w-4" />
           <span>Pendientes</span>
           {pendingEventsCount > 0 && (
-            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(204,164,59,0.2)', color: '#CCA43B' }}>
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(238,108,77,0.2)', color: '#EE6C4D' }}>
               {pendingEventsCount}
             </span>
           )}
@@ -153,7 +153,7 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "all"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
@@ -167,7 +167,7 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "users"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
@@ -181,7 +181,7 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "categories"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
@@ -205,7 +205,7 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "favorites"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
@@ -219,7 +219,7 @@ export function DashboardSidebar({
               : "hover:bg-white/5"
             }`}
           style={activeTab === "profile"
-            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
             : { color: 'rgba(229,229,229,0.7)' }
           }
         >
@@ -231,7 +231,7 @@ export function DashboardSidebar({
   );
 
   return (
-    <div className="w-64 min-h-[calc(100vh-4rem)] flex flex-col" style={{ background: '#242F40', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+    <div className="w-64 min-h-[calc(100vh-4rem)] flex flex-col" style={{ background: '#293241', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
       <div className="p-6 flex-1">
         {usuario?.rol === "admin" && renderAdminLinks()}
         {usuario?.rol === "organizador" && renderOrganizerLinks()}

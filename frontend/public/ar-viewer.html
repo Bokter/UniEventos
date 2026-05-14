@@ -34,7 +34,7 @@
             cursor: pointer; font-family: system-ui, sans-serif;
         }
         #splash {
-            position: fixed; inset: 0; background: #242F40;
+            position: fixed; inset: 0; background: #293241;
             z-index: 50; display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 20px;
             transition: opacity 0.4s ease;
@@ -42,26 +42,26 @@
         #splash.oculto { opacity: 0; pointer-events: none; }
         #splash-logo {
             width: 72px; height: 72px;
-            background: #CCA43B;
+            background: #EE6C4D;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-family: 'Outfit', sans-serif;
             font-size: 22px; font-weight: 700;
-            color: #242F40;
+            color: #FFFFFF;
             animation: logoPulse 1s ease-in-out infinite alternate;
         }
         @keyframes logoPulse { from { transform: scale(0.95); } to { transform: scale(1.05); } }
-        #splash-titulo { color: #CCA43B; font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 500; letter-spacing: 0.06em; }
+        #splash-titulo { color: #E0FBFC; font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: 0.06em; }
         #splash-sub {
-            color: rgba(229,229,229,0.65); font-family: 'Outfit', sans-serif;
+            color: rgba(224,251,252,0.65); font-family: 'Outfit', sans-serif;
             font-size: 14px; font-weight: 300; max-width: 280px; text-align: center; line-height: 1.6;
         }
         #btn-iniciar-ar {
-            background: #CCA43B; color: #242F40; border: none;
+            background: #EE6C4D; color: #FFFFFF; border: none;
             border-radius: 12px; padding: 16px 28px;
-            font-size: 17px; font-weight: 500;
+            font-size: 17px; font-weight: 700;
             font-family: 'Outfit', sans-serif; cursor: pointer;
-            box-shadow: 0 8px 32px rgba(204,164,59,0.4);
+            box-shadow: 0 8px 32px rgba(238,108,77,0.4);
             min-width: 210px; transition: opacity 0.2s;
         }
         #btn-iniciar-ar:disabled { opacity: 0.6; cursor: wait; }
@@ -74,7 +74,7 @@
             font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 300;
         }
         #splash-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; overflow: hidden; }
-        #splash-bar-fill { height: 100%; width: 0%; background: #CCA43B; border-radius: 2px; transition: width 0.4s ease; }
+        #splash-bar-fill { height: 100%; width: 0%; background: #EE6C4D; border-radius: 2px; transition: width 0.4s ease; }
         #loading {
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -83,7 +83,7 @@
             text-align: center; z-index: 35; display: none;
         }
         #loading-bar { width: 200px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin: 10px auto 0; }
-        #loading-fill { height: 100%; width: 0%; background: #CCA43B; border-radius: 3px; transition: width 0.3s ease; }
+        #loading-fill { height: 100%; width: 0%; background: #EE6C4D; border-radius: 3px; transition: width 0.3s ease; }
         #panel-eventos {
             position: fixed; bottom: 0; left: 0; right: 0;
             z-index: 20;

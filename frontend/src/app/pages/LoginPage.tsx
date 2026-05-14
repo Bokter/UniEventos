@@ -139,7 +139,7 @@ export function LoginPage() {
 
   if (showVerify) {
     return (
-      <div className="min-h-screen" style={{ background: '#E5E5E5' }}>
+      <div className="min-h-screen" style={{ background: '#E0FBFC' }}>
         <Navbar showSearch={false} />
         <div className="max-w-md mx-auto px-4 py-12">
           <Card>
@@ -191,7 +191,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#E5E5E5' }}>
+    <div className="min-h-screen" style={{ background: '#E0FBFC' }}>
       <Navbar showSearch={false} />
 
       <div className="max-w-md mx-auto px-4 py-12">
@@ -317,7 +317,7 @@ export function LoginPage() {
                   <Button
                     type="submit"
                     className="w-full"
-                    style={{ background: '#CCA43B', color: '#242F40', fontWeight: 500 }}
+                    style={{ background: '#EE6C4D', color: '#FFFFFF', fontWeight: 700 }}
                     disabled={isLoading}
                   >
                     {isLoading ? "Creando cuenta..." : "Crear cuenta"}

@@ -15,15 +15,15 @@ body {
 }
 
 /* ── Headings con letter-spacing elegante ── */
-h1, h2, h3 {
-  font-weight: 500;
+h1, h2, h3, h4 {
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 /* ── Scrollbar personalizado ── */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--color-light, #E5E5E5); }
-::-webkit-scrollbar-thumb { background: var(--color-navy, #242F40); border-radius: 99px; }
+::-webkit-scrollbar-track { background: var(--color-light, #E0FBFC); }
+::-webkit-scrollbar-thumb { background: var(--color-navy, #3D5A80); border-radius: 99px; }
 
 /* ══════════════════════════════════════════════════
    LOADING SCREEN
@@ -32,7 +32,7 @@ h1, h2, h3 {
 #loading-screen {
   position: fixed;
   inset: 0;
-  background: #242F40;
+  background: #293241;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -49,15 +49,15 @@ h1, h2, h3 {
 }
 
 .loader-logo {
-  color: #CCA43B;
+  color: #EE6C4D;
   font-family: 'Outfit', sans-serif;
   font-size: 1.8rem;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: 0.1em;
 }
 
 .loader-tagline {
-  color: rgba(229, 229, 229, 0.6);
+  color: rgba(224, 251, 252, 0.6);
   font-family: 'Outfit', sans-serif;
   font-size: 0.8rem;
   font-weight: 300;
@@ -77,7 +77,7 @@ h1, h2, h3 {
 .loader-fill {
   height: 100%;
   width: 0%;
-  background: #CCA43B;
+  background: #EE6C4D;
   border-radius: 99px;
   animation: loadFill 1.2s ease forwards;
 }

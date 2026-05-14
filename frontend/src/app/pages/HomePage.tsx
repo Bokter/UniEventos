@@ -95,7 +95,7 @@ export function HomePage() {
       <div
         className="text-white py-20"
         style={{
-          background: 'linear-gradient(135deg, #1a2535 0%, #242F40 60%, #2e3d55 100%)'
+          background: 'linear-gradient(135deg, #1d2635 0%, #293241 60%, #3D5A80 100%)'
         }}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -110,9 +110,9 @@ export function HomePage() {
               size="lg"
               className="text-lg px-8 py-6 rounded-md transition-all shadow-lg"
               style={{
-                background: '#CCA43B',
-                color: '#242F40',
-                fontWeight: 500,
+                background: '#EE6C4D',
+                color: '#FFFFFF',
+                fontWeight: 700,
                 border: 'none',
               }}
               onClick={() => setArModalOpen(true)}
@@ -200,15 +200,15 @@ export function HomePage() {
           onClick={(e) => { if (e.target === e.currentTarget) setArModalOpen(false); }}
         >
           <div style={{
-            background: '#242F40', border: '1px solid #CCA43B',
+            background: '#293241', border: '1px solid #EE6C4D',
             borderRadius: '12px', padding: '2rem', maxWidth: '360px',
             margin: '1rem', textAlign: 'center', fontFamily: "'Outfit', sans-serif"
           }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📱</div>
-            <h3 style={{ color: '#CCA43B', fontWeight: 500, marginBottom: '0.5rem', letterSpacing: '0.02em' }}>
+            <h3 style={{ color: '#EE6C4D', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.02em' }}>
               Experiencia Móvil
             </h3>
-            <p style={{ color: '#E5E5E5', fontWeight: 300, lineHeight: 1.6, marginBottom: '1.5rem' }}>
+            <p style={{ color: '#E0FBFC', fontWeight: 300, lineHeight: 1.6, marginBottom: '1.5rem' }}>
               El visor AR está optimizado para dispositivos móviles.<br />
               Para la mejor experiencia, ábrelo desde tu celular.
             </p>
@@ -216,8 +216,8 @@ export function HomePage() {
               <button
                 onClick={() => setArModalOpen(false)}
                 style={{
-                  padding: '0.5rem 1.25rem', border: '1px solid #E5E5E5',
-                  background: 'transparent', color: '#E5E5E5', borderRadius: '8px',
+                  padding: '0.5rem 1.25rem', border: '1px solid #98C1D9',
+                  background: 'transparent', color: '#98C1D9', borderRadius: '8px',
                   fontFamily: "'Outfit', sans-serif", cursor: 'pointer'
                 }}
               >
@@ -227,8 +227,8 @@ export function HomePage() {
                 onClick={() => window.location.href = '/ar-viewer.html'}
                 style={{
                   padding: '0.5rem 1.25rem', border: 'none',
-                  background: '#CCA43B', color: '#242F40', borderRadius: '8px',
-                  fontFamily: "'Outfit', sans-serif", fontWeight: 500, cursor: 'pointer'
+                  background: '#EE6C4D', color: '#FFFFFF', borderRadius: '8px',
+                  fontFamily: "'Outfit', sans-serif", fontWeight: 700, cursor: 'pointer'
                 }}
               >
                 Continuar de todas formas

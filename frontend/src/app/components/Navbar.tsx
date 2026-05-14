@@ -14,15 +14,15 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
   const { usuario, logout } = useAuth();
 
   return (
-    <nav className="border-b sticky top-0 z-50 min-w-full" style={{ background: '#242F40', borderColor: 'rgba(255,255,255,0.08)' }}>
+    <nav className="border-b sticky top-0 z-50 min-w-full" style={{ background: '#293241', borderColor: 'rgba(255,255,255,0.08)' }}>
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2" style={{ textDecoration: 'none' }}>
-            <div className="w-8 h-8 rounded flex items-center justify-center" style={{ background: '#CCA43B' }}>
-              <span style={{ color: '#242F40', fontWeight: 700, fontSize: '0.8rem' }}>UN</span>
+            <div className="w-8 h-8 rounded flex items-center justify-center" style={{ background: '#EE6C4D' }}>
+              <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: '0.8rem' }}>UN</span>
             </div>
-            <span className="text-xl" style={{ color: '#CCA43B', fontWeight: 500, letterSpacing: '0.04em' }}>
+            <span className="text-xl" style={{ color: '#E0FBFC', fontWeight: 700, letterSpacing: '0.04em' }}>
               UniEventos
             </span>
           </Link>
@@ -59,7 +59,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   <Button
                     onClick={() => navigate("/organizer/publish")}
                     className="text-white"
-                    style={{ background: '#CCA43B', color: '#242F40', fontWeight: 500 }}
+                    style={{ background: '#EE6C4D', color: '#FFFFFF', fontWeight: 700 }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Publicar evento
@@ -69,7 +69,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   <Button
                     onClick={() => navigate("/admin")}
                     variant="outline"
-                    style={{ borderColor: '#CCA43B', color: '#CCA43B', background: 'transparent' }}
+                    style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
                   >
                     Panel Admin
                   </Button>
@@ -78,7 +78,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   <Button
                     onClick={() => navigate("/organizer/dashboard")}
                     variant="outline"
-                    style={{ borderColor: '#CCA43B', color: '#CCA43B', background: 'transparent' }}
+                    style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
                   >
                     Dashboard
                   </Button>
@@ -87,16 +87,16 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   <Button
                     onClick={() => navigate("/user/dashboard")}
                     variant="outline"
-                    style={{ borderColor: '#CCA43B', color: '#CCA43B', background: 'transparent' }}
+                    style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
                   >
                     Mi Panel
                   </Button>
                 )}
                 <div className="flex items-center gap-2 ml-2">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#CCA43B', color: '#242F40', fontWeight: 700 }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#EE6C4D', color: '#FFFFFF', fontWeight: 700 }}>
                     {usuario.nombre_completo.charAt(0).toUpperCase()}
                   </div>
-                  <span className="hidden lg:block" style={{ color: '#E5E5E5' }}>{usuario.nombre_completo}</span>
+                  <span className="hidden lg:block" style={{ color: '#E0FBFC' }}>{usuario.nombre_completo}</span>
                 </div>
                 <Button
                   onClick={() => {
@@ -109,7 +109,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   }}
                   variant="ghost"
                   className="hover:text-foreground"
-                  style={{ color: 'rgba(229,229,229,0.6)' }}
+                  style={{ color: 'rgba(224,251,252,0.6)' }}
                   size="icon"
                   title="Cerrar sesión"
                 >
@@ -121,7 +121,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                 <Button
                   onClick={() => navigate("/login")}
                   variant="outline"
-                  style={{ borderColor: '#CCA43B', color: '#CCA43B', background: 'transparent' }}
+                  style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
                 >
                   <LogIn className="h-4 w-4 mr-2" />
                   Iniciar sesión
@@ -129,7 +129,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                 <Button
                   onClick={() => navigate("/login")}
                   className="hidden sm:flex"
-                  style={{ background: '#CCA43B', color: '#242F40', fontWeight: 500 }}
+                  style={{ background: '#EE6C4D', color: '#FFFFFF', fontWeight: 700 }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Publicar evento
