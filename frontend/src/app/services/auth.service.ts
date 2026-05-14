@@ -2,7 +2,7 @@
 // auth.service.ts — Servicio de autenticación para UniEventos
 // ============================================================
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const BASE_URL = 'https://unieventos-s25a.onrender.com';
 
 // ── Tipos ────────────────────────────────────────────────────
 export type Rol = 'miembro' | 'organizador' | 'admin';
@@ -80,7 +80,7 @@ export const register = async (
     const err = await res.json().catch(() => ({}));
     throw new Error((err as any).message || 'Error al registrarse');
   }
-  
+
   return res.json(); // Ahora todos los registros devuelven { mensaje: "..." }
 };
 
