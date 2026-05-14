@@ -2,7 +2,7 @@
 // auth.service.ts — Servicio de autenticación para UniEventos
 // ============================================================
 
-const BASE_URL = 'https://unieventos-s25a.onrender.com';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // ── Tipos ────────────────────────────────────────────────────
 export type Rol = 'miembro' | 'organizador' | 'admin';
@@ -53,19 +53,14 @@ export const login = async (
   email: string,
   password: string
 ): Promise<RespuestaAuth> => {
-  // Uninorte users use the Roble endpoint
-  const endpoint = email.endsWith('@uninorte.edu.co')
-    ? `${BASE_URL}/auth/login-uninorte`
-    : `${BASE_URL}/auth/login`;
-
-  const res = await fetch(endpoint, {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error((err as any).message || 'Credenciales incorrectas');
+    throw new Error((err as any).message || 'Credenciales incorrectas o cuenta no verificada');
   }
   return res.json();
 };
@@ -75,12 +70,8 @@ export const register = async (
   nombre_completo: string,
   email: string,
   password: string
-): Promise<RespuestaAuth> => {
-  const endpoint = email.endsWith('@uninorte.edu.co')
-    ? `${BASE_URL}/auth/register-uninorte`
-    : `${BASE_URL}/auth/register`;
-
-  const res = await fetch(endpoint, {
+): Promise<any> => {
+  const res = await fetch(`${BASE_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nombre_completo, email, password }),
@@ -90,14 +81,7 @@ export const register = async (
     throw new Error((err as any).message || 'Error al registrarse');
   }
   
-  const data = await res.json();
-  
-  // Si es uninorte, no devuelve token inmediatamente, sino un mensaje de verificación
-  if (email.endsWith('@uninorte.edu.co')) {
-    return data; // Contiene { mensaje: "..." }
-  }
-  
-  return data; // Contiene { access_token, usuario }
+  return res.json(); // Ahora todos los registros devuelven { mensaje: "..." }
 };
 
 // ── Verify Email ─────────────────────────────────────────────
