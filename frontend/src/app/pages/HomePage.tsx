@@ -108,7 +108,7 @@ export function HomePage() {
             </p>
             <Button
               size="lg"
-              className="text-lg px-8 py-6 rounded-md transition-all shadow-lg mx-auto md:mx-0 block md:inline-block"
+              className="text-lg px-8 h-14 flex items-center justify-center rounded-md transition-all shadow-lg mx-auto md:mx-0"
               style={{
                 background: '#EE6C4D',
                 color: '#FFFFFF',

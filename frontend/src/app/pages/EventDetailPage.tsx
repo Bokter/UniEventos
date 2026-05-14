@@ -220,7 +220,7 @@ export function EventDetailPage() {
           Volver a Eventos
         </Button>
 
-        <div className="aspect-[21/9] rounded-lg overflow-hidden mb-6 bg-gray-100">
+        <div className="aspect-[16/9] md:aspect-[21/9] rounded-lg overflow-hidden mb-6 bg-gray-100">
           <img src={imagenPortada} alt={titulo} className="w-full h-full object-cover" />
         </div>
 
@@ -228,9 +228,9 @@ export function EventDetailPage() {
           <div className="md:col-span-2">
             {event.transmisiones && event.transmisiones.length > 0 && (
               <div className="mb-8">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-xl" style={{ fontWeight: 600 }}>Transmisiones en vivo</h2>
-                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-semibold">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                  <h2 className="text-xl font-semibold">Transmisiones en vivo</h2>
+                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs sm:text-sm font-semibold w-fit">
                     <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                     EN VIVO
                   </span>

@@ -187,15 +187,15 @@ export function OrganizerDashboardPage() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
       <Navbar showSearch={false} />
 
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         {/* Sidebar */}
         <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Contenido principal */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4 sm:p-6 md:p-8">
           {activeTab === 'events' && (
             <>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                 <div>
                   <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Mis Eventos</h1>
                   <p className="text-muted-foreground">
@@ -374,14 +374,14 @@ export function OrganizerDashboardPage() {
             <div>
               <h1 className="text-2xl mb-6" style={{ fontWeight: 600 }}>Mi Perfil</h1>
               <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-2xl">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-2xl">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-6 text-center sm:text-left">
+                  <div className="w-20 h-20 rounded-full bg-[#3D5A80] text-white flex items-center justify-center text-2xl shrink-0">
                     {usuario.nombre_completo.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="text-xl" style={{ fontWeight: 600 }}>{usuario.nombre_completo}</h2>
+                    <h2 className="text-xl font-semibold">{usuario.nombre_completo}</h2>
                     <p className="text-muted-foreground">{usuario.email}</p>
-                    <p className="text-sm text-accent capitalize">{usuario.rol}</p>
+                    <p className="text-sm text-[#EE6C4D] capitalize font-medium">{usuario.rol}</p>
                   </div>
                 </div>
                 <div className="space-y-4">

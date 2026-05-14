@@ -49,7 +49,7 @@ export function DashboardSidebar({
 
   const renderOrganizerLinks = () => (
     <>
-      <h2 className="text-sm mb-4 font-semibold uppercase" style={{ color: 'rgba(229,229,229,0.5)', letterSpacing: '0.08em' }}>
+      <h2 className="hidden md:block text-sm mb-4 font-semibold uppercase text-white/50 tracking-[0.08em]">
         Panel del Organizador
       </h2>
       <nav className="space-y-1">
@@ -123,7 +123,7 @@ export function DashboardSidebar({
 
   const renderAdminLinks = () => (
     <>
-      <h2 className="text-sm mb-4 font-semibold uppercase" style={{ color: 'rgba(229,229,229,0.5)', letterSpacing: '0.08em' }}>
+      <h2 className="hidden md:block text-sm mb-4 font-semibold uppercase text-white/50 tracking-[0.08em]">
         Panel de Administrador
       </h2>
       <nav className="space-y-1">
@@ -194,7 +194,7 @@ export function DashboardSidebar({
 
   const renderAttendeeLinks = () => (
     <>
-      <h2 className="text-sm mb-4 font-semibold uppercase" style={{ color: 'rgba(229,229,229,0.5)', letterSpacing: '0.08em' }}>
+      <h2 className="hidden md:block text-sm mb-4 font-semibold uppercase text-white/50 tracking-[0.08em]">
         Mi Cuenta
       </h2>
       <nav className="space-y-1">
@@ -231,18 +231,19 @@ export function DashboardSidebar({
   );
 
   return (
-    <div className="w-64 min-h-[calc(100vh-4rem)] flex flex-col" style={{ background: '#293241', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
-      <div className="p-6 flex-1">
-        {usuario?.rol === "admin" && renderAdminLinks()}
-        {usuario?.rol === "organizador" && renderOrganizerLinks()}
-        {(!usuario?.rol || usuario?.rol === "miembro") && renderAttendeeLinks()}
+    <div className="w-full md:w-64 md:min-h-[calc(100vh-4rem)] flex flex-col bg-[#293241] border-b md:border-b-0 md:border-r border-white/10">
+      <div className="p-4 md:p-6 flex-1 overflow-x-auto md:overflow-x-visible">
+        <div className="flex md:block gap-2 min-w-max md:min-w-0">
+          {usuario?.rol === "admin" && renderAdminLinks()}
+          {usuario?.rol === "organizador" && renderOrganizerLinks()}
+          {(!usuario?.rol || usuario?.rol === "miembro") && renderAttendeeLinks()}
+        </div>
       </div>
 
-      <div className="p-6" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="p-4 md:p-6 border-t border-white/10 hidden md:block">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-red-500/10 transition-colors"
-          style={{ color: '#f87171' }}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-red-500/10 transition-colors text-red-400"
         >
           <LogOut className="h-4 w-4" />
           <span>Cerrar sesión</span>
