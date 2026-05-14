@@ -1,0 +1,89 @@
+/* ══════════════════════════════════════════════════
+   UniEventos — Redesign CSS
+   Importado al final de index.css para sobreescribir
+   estilos base sin romper Tailwind/shadcn.
+══════════════════════════════════════════════════ */
+
+/* ── Animación de entrada de página ── */
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+body {
+  animation: fadeInPage 0.45s ease forwards;
+  background: linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%);
+  min-height: 100vh;
+}
+
+/* ── Headings con letter-spacing elegante ── */
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ── Scrollbar personalizado ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #d8eede; }
+::-webkit-scrollbar-thumb { background: var(--color-navy, #3D5A80); border-radius: 99px; }
+
+/* ══════════════════════════════════════════════════
+   LOADING SCREEN
+══════════════════════════════════════════════════ */
+
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  background: #293241;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  z-index: 9999;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#loading-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-logo {
+  color: #EE6C4D;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.loader-tagline {
+  color: rgba(224, 251, 252, 0.6);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: -1.5rem;
+}
+
+.loader-bar {
+  width: 200px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.loader-fill {
+  height: 100%;
+  width: 0%;
+  background: #EE6C4D;
+  border-radius: 99px;
+  animation: loadFill 1.2s ease forwards;
+}
+
+@keyframes loadFill {
+  to { width: 100%; }
+}

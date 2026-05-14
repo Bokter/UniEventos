@@ -18,6 +18,7 @@ export function HomePage() {
   const [eventos, setEventos] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [arModalOpen, setArModalOpen] = useState(false);
 
   useEffect(() => {
     // Cargar categorías del backend para tener los IDs reales
@@ -91,19 +92,30 @@ export function HomePage() {
     <div className="min-h-screen bg-white">
       <Navbar showSearch={true} onSearchChange={setBusqueda} searchValue={busqueda} />
 
-      <div className="bg-gradient-to-br from-[#0A2540] via-[#05325E] to-[#0D4E8E] text-white py-20">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div
+        className="text-white py-12 md:py-20"
+        style={{
+          background: 'linear-gradient(135deg, #1d2635 0%, #293241 60%, #3D5A80 100%)'
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center md:items-start text-center md:text-left">
           <div className="max-w-2xl">
-            <h1 className="text-5xl font-bold mb-6 leading-tight">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight" style={{ letterSpacing: '0.02em' }}>
               Todos los eventos universitarios en un solo lugar
             </h1>
-            <p className="text-xl text-blue-100/90 mb-10">
+            <p className="text-base md:text-lg lg:text-xl mb-10" style={{ color: 'rgba(229,229,229,0.85)', fontWeight: 300 }}>
               Descubre, asiste y organiza eventos en tu campus. Mantente conectado con tu comunidad universitaria.
             </p>
             <Button
               size="lg"
-              className="bg-[#1D9E75] hover:bg-[#188c66] text-white text-lg px-8 py-6 rounded-md transition-all shadow-lg"
-              onClick={() => document.getElementById('seccion-eventos')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-lg px-8 h-14 flex items-center justify-center rounded-md transition-all shadow-lg mx-auto md:mx-0"
+              style={{
+                background: '#EE6C4D',
+                color: '#FFFFFF',
+                fontWeight: 700,
+                border: 'none',
+              }}
+              onClick={() => setArModalOpen(true)}
             >
               Explorar eventos
             </Button>
@@ -144,7 +156,7 @@ export function HomePage() {
       </div>
 
       <main id="seccion-eventos" className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <h2 className="text-2xl font-bold text-gray-800">
             {isLoading ? "Cargando eventos..." : `Próximos Eventos (${eventosFiltrados.length})`}
           </h2>
@@ -177,6 +189,39 @@ export function HomePage() {
           </div>
         )}
       </main>
+
+      {/* Modal de advertencia AR */}
+      {arModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-[8000] flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setArModalOpen(false); }}
+        >
+          <div className="bg-[#293241] border border-[#EE6C4D] rounded-xl p-8 max-w-[360px] w-full text-center shadow-2xl">
+            <div className="text-4xl mb-4">📱</div>
+            <h3 className="text-[#EE6C4D] font-bold text-xl mb-2 tracking-wide">
+              Experiencia Móvil
+            </h3>
+            <p className="text-[#E0FBFC] font-light leading-relaxed mb-6">
+              El visor AR está optimizado para dispositivos móviles.<br />
+              Para la mejor experiencia, ábrelo desde tu celular.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setArModalOpen(false)}
+                className="px-5 py-2 border border-[#98C1D9] bg-transparent text-[#98C1D9] rounded-lg hover:bg-[#98C1D9]/10 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => window.location.href = '/ar-viewer.html'}
+                className="px-5 py-2 border-none bg-[#EE6C4D] text-white rounded-lg font-bold hover:bg-[#EE6C4D]/90 transition-colors cursor-pointer"
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

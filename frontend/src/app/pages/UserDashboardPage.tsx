@@ -38,7 +38,7 @@ export function UserDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
       <Navbar showSearch={false} />
 
       <div className="flex">

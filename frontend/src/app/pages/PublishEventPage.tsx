@@ -271,22 +271,22 @@ export function PublishEventPage() {
           {editId ? "Actualiza los datos de tu evento" : "Crea y envía un evento para revisión"}
         </p>
 
-        <div className="flex items-center justify-center mb-8">
+        <div className="flex items-center justify-center mb-8 gap-2 sm:gap-4">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${s <= step ? 'border-primary bg-primary text-white' : 'border-gray-300 bg-white text-gray-400'}`}>
-                {s < step ? <Check className="h-5 w-5" /> : s}
+              <div className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 transition-colors ${s <= step ? 'border-primary bg-primary text-white' : 'border-gray-300 bg-white text-gray-400'}`}>
+                {s < step ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : s}
               </div>
-              <div className="flex flex-col ml-3 mr-8">
+              <div className="hidden sm:flex flex-col ml-3 mr-4 lg:mr-8">
                 <span className="text-xs text-muted-foreground">Paso {s}</span>
-                <span className="text-sm" style={{ fontWeight: 600 }}>{s === 1 ? 'Información básica' : s === 2 ? 'Ubicación' : 'Revisión'}</span>
+                <span className="text-sm font-semibold">{s === 1 ? 'Información' : s === 2 ? 'Ubicación' : 'Revisión'}</span>
               </div>
-              {s < 3 && <div className="w-12 h-0.5 bg-gray-300 mr-8" />}
+              {s < 3 && <div className="w-8 sm:w-12 h-0.5 bg-gray-300 mx-2 sm:mr-8" />}
             </div>
           ))}
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 md:p-8">
           {step === 1 && (
             <div className="space-y-6">
               <div>
@@ -416,14 +416,25 @@ export function PublishEventPage() {
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-            {step > 1 ? <Button variant="outline" onClick={handleBack} disabled={isSubmitting}><ArrowLeft className="h-4 w-4 mr-2" />Atrás</Button> : <div />}
+          <div className="flex flex-col sm:flex-row items-center justify-between mt-8 pt-6 border-t border-gray-200 gap-4">
+            {step > 1 ? (
+              <Button variant="outline" onClick={handleBack} disabled={isSubmitting} className="w-full sm:w-auto">
+                <ArrowLeft className="h-4 w-4 mr-2" />Atrás
+              </Button>
+            ) : <div className="hidden sm:block" />}
+            
             {step < 3 ? (
-              <Button onClick={handleNext} className="bg-primary hover:bg-primary/90">Siguiente<ArrowRight className="h-4 w-4 ml-2" /></Button>
+              <Button onClick={handleNext} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
+                Siguiente<ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
             ) : (
-              <div className="flex gap-2">
-                <Button onClick={() => handleSubmit('Draft')} variant="outline" disabled={isSubmitting}>{isSubmitting ? "Guardando..." : "Guardar como borrador"}</Button>
-                <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66]" disabled={isSubmitting}>{isSubmitting ? "Enviando..." : "Enviar para revisión"}</Button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Button onClick={() => handleSubmit('Draft')} variant="outline" disabled={isSubmitting} className="w-full">
+                  {isSubmitting ? "Guardando..." : "Borrador"}
+                </Button>
+                <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66] w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Enviando..." : "Enviar a revisión"}
+                </Button>
               </div>
             )}
           </div>
