@@ -2,11 +2,11 @@
 
 :root {
   /* ── Paleta UniEventos ────────────────────────── */
-  --color-dark:  #293241;
-  --color-navy:  #3D5A80;
+  --color-dark: #293241;
+  --color-navy: #3D5A80;
   --color-accent: #98C1D9;
-  --color-light: #E0FBFC;
-  --color-warm:  #EE6C4D;
+  --color-light: #FFFFFF;
+  --color-warm: #EE6C4D;
   --color-white: #FFFFFF;
 
   /* ── Shadcn variables redirigidas a la nueva paleta ── */
@@ -44,9 +44,9 @@
   --sidebar-foreground: #E0FBFC;
   --sidebar-primary: #EE6C4D;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: rgba(238,108,77,0.12);
+  --sidebar-accent: rgba(238, 108, 77, 0.12);
   --sidebar-accent-foreground: #EE6C4D;
-  --sidebar-border: rgba(255,255,255,0.08);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #EE6C4D;
   --success: #1D9E75;
   --success-foreground: #ffffff;
