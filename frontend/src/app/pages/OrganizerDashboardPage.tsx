@@ -184,7 +184,7 @@ export function OrganizerDashboardPage() {
   const approvedCount = organizerEvents.filter(e => e.estado === 'Approved' || e.estado === 'aprobado').length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
       <Navbar showSearch={false} />
 
       <div className="flex">
@@ -254,57 +254,46 @@ export function OrganizerDashboardPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              {/* Editar: solo disponible en borrador o rechazado */}
+                              {/* Editar */}
                               <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="outline"
                                 onClick={() => handleEdit(event.id)}
                                 disabled={event.estado !== 'Draft' && event.estado !== 'borrador' && event.estado !== 'Rejected' && event.estado !== 'rechazado'}
-                                title={
-                                  event.estado === 'Draft' || event.estado === 'borrador' || event.estado === 'Rejected' || event.estado === 'rechazado'
-                                    ? 'Editar evento'
-                                    : 'Solo puedes editar eventos en borrador o rechazados'
-                                }
+                                title={event.estado === 'Draft' || event.estado === 'borrador' || event.estado === 'Rejected' || event.estado === 'rechazado' ? 'Editar evento' : 'Solo puedes editar eventos en borrador o rechazados'}
+                                style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
-                              {/* Stream Link: solo para eventos aprobados */}
+                              {/* Stream Link */}
                               <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="outline"
                                 onClick={() => handleOpenStreamDialog(event)}
                                 disabled={event.estado !== 'Approved' && event.estado !== 'aprobado'}
-                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                title={
-                                  event.estado === 'Approved' || event.estado === 'aprobado'
-                                    ? 'Añadir enlace de transmisión'
-                                    : 'Solo eventos aprobados pueden tener transmisión'
-                                }
+                                style={{ borderColor: '#A4D4B4', color: '#293241' }}
+                                title={event.estado === 'Approved' || event.estado === 'aprobado' ? 'Añadir enlace de transmisión' : 'Solo eventos aprobados pueden tener transmisión'}
                               >
                                 <Video className="h-4 w-4" />
                               </Button>
-                              {/* Cancelar: solo disponible en eventos aprobados */}
+                              {/* Cancelar */}
                               <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="outline"
                                 onClick={() => handleCancel(event.id)}
                                 disabled={event.estado !== 'Approved' && event.estado !== 'aprobado'}
-                                className="text-destructive hover:text-destructive"
-                                title={
-                                  event.estado === 'Approved' || event.estado === 'aprobado'
-                                    ? 'Cancelar evento'
-                                    : 'Solo puedes cancelar eventos aprobados'
-                                }
+                                className="border-destructive text-destructive hover:bg-red-50"
+                                title={event.estado === 'Approved' || event.estado === 'aprobado' ? 'Cancelar evento' : 'Solo puedes cancelar eventos aprobados'}
                               >
                                 <X className="h-4 w-4" />
                               </Button>
-                              {/* Eliminar: solo disponible en borrador o cancelado */}
+                              {/* Eliminar */}
                               {(event.estado === 'borrador' || event.estado === 'cancelado') && (
                                 <Button
                                   size="sm"
-                                  variant="ghost"
+                                  variant="outline"
                                   onClick={() => handleEliminar(event.id)}
-                                  className="text-destructive hover:text-destructive hover:bg-red-50"
+                                  className="border-destructive text-destructive hover:bg-red-50"
                                   title="Eliminar evento permanentemente"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -432,8 +421,8 @@ export function OrganizerDashboardPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStreamDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSaveStreamLink} className="bg-primary text-white">Guardar</Button>
+            <Button variant="outline" onClick={() => setStreamDialogOpen(false)} style={{ borderColor: '#A4D4B4', color: '#293241' }}>Cancelar</Button>
+            <Button onClick={handleSaveStreamLink} className="text-white font-bold" style={{ background: 'linear-gradient(135deg, #EE6C4D 0%, #e05a3c 100%)', border: 'none' }}>Guardar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

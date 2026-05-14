@@ -248,7 +248,7 @@ export function AdminPanelPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
       <Navbar showSearch={false} />
 
       <div className="flex">
@@ -306,7 +306,7 @@ export function AdminPanelPage() {
                               <Button
                                 size="sm"
                                 onClick={() => handleApprove(event.id)}
-                                className="bg-[#1D9E75] hover:bg-[#188c66] text-white"
+                                style={{ background: '#A4D4B4', color: '#293241', fontWeight: 700, border: 'none' }}
                               >
                                 <Check className="h-4 w-4 mr-1" />
                                 Aprobar
@@ -437,10 +437,22 @@ export function AdminPanelPage() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="ghost" onClick={() => handleToggleUserStatus(user.id, user.activo)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleToggleUserStatus(user.id, user.activo)}
+                            style={{ borderColor: '#A4D4B4', color: '#293241', fontWeight: 600 }}
+                          >
                             {user.activo ? 'Desactivar' : 'Activar'}
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleEditUserClick(user)}>Editar</Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditUserClick(user)}
+                            style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                          >
+                            Editar
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -460,7 +472,8 @@ export function AdminPanelPage() {
                   </p>
                 </div>
                 <Button
-                  className="bg-primary text-white"
+                  className="text-white font-bold"
+                  style={{ background: 'linear-gradient(135deg, #EE6C4D 0%, #e05a3c 100%)', border: 'none' }}
                   onClick={() => {
                     setSelectedCategoryToEdit(null);
                     setEditCategoryDialogOpen(true);
@@ -490,10 +503,22 @@ export function AdminPanelPage() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="ghost" onClick={() => handleToggleCategoryStatus(category.id, category.activa)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleToggleCategoryStatus(category.id, category.activa)}
+                            style={{ borderColor: '#A4D4B4', color: '#293241', fontWeight: 600 }}
+                          >
                             {category.activa ? 'Desactivar' : 'Activar'}
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleEditCategoryClick(category)}>Editar</Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditCategoryClick(category)}
+                            style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                          >
+                            Editar
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

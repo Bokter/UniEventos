@@ -12,6 +12,8 @@
 
 body {
   animation: fadeInPage 0.45s ease forwards;
+  background: linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%);
+  min-height: 100vh;
 }
 
 /* ── Headings con letter-spacing elegante ── */
@@ -22,7 +24,7 @@ h1, h2, h3, h4 {
 
 /* ── Scrollbar personalizado ── */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--color-light, #E0FBFC); }
+::-webkit-scrollbar-track { background: #d8eede; }
 ::-webkit-scrollbar-thumb { background: var(--color-navy, #3D5A80); border-radius: 99px; }
 
 /* ══════════════════════════════════════════════════
