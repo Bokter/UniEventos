@@ -22,6 +22,7 @@ function redirigirPorRol(rol: Rol, navigate: ReturnType<typeof useNavigate>) {
     } else {
       navigate("/");
     }
+    setTimeout(() => { document.body.style.opacity = '1'; }, 50);
   }, 420);
 }
 

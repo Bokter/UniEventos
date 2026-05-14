@@ -44,6 +44,7 @@ export function DashboardSidebar({
     setTimeout(() => {
       logout();
       navigate("/");
+      setTimeout(() => { document.body.style.opacity = '1'; }, 50);
     }, 420);
   };
 
