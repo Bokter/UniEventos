@@ -20,50 +20,8 @@ export class AuthService {
     'rojasdelahoz@uninorte.edu.co',
   ];
 
-  // ─── VISITANTES (cualquier correo que NO sea @uninorte.edu.co) ───────────────
-
+  // ─── REGISTRO UNIFICADO (Vía Roble para todos) ─────────────────────────
   async register(nombre_completo: string, email: string, password: string) {
-    if (email.endsWith('@uninorte.edu.co')) {
-      throw new ConflictException('Los correos Uninorte deben registrarse con /auth/register-uninorte');
-    }
-
-    const existe = await this.usuarioRepository.findByEmail(email);
-    if (existe) throw new ConflictException('El email ya está registrado');
-
-    const password_hash = await bcrypt.hash(password, 10);
-    const usuario = await this.usuarioRepository.create({
-      nombre_completo,
-      email,
-      password_hash,
-      rol: RolUsuario.MIEMBRO,
-    });
-
-    const token = this.generarToken(usuario);
-    return { access_token: token, usuario: this.formatearUsuario(usuario) };
-  }
-
-  async login(email: string, password: string) {
-    if (email.endsWith('@uninorte.edu.co')) {
-      throw new UnauthorizedException('Los usuarios Uninorte deben usar /auth/login-uninorte');
-    }
-
-    const usuario = await this.usuarioRepository.findByEmail(email);
-    if (!usuario) throw new UnauthorizedException('Credenciales inválidas');
-
-    const valido = await bcrypt.compare(password, usuario.password_hash);
-    if (!valido) throw new UnauthorizedException('Credenciales inválidas');
-
-    const token = this.generarToken(usuario);
-    return { access_token: token, usuario: this.formatearUsuario(usuario) };
-  }
-
-  // ─── COMUNIDAD UNINORTE (@uninorte.edu.co via Roble) ─────────────────────────
-
-  async registerUninorte(nombre_completo: string, email: string, password: string) {
-    if (!email.endsWith('@uninorte.edu.co')) {
-      throw new ConflictException('Este endpoint es solo para correos @uninorte.edu.co');
-    }
-
     // 1. Registrar en Roble (envía código de verificación al correo)
     const robleRes = await fetch(`${ROBLE_BASE}/signup`, {
       method: 'POST',
@@ -76,19 +34,80 @@ export class AuthService {
       throw new ConflictException(error?.message || 'Error al registrar en Roble');
     }
 
-    // 2. Guardar en la BD local como ORGANIZADOR
+    // 2. Guardar en la BD local con el rol correspondiente
     const existe = await this.usuarioRepository.findByEmail(email);
     if (!existe) {
       const password_hash = await bcrypt.hash(password, 10);
+      let rol = RolUsuario.MIEMBRO;
+
+      if (email.endsWith('@uninorte.edu.co')) {
+        rol = this.ADMIN_EMAILS.includes(email) ? RolUsuario.ADMIN : RolUsuario.ORGANIZADOR;
+      }
+
       await this.usuarioRepository.create({
         nombre_completo,
         email,
         password_hash,
-        rol: this.ADMIN_EMAILS.includes(email) ? RolUsuario.ADMIN : RolUsuario.ORGANIZADOR,
+        rol,
       });
     }
 
-    return { mensaje: 'Registro exitoso. Revisa tu correo Uninorte para verificar tu cuenta.' };
+    return { mensaje: 'Registro exitoso. Revisa tu correo para verificar tu cuenta e iniciar sesión.' };
+  }
+
+  // Alias para retrocompatibilidad si es necesario
+  async registerUninorte(nombre_completo: string, email: string, password: string) {
+    return this.register(nombre_completo, email, password);
+  }
+
+  // ─── LOGIN UNIFICADO (Vía Roble para todos) ─────────────────────────
+  async login(email: string, password: string) {
+    // 1. Autenticar contra Roble
+    const robleRes = await fetch(`${ROBLE_BASE}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!robleRes.ok) {
+      const error = await robleRes.json().catch(() => ({}));
+      console.error('Error de Login en Roble:', error);
+      throw new UnauthorizedException(error?.message || 'Credenciales inválidas o cuenta no verificada');
+    }
+
+    // 2. Buscar o crear usuario local
+    let usuario = await this.usuarioRepository.findByEmail(email);
+    if (!usuario) {
+      // Si por alguna razón el registro no se completó localmente pero sí en Roble
+      const password_hash = await bcrypt.hash(password, 10);
+      let rol = RolUsuario.MIEMBRO;
+
+      if (email.endsWith('@uninorte.edu.co')) {
+        rol = this.ADMIN_EMAILS.includes(email) ? RolUsuario.ADMIN : RolUsuario.ORGANIZADOR;
+      }
+
+      usuario = await this.usuarioRepository.create({
+        nombre_completo: email.split('@')[0],
+        email,
+        password_hash,
+        rol,
+      });
+    }
+
+    // 3. Verificar si debe ser promovido a ADMIN (si es Uninorte)
+    if (email.endsWith('@uninorte.edu.co') && this.ADMIN_EMAILS.includes(email) && usuario.rol !== RolUsuario.ADMIN) {
+      usuario.rol = RolUsuario.ADMIN;
+      await this.usuarioRepository.update(usuario.id, { rol: RolUsuario.ADMIN });
+    }
+
+    // 4. Generar nuestro propio JWT
+    const token = this.generarToken(usuario);
+    return { access_token: token, usuario: this.formatearUsuario(usuario) };
+  }
+
+  // Alias para retrocompatibilidad
+  async loginUninorte(email: string, password: string) {
+    return this.login(email, password);
   }
 
   async verifyEmail(email: string, code: string) {
@@ -122,50 +141,6 @@ export class AuthService {
     }
 
     return { mensaje: 'Se ha reenviado un nuevo código de verificación al correo.' };
-  }
-
-  async loginUninorte(email: string, password: string) {
-    if (!email.endsWith('@uninorte.edu.co')) {
-      throw new UnauthorizedException('Este endpoint es solo para correos @uninorte.edu.co');
-    }
-
-    // 1. Autenticar contra Roble
-    const robleRes = await fetch(`${ROBLE_BASE}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!robleRes.ok) {
-      const error = await robleRes.json().catch(() => ({}));
-      console.error('Error de Login en Roble:', error);
-      throw new UnauthorizedException(error?.message || 'Credenciales Uninorte inválidas');
-    }
-
-    // 2. Buscar o crear usuario local
-    let usuario = await this.usuarioRepository.findByEmail(email);
-    if (!usuario) {
-      // Primera vez que inicia sesión — crear en BD local automáticamente
-      const password_hash = await bcrypt.hash(password, 10);
-      usuario = await this.usuarioRepository.create({
-        nombre_completo: email.split('@')[0],
-        email,
-        password_hash,
-        rol: this.ADMIN_EMAILS.includes(email) ? RolUsuario.ADMIN : RolUsuario.ORGANIZADOR,
-      });
-    }
-
-    // 3. Verificar si debe ser promovido a ADMIN (si estaba como organizador y ahora está en la lista)
-    console.log(`Verificando admin para: ${email}. Rol actual: ${usuario.rol}`);
-    if (this.ADMIN_EMAILS.includes(email) && usuario.rol !== RolUsuario.ADMIN) {
-      console.log(`¡Promoviendo a ADMIN a: ${email}!`);
-      usuario.rol = RolUsuario.ADMIN;
-      await this.usuarioRepository.update(usuario.id, { rol: RolUsuario.ADMIN });
-    }
-
-    // 4. Generar nuestro propio JWT
-    const token = this.generarToken(usuario);
-    return { access_token: token, usuario: this.formatearUsuario(usuario) };
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────────
