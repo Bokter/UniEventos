@@ -18,6 +18,7 @@ export function HomePage() {
   const [eventos, setEventos] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [arModalOpen, setArModalOpen] = useState(false);
 
   useEffect(() => {
     // Cargar categorías del backend para tener los IDs reales
@@ -91,19 +92,30 @@ export function HomePage() {
     <div className="min-h-screen bg-white">
       <Navbar showSearch={true} onSearchChange={setBusqueda} searchValue={busqueda} />
 
-      <div className="bg-gradient-to-br from-[#0A2540] via-[#05325E] to-[#0D4E8E] text-white py-20">
+      <div
+        className="text-white py-20"
+        style={{
+          background: 'linear-gradient(135deg, #1a2535 0%, #242F40 60%, #2e3d55 100%)'
+        }}
+      >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="max-w-2xl">
-            <h1 className="text-5xl font-bold mb-6 leading-tight">
+            <h1 className="text-5xl font-medium mb-6 leading-tight" style={{ letterSpacing: '0.02em' }}>
               Todos los eventos universitarios en un solo lugar
             </h1>
-            <p className="text-xl text-blue-100/90 mb-10">
+            <p className="text-xl mb-10" style={{ color: 'rgba(229,229,229,0.85)', fontWeight: 300 }}>
               Descubre, asiste y organiza eventos en tu campus. Mantente conectado con tu comunidad universitaria.
             </p>
             <Button
               size="lg"
-              className="bg-[#1D9E75] hover:bg-[#188c66] text-white text-lg px-8 py-6 rounded-md transition-all shadow-lg"
-              onClick={() => document.getElementById('seccion-eventos')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-lg px-8 py-6 rounded-md transition-all shadow-lg"
+              style={{
+                background: '#CCA43B',
+                color: '#242F40',
+                fontWeight: 500,
+                border: 'none',
+              }}
+              onClick={() => setArModalOpen(true)}
             >
               Explorar eventos
             </Button>
@@ -177,6 +189,54 @@ export function HomePage() {
           </div>
         )}
       </main>
+
+      {/* Modal de advertencia AR */}
+      {arModalOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            zIndex: 8000, display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setArModalOpen(false); }}
+        >
+          <div style={{
+            background: '#242F40', border: '1px solid #CCA43B',
+            borderRadius: '12px', padding: '2rem', maxWidth: '360px',
+            margin: '1rem', textAlign: 'center', fontFamily: "'Outfit', sans-serif"
+          }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📱</div>
+            <h3 style={{ color: '#CCA43B', fontWeight: 500, marginBottom: '0.5rem', letterSpacing: '0.02em' }}>
+              Experiencia Móvil
+            </h3>
+            <p style={{ color: '#E5E5E5', fontWeight: 300, lineHeight: 1.6, marginBottom: '1.5rem' }}>
+              El visor AR está optimizado para dispositivos móviles.<br />
+              Para la mejor experiencia, ábrelo desde tu celular.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+              <button
+                onClick={() => setArModalOpen(false)}
+                style={{
+                  padding: '0.5rem 1.25rem', border: '1px solid #E5E5E5',
+                  background: 'transparent', color: '#E5E5E5', borderRadius: '8px',
+                  fontFamily: "'Outfit', sans-serif", cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => window.location.href = '/ar-viewer.html'}
+                style={{
+                  padding: '0.5rem 1.25rem', border: 'none',
+                  background: '#CCA43B', color: '#242F40', borderRadius: '8px',
+                  fontFamily: "'Outfit', sans-serif", fontWeight: 500, cursor: 'pointer'
+                }}
+              >
+                Continuar de todas formas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,18 +10,21 @@ import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import { type Rol, resendCode } from "../services/auth.service";
 
-// Redirige al usuario según su rol
+// Redirige al usuario según su rol con fade-out
 function redirigirPorRol(rol: Rol, navigate: ReturnType<typeof useNavigate>) {
-  if (rol === "admin") {
-    navigate("/admin");
-  } else if (rol === "organizador") {
-    navigate("/organizer/dashboard");
-  } else if (rol === "miembro") {
-    navigate("/user/dashboard");
-  }
-  else {
-    navigate("/");
-  }
+  document.body.style.transition = 'opacity 0.4s ease';
+  document.body.style.opacity = '0';
+  setTimeout(() => {
+    if (rol === "admin") {
+      navigate("/admin");
+    } else if (rol === "organizador") {
+      navigate("/organizer/dashboard");
+    } else if (rol === "miembro") {
+      navigate("/user/dashboard");
+    } else {
+      navigate("/");
+    }
+  }, 420);
 }
 
 export function LoginPage() {
@@ -136,7 +139,7 @@ export function LoginPage() {
 
   if (showVerify) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen" style={{ background: '#E5E5E5' }}>
         <Navbar showSearch={false} />
         <div className="max-w-md mx-auto px-4 py-12">
           <Card>
@@ -188,7 +191,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: '#E5E5E5' }}>
       <Navbar showSearch={false} />
 
       <div className="max-w-md mx-auto px-4 py-12">
@@ -313,7 +316,8 @@ export function LoginPage() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-[#1D9E75] hover:bg-[#188c66]"
+                    className="w-full"
+                    style={{ background: '#CCA43B', color: '#242F40', fontWeight: 500 }}
                     disabled={isLoading}
                   >
                     {isLoading ? "Creando cuenta..." : "Crear cuenta"}

@@ -1,44 +1,52 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* ── Paleta UniEventos ────────────────────────── */
+  --color-dark:  #363636;
+  --color-navy:  #242F40;
+  --color-gold:  #CCA43B;
+  --color-light: #E5E5E5;
+  --color-white: #FFFFFF;
+
+  /* ── Shadcn variables redirigidas a la nueva paleta ── */
   --font-size: 16px;
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
-  --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #1A3A6B;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
+  --background: #E5E5E5;
+  --foreground: #363636;
+  --card: #FFFFFF;
+  --card-foreground: #363636;
+  --popover: #FFFFFF;
+  --popover-foreground: #363636;
+  --primary: #CCA43B;
+  --primary-foreground: #242F40;
+  --secondary: #E5E5E5;
+  --secondary-foreground: #363636;
+  --muted: #d4d4d4;
   --muted-foreground: #717182;
-  --accent: #2E75B6;
-  --accent-foreground: #ffffff;
+  --accent: #CCA43B;
+  --accent-foreground: #242F40;
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
+  --border: rgba(36, 47, 64, 0.12);
   --input: transparent;
-  --input-background: #f3f3f5;
+  --input-background: #f3f3f3;
   --switch-background: #cbced4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: oklch(0.708 0 0);
+  --ring: #CCA43B;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #1A3A6B;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #242F40;
+  --sidebar-foreground: #E5E5E5;
+  --sidebar-primary: #CCA43B;
+  --sidebar-primary-foreground: #242F40;
+  --sidebar-accent: rgba(204,164,59,0.12);
+  --sidebar-accent-foreground: #CCA43B;
+  --sidebar-border: rgba(255,255,255,0.08);
+  --sidebar-ring: #CCA43B;
   --success: #1D9E75;
   --success-foreground: #ffffff;
 }
@@ -130,6 +138,8 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-weight: 300;
   }
 
   /**

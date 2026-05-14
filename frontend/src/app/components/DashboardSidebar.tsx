@@ -39,29 +39,38 @@ export function DashboardSidebar({
   const { usuario, logout } = useAuth();
 
   const handleLogout = () => {
-    logout();
-    navigate("/");
+    document.body.style.transition = 'opacity 0.4s ease';
+    document.body.style.opacity = '0';
+    setTimeout(() => {
+      logout();
+      navigate("/");
+    }, 420);
   };
 
   const renderOrganizerLinks = () => (
     <>
-      <h2 className="text-sm text-muted-foreground mb-4 font-semibold uppercase">
+      <h2 className="text-sm mb-4 font-semibold uppercase" style={{ color: 'rgba(229,229,229,0.5)', letterSpacing: '0.08em' }}>
         Panel del Organizador
       </h2>
       <nav className="space-y-1">
         <button
           onClick={() => setActiveTab("events")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "events"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "events"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <FileText className="h-4 w-4" />
           <span>Mis eventos</span>
         </button>
         <button
           onClick={() => navigate("/organizer/publish")}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-gray-50 text-muted-foreground transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-white/5 transition-colors"
+          style={{ color: 'rgba(229,229,229,0.7)' }}
         >
           <Plus className="h-4 w-4" />
           <span>Publicar evento</span>
@@ -69,9 +78,13 @@ export function DashboardSidebar({
         <button
           onClick={() => setActiveTab("notifications")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "notifications"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "notifications"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <Bell className="h-4 w-4" />
           <span>Notificaciones</span>
@@ -79,9 +92,13 @@ export function DashboardSidebar({
         <button
           onClick={() => setActiveTab("favorites")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "favorites"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "favorites"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <Heart className="h-4 w-4" />
           <span>Favoritos</span>
@@ -89,9 +106,13 @@ export function DashboardSidebar({
         <button
           onClick={() => setActiveTab("profile")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "profile"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "profile"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <User className="h-4 w-4" />
           <span>Mi perfil</span>
@@ -102,21 +123,25 @@ export function DashboardSidebar({
 
   const renderAdminLinks = () => (
     <>
-      <h2 className="text-sm text-muted-foreground mb-4 font-semibold uppercase">
+      <h2 className="text-sm mb-4 font-semibold uppercase" style={{ color: 'rgba(229,229,229,0.5)', letterSpacing: '0.08em' }}>
         Panel de Administrador
       </h2>
       <nav className="space-y-1">
         <button
           onClick={() => setActiveTab("pending")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "pending"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "pending"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <FileText className="h-4 w-4" />
           <span>Pendientes</span>
           {pendingEventsCount > 0 && (
-            <span className="ml-auto bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(204,164,59,0.2)', color: '#CCA43B' }}>
               {pendingEventsCount}
             </span>
           )}
@@ -124,9 +149,13 @@ export function DashboardSidebar({
         <button
           onClick={() => setActiveTab("all")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "all"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "all"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <FileText className="h-4 w-4" />
           <span>Todos los eventos</span>
@@ -134,9 +163,13 @@ export function DashboardSidebar({
         <button
           onClick={() => setActiveTab("users")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "users"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "users"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <Users className="h-4 w-4" />
           <span>Usuarios</span>
@@ -144,9 +177,13 @@ export function DashboardSidebar({
         <button
           onClick={() => setActiveTab("categories")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "categories"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "categories"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <Tag className="h-4 w-4" />
           <span>Categorías</span>
@@ -157,16 +194,20 @@ export function DashboardSidebar({
 
   const renderAttendeeLinks = () => (
     <>
-      <h2 className="text-sm text-muted-foreground mb-4 font-semibold uppercase">
+      <h2 className="text-sm mb-4 font-semibold uppercase" style={{ color: 'rgba(229,229,229,0.5)', letterSpacing: '0.08em' }}>
         Mi Cuenta
       </h2>
       <nav className="space-y-1">
         <button
           onClick={() => setActiveTab("favorites")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "favorites"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "favorites"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <Heart className="h-4 w-4" />
           <span>Favoritos</span>
@@ -174,9 +215,13 @@ export function DashboardSidebar({
         <button
           onClick={() => setActiveTab("profile")}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "profile"
-              ? "bg-primary/10 text-primary border-l-4 border-primary"
-              : "hover:bg-gray-50 text-muted-foreground"
+              ? "border-l-4"
+              : "hover:bg-white/5"
             }`}
+          style={activeTab === "profile"
+            ? { borderLeftColor: '#CCA43B', color: '#CCA43B', background: 'rgba(204,164,59,0.1)' }
+            : { color: 'rgba(229,229,229,0.7)' }
+          }
         >
           <User className="h-4 w-4" />
           <span>Mi perfil</span>
@@ -186,17 +231,18 @@ export function DashboardSidebar({
   );
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] flex flex-col">
+    <div className="w-64 min-h-[calc(100vh-4rem)] flex flex-col" style={{ background: '#242F40', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
       <div className="p-6 flex-1">
         {usuario?.rol === "admin" && renderAdminLinks()}
         {usuario?.rol === "organizador" && renderOrganizerLinks()}
         {(!usuario?.rol || usuario?.rol === "miembro") && renderAttendeeLinks()}
       </div>
 
-      <div className="p-6 border-t border-gray-200">
+      <div className="p-6" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-red-50 text-destructive transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-red-500/10 transition-colors"
+          style={{ color: '#f87171' }}
         >
           <LogOut className="h-4 w-4" />
           <span>Cerrar sesión</span>
