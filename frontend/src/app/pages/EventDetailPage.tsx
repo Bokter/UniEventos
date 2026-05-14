@@ -114,8 +114,8 @@ export function EventDetailPage() {
   const fechaInicio = parseSafeDate(event.fecha ? `${event.fecha}T${horaInicioStr}` : (event.dateStart || new Date()));
   const fechaFin = parseSafeDate(event.fecha ? `${event.fecha}T${horaFinStr}` : (event.dateEnd || new Date()));
   const lugarNombre = event.lugar?.nombre || event.location?.name;
-  const lat = event.lugar?.lat || event.location?.lat;
-  const lng = event.lugar?.lng || event.location?.lng;
+  const lat = Number(event.lugar?.latitud || event.lugar?.lat || event.location?.lat || 0);
+  const lng = Number(event.lugar?.longitud || event.lugar?.lng || event.location?.lng || 0);
   const imagenPortada = event.imagen_portada || event.coverImage || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000';
 
   const organizadores = event.organizadores || event.organizers || (event.organizador ? [event.organizador] : []);
