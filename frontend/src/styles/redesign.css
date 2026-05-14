@@ -11,9 +11,12 @@
 }
 
 body {
-  animation: fadeInPage 0.45s ease forwards;
   background: linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%);
   min-height: 100vh;
+}
+
+#root {
+  animation: fadeInPage 0.45s ease forwards;
 }
 
 /* ── Headings con letter-spacing elegante ── */
