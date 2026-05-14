@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Body, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, ParseIntPipe, UseGuards, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UsuariosService } from '../application/services/usuarios.service';
 import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
@@ -45,5 +45,11 @@ export class UsuariosController {
     @Body('rol') rol: string,
   ) {
     return this.usuariosService.cambiarRol(id, rol);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar usuario permanentemente (admin)' })
+  eliminar(@Param('id', ParseIntPipe) id: number) {
+    return this.usuariosService.eliminar(id);
   }
 }

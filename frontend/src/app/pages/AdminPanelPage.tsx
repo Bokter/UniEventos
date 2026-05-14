@@ -218,20 +218,14 @@ export function AdminPanelPage() {
     }
   };
 
-  const handleToggleUserStatus = async (userId: number, isActive: boolean) => {
+  const handleDeleteUser = async (userId: number) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar permanentemente a este usuario? Esta acción no se puede deshacer.")) return;
     try {
-      if (isActive) {
-        await usuariosApi.desactivar(userId);
-        toast.success("Usuario desactivado");
-      } else {
-        await usuariosApi.activar(userId);
-        toast.success("Usuario activado");
-      }
-      setUsuarios(prev =>
-        prev.map(u => u.id === userId ? { ...u, activo: !isActive } : u)
-      );
+      await usuariosApi.eliminar(userId);
+      toast.success("Usuario eliminado exitosamente");
+      setUsuarios(prev => prev.filter(u => u.id !== userId));
     } catch (error: unknown) {
-      toast.error((error as Error).message || "No se pudo cambiar el estado del usuario");
+      toast.error((error as Error).message || "No se pudo eliminar el usuario");
     }
   };
 
@@ -442,11 +436,10 @@ export function AdminPanelPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleToggleUserStatus(user.id, user.activo)}
-                              className="hover:bg-[#A4D4B4]/10 active:scale-95 transition-all"
-                              style={{ borderColor: '#A4D4B4', color: '#293241', fontWeight: 600 }}
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="border-destructive text-destructive hover:bg-destructive/10 active:scale-95 transition-all"
                             >
-                              {user.activo ? 'Desactivar' : 'Activar'}
+                              Eliminar
                             </Button>
                             <Button
                               size="sm"

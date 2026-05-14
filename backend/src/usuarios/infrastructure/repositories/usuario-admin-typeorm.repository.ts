@@ -41,4 +41,10 @@ export class UsuarioAdminTypeormRepository implements IUsuarioAdminRepository {
     const { password_hash, ...rest } = guardado;
     return rest;
   }
+
+  async delete(id: number): Promise<void> {
+    const usuario = await this.repo.findOne({ where: { id } });
+    if (!usuario) throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+    await this.repo.delete(id);
+  }
 }

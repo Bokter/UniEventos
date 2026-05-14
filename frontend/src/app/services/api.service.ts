@@ -136,6 +136,12 @@ export const usuariosApi = {
       headers: buildHeaders(),
     }).then(handleResponse),
 
+  eliminar: (id: number | string) =>
+    fetchWithRetry(`${BASE_URL}/usuarios/${id}`, {
+      method: 'DELETE',
+      headers: buildHeaders(),
+    }).then(handleResponse),
+
   cambiarRol: (id: number | string, rol: string) =>
     fetchWithRetry(`${BASE_URL}/usuarios/${id}/rol`, {
       method: 'PATCH',
