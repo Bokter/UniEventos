@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
@@ -9,114 +10,340 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gyronorm@2.0.6/dist/gyronorm.complete.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: black; overscroll-behavior: none; touch-action: none; font-family: 'Outfit', system-ui, sans-serif; }
-        #video  { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-        #canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: black;
+            overscroll-behavior: none;
+            touch-action: none;
+            font-family: 'Outfit', system-ui, sans-serif;
+        }
+
+        #video {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+
+        #canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
 
         /* Capa transparente para capturar toques en el AR (encima del canvas, debajo de UI) */
-        #ar-touch { position: fixed; inset: 0; z-index: 2; }
+        #ar-touch {
+            position: fixed;
+            inset: 0;
+            z-index: 2;
+        }
 
         #ui {
             position: fixed;
-            top: 0; left: 0; right: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             padding: 12px 16px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-            z-index: 10; color: white; pointer-events: none;
-            display: flex; justify-content: space-between; align-items: flex-start;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent);
+            z-index: 10;
+            color: white;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }
-        #ui-left { pointer-events: none; }
-        #titulo  { font-weight: 800; font-size: 18px; }
-        #status  { margin-top: 4px; font-size: 12px; opacity: 0.9; }
+
+        #ui-left {
+            pointer-events: none;
+        }
+
+        #titulo {
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        #status {
+            margin-top: 4px;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
         #btn-dev {
             pointer-events: auto;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white; border-radius: 8px;
-            padding: 6px 10px; font-size: 11px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 11px;
             cursor: pointer;
         }
 
         /* ── Splash ── */
         #splash {
             position: fixed;
-            inset: 0; background: #293241;
-            z-index: 50; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 20px;
+            inset: 0;
+            background: #293241;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
             transition: opacity 0.4s ease;
         }
-        #splash.oculto { opacity: 0; pointer-events: none; }
+
+        #splash.oculto {
+            opacity: 0;
+            pointer-events: none;
+        }
+
         #splash-logo {
             width: 72px;
-            height: 72px; background: #EE6C4D; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px; font-weight: 700; color: #fff;
+            height: 72px;
+            background: #EE6C4D;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
             animation: logoPulse 1s ease-in-out infinite alternate;
         }
-        @keyframes logoPulse { from { transform: scale(0.95); } to { transform: scale(1.05); } }
-        #splash-titulo { color: #E0FBFC; font-size: 24px; font-weight: 700; letter-spacing: 0.06em; }
-        #splash-sub    { color: rgba(224,251,252,0.65); font-size: 14px; font-weight: 300; max-width: 280px; text-align: center; line-height: 1.6; }
+
+        @keyframes logoPulse {
+            from {
+                transform: scale(0.95);
+            }
+
+            to {
+                transform: scale(1.05);
+            }
+        }
+
+        #splash-titulo {
+            color: #E0FBFC;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+        }
+
+        #splash-sub {
+            color: rgba(224, 251, 252, 0.65);
+            font-size: 14px;
+            font-weight: 300;
+            max-width: 280px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
         #btn-iniciar-ar {
             background: #EE6C4D;
-            color: #fff; border: none; border-radius: 12px;
-            padding: 16px 28px; font-size: 17px; font-weight: 700; font-family: 'Outfit', sans-serif;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 28px;
+            font-size: 17px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
             cursor: pointer;
-            box-shadow: 0 8px 32px rgba(238,108,77,0.4);
-            min-width: 210px; transition: opacity 0.2s;
+            box-shadow: 0 8px 32px rgba(238, 108, 77, 0.4);
+            min-width: 210px;
+            transition: opacity 0.2s;
         }
-        #btn-iniciar-ar:disabled { opacity: 0.6; cursor: wait; }
-        #splash-progress { display: none; flex-direction: column; align-items: center; gap: 8px; }
-        #splash-progress-text { color: rgba(229,229,229,0.7); font-size: 13px; font-weight: 300; }
-        #splash-bar      { width: 200px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; overflow: hidden; }
-        #splash-bar-fill { height: 100%; width: 0%; background: #EE6C4D; border-radius: 2px; transition: width 0.4s ease; }
+
+        #btn-iniciar-ar:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #splash-progress {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #splash-progress-text {
+            color: rgba(229, 229, 229, 0.7);
+            font-size: 13px;
+            font-weight: 300;
+        }
+
+        #splash-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        #splash-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: #EE6C4D;
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
 
         /* ── Loading GPS ── */
         #loading {
             position: fixed;
-            top: 50%; left: 50%;
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
-            color: white; font-size: 16px; text-align: center; z-index: 35; display: none;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            z-index: 35;
+            display: none;
         }
-        #loading-bar  { width: 200px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin: 10px auto 0; }
-        #loading-fill { height: 100%; width: 0%; background: #EE6C4D; border-radius: 3px; transition: width 0.3s ease; }
+
+        #loading-bar {
+            width: 200px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin: 10px auto 0;
+        }
+
+        #loading-fill {
+            height: 100%;
+            width: 0%;
+            background: #EE6C4D;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
 
         /* ── Panel lista de eventos ── */
         #panel-eventos {
             position: fixed;
-            bottom: 0; left: 0; right: 0; z-index: 20;
-            background: rgba(15,15,46,0.95); border-radius: 20px 20px 0 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            background: rgba(15, 15, 46, 0.95);
+            border-radius: 20px 20px 0 0;
             padding: 0 0 24px;
             transform: translateY(calc(100% - 56px));
             transition: transform 0.4s ease;
-            backdrop-filter: blur(10px); max-height: 60vh;
+            backdrop-filter: blur(10px);
+            max-height: 60vh;
         }
-        #panel-eventos.expandido { transform: translateY(0); }
+
+        #panel-eventos.expandido {
+            transform: translateY(0);
+        }
+
         #panel-zona-toque {
             height: 56px;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
         }
-        #panel-handle { width: 60px; height: 5px; background: rgba(255,255,255,0.3); border-radius: 4px; pointer-events: none; }
-        #panel-titulo-eventos { color: white; font-size: 14px; font-weight: 700; opacity: 0.7; pointer-events: none; }
+
+        #panel-handle {
+            width: 60px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        #panel-titulo-eventos {
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
         #lista-eventos {
             overflow-y: auto;
             max-height: calc(60vh - 56px);
-            padding: 0 12px; display: flex; flex-direction: column; gap: 8px;
+            padding: 0 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
+
         .evento-item {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(108,99,255,0.3);
-            border-radius: 12px; padding: 12px 14px; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s ease; color: white;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(108, 99, 255, 0.3);
+            border-radius: 12px;
+            padding: 12px 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            color: white;
         }
-        .evento-item.navegando { border-color: #00ff88; background: rgba(0,255,136,0.1); }
-        .evento-item-info   { flex: 1; }
-        .evento-item-nombre { font-size: 14px; font-weight: 700; }
-        .evento-item-lugar  { font-size: 12px; color: #a8a6ff; margin-top: 2px; }
-        .evento-item-dist   { font-size: 13px; font-weight: 700; color: #ffcc00; margin-left: 10px; white-space: nowrap; }
-        .evento-item-badge  { font-size: 11px; font-weight: 700; background: #00ff88; color: #0f0f2e; border-radius: 6px; padding: 2px 8px; margin-left: 8px; white-space: nowrap; }
-        .evento-item-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+
+        .evento-item.navegando {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .evento-item-info {
+            flex: 1;
+        }
+
+        .evento-item-nombre {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .evento-item-lugar {
+            font-size: 12px;
+            color: #a8a6ff;
+            margin-top: 2px;
+        }
+
+        .evento-item-dist {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffcc00;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+
+        .evento-item-badge {
+            font-size: 11px;
+            font-weight: 700;
+            background: #00ff88;
+            color: #0f0f2e;
+            border-radius: 6px;
+            padding: 2px 8px;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
+        .evento-item-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
 
         /* ── Panel detalle del pin (Modo Pestaña Pequeña y Compacta) ── */
         #pin-detalle {
@@ -137,7 +364,10 @@
             border: 1px solid rgba(255, 255, 255, 0.12);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
-        #pin-detalle.visible { transform: translateY(0); }
+
+        #pin-detalle.visible {
+            transform: translateY(0);
+        }
 
         #pin-detalle-header {
             display: flex;
@@ -147,7 +377,11 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             padding-bottom: 8px;
         }
-        #pin-detalle-header-left { flex: 1; padding-right: 8px; }
+
+        #pin-detalle-header-left {
+            flex: 1;
+            padding-right: 8px;
+        }
 
         #pin-detalle-estado {
             display: inline-flex;
@@ -159,13 +393,14 @@
             font-weight: 700;
             margin-bottom: 4px;
         }
+
         #pin-detalle-titulo {
             color: #fff;
             font-size: 17px;
             font-weight: 700;
             line-height: 1.3;
         }
-        
+
         /* Botón Interactiva para salir de la pestaña */
         #pin-detalle-cerrar {
             background: #EE6C4D;
@@ -180,7 +415,10 @@
             box-shadow: 0 4px 12px rgba(238, 108, 77, 0.2);
             font-family: 'Outfit', sans-serif;
         }
-        #pin-detalle-cerrar:active { background: #d45d3f; }
+
+        #pin-detalle-cerrar:active {
+            background: #d45d3f;
+        }
 
         .pin-meta-container {
             display: grid;
@@ -188,14 +426,28 @@
             gap: 6px;
             margin-bottom: 12px;
         }
+
         .pin-meta-row {
             display: flex;
             align-items: center;
             gap: 6px;
         }
-        .pin-meta-icon  { font-size: 12px; opacity: 0.8; }
-        .pin-meta-label { display: none; } /* Oculto en layout compacto grid */
-        .pin-meta-val   { color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 500; }
+
+        .pin-meta-icon {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .pin-meta-label {
+            display: none;
+        }
+
+        /* Oculto en layout compacto grid */
+        .pin-meta-val {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 12px;
+            font-weight: 500;
+        }
 
         #pin-detalle-desc-wrap {
             background: rgba(255, 255, 255, 0.04);
@@ -203,6 +455,7 @@
             padding: 10px;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+
         #pin-detalle-desc-label {
             color: #EE6C4D;
             font-size: 10px;
@@ -211,8 +464,9 @@
             margin-bottom: 4px;
             font-weight: 700;
         }
+
         #pin-detalle-desc {
-            color: rgba(255,255,255,0.8);
+            color: rgba(255, 255, 255, 0.8);
             font-size: 13px;
             line-height: 1.5;
         }
@@ -220,36 +474,84 @@
         /* ── Llegada ── */
         #llegada {
             position: fixed;
-            top: 50%; left: 50%;
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,255,136,0.15); border: 2px solid #00ff88;
-            border-radius: 20px; padding: 24px 36px; color: #00ff88;
-            font-size: 24px; font-weight: 800; text-align: center; z-index: 35; display: none;
+            background: rgba(0, 255, 136, 0.15);
+            border: 2px solid #00ff88;
+            border-radius: 20px;
+            padding: 24px 36px;
+            color: #00ff88;
+            font-size: 24px;
+            font-weight: 800;
+            text-align: center;
+            z-index: 35;
+            display: none;
             animation: pulsar 0.5s ease-in-out infinite alternate;
         }
-        @keyframes pulsar { from { box-shadow: 0 0 10px #00ff88; } to { box-shadow: 0 0 30px #00ff88; } }
+
+        @keyframes pulsar {
+            from {
+                box-shadow: 0 0 10px #00ff88;
+            }
+
+            to {
+                box-shadow: 0 0 30px #00ff88;
+            }
+        }
 
         /* ── Leyenda ── */
         #leyenda {
             position: fixed;
-            top: 70px; right: 12px; z-index: 10;
-            display: flex; flex-direction: column; gap: 5px; pointer-events: none;
+            top: 70px;
+            right: 12px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            pointer-events: none;
         }
-        .leyenda-item { display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.55); border-radius: 8px; padding: 4px 8px; }
-        .leyenda-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-        .leyenda-txt  { color: rgba(255,255,255,0.85); font-size: 11px; }
+
+        .leyenda-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 8px;
+            padding: 4px 8px;
+        }
+
+        .leyenda-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .leyenda-txt {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 11px;
+        }
 
         /* ── Debug ── */
         #debug {
             position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: rgba(0,0,0,0.86); color: #78ff78;
-            font-family: monospace; font-size: 10px; padding: 6px;
-            z-index: 99; max-height: 22vh;
-            overflow-y: auto; display: none;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.86);
+            color: #78ff78;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 6px;
+            z-index: 99;
+            max-height: 22vh;
+            overflow-y: auto;
+            display: none;
         }
     </style>
 </head>
+
 <body>
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
@@ -263,7 +565,9 @@
         <button id="btn-iniciar-ar" type="button">Iniciar AR</button>
         <div id="splash-progress">
             <div id="splash-progress-text">Iniciando...</div>
-            <div id="splash-bar"><div id="splash-bar-fill"></div></div>
+            <div id="splash-bar">
+                <div id="splash-bar-fill"></div>
+            </div>
         </div>
     </div>
 
@@ -276,15 +580,25 @@
     </div>
 
     <div id="leyenda">
-        <div class="leyenda-item"><div class="leyenda-dot" style="background:#00C853"></div><span class="leyenda-txt">En curso</span></div>
-        <div class="leyenda-item"><div class="leyenda-dot" style="background:#FFD600"></div><span class="leyenda-txt">Por iniciar</span></div>
-        <div class="leyenda-item"><div class="leyenda-dot" style="background:#F44336"></div><span class="leyenda-txt">Terminado hoy</span></div>
-        <div class="leyenda-item"><div class="leyenda-dot" style="background:#9E9E9E"></div><span class="leyenda-txt">Próximo</span></div>
+        <div class="leyenda-item">
+            <div class="leyenda-dot" style="background:#00C853"></div><span class="leyenda-txt">En curso</span>
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-dot" style="background:#FFD600"></div><span class="leyenda-txt">Por iniciar</span>
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-dot" style="background:#F44336"></div><span class="leyenda-txt">Terminado hoy</span>
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-dot" style="background:#9E9E9E"></div><span class="leyenda-txt">Próximo</span>
+        </div>
     </div>
 
     <div id="loading">
         Obteniendo ubicación...<br>
-        <div id="loading-bar"><div id="loading-fill"></div></div>
+        <div id="loading-bar">
+            <div id="loading-fill"></div>
+        </div>
     </div>
 
     <div id="panel-eventos">
@@ -330,15 +644,15 @@
 
     <script>
         'use strict';
-        const API_URL        = 'https://unieventos-s25a.onrender.com/eventos/ar';
-        const DIST_MAXIMA    = 500;
-        const DIST_LLEGADA   = 10;
-        const EARTH_RADIUS   = 6378137;
+        const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
+        const DIST_MAXIMA = 500;
+        const DIST_LLEGADA = 10;
+        const EARTH_RADIUS = 6378137;
         const ORIENTATION_SLERP = 0.15;
         const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         const GPS_BUFFER_SIZE = 5;
         // Filtro por evento individual desde ?eventoId=123
-        const urlParams        = new URLSearchParams(window.location.search);
+        const urlParams = new URLSearchParams(window.location.search);
         const FILTRO_EVENTO_ID = urlParams.get('eventoId');
 
         localStorage.removeItem('unieventos_alphaOffsetRad');
@@ -365,49 +679,70 @@
         let rawCompassHeading = null, smoothCompassHeading = null;
         let iosYawDeg = null, iosPitchDeg = null;
         let iosLastRawHeadingDeg = null, iosLastHeadingSampleMs = 0;
-        const IOS_YAW_ALPHA_MIN        = 0.06;
-        const IOS_YAW_ALPHA_MAX        = 0.42;
-        const IOS_YAW_FULL_SPEED_DEG   = 45;
-        const IOS_PITCH_ALPHA          = 0.58;
-        const IOS_CAMERA_SLERP         = 0.82;
-        const IOS_MAX_PITCH_DEG        = 78;
+        const IOS_YAW_ALPHA_MIN = 0.06;
+        const IOS_YAW_ALPHA_MAX = 0.42;
+        const IOS_YAW_FULL_SPEED_DEG = 45;
+        const IOS_PITCH_ALPHA = 0.58;
+        const IOS_CAMERA_SLERP = 0.82;
+        const IOS_MAX_PITCH_DEG = 78;
         const IOS_FREEZE_YAW_PITCH_SPEED = 32;
-        const IOS_YAW_OFFSET_DEG       = 0;
-        const zee              = new THREE.Vector3(0, 0, 1);
+        const IOS_YAW_OFFSET_DEG = 0;
+        const zee = new THREE.Vector3(0, 0, 1);
         const orientationEuler = new THREE.Euler();
-        const q0               = new THREE.Quaternion();
-        const q1               = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
-        const qTarget          = new THREE.Quaternion();
-        const tmpVec3          = new THREE.Vector3();
-        const iosAxisY         = new THREE.Vector3(0, 1, 0);
-        const iosAxisX         = new THREE.Vector3(1, 0, 0);
-        const iosQRaw          = new THREE.Quaternion();
-        const iosQYaw          = new THREE.Quaternion();
-        const iosQPitch        = new THREE.Quaternion();
+        const q0 = new THREE.Quaternion();
+        const q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
+        const qTarget = new THREE.Quaternion();
+        const tmpVec3 = new THREE.Vector3();
+        const iosAxisY = new THREE.Vector3(0, 1, 0);
+        const iosAxisX = new THREE.Vector3(1, 0, 0);
+        const iosQRaw = new THREE.Quaternion();
+        const iosQYaw = new THREE.Quaternion();
+        const iosQPitch = new THREE.Quaternion();
         let iosLastRawPitchDeg = null, iosLastPitchMs = 0;
         let iosPitchSpeedDegS = 0, iosYawFrozen = false;
 
         // Raycaster para toques en pines
         const raycaster = new THREE.Raycaster();
-        const tapPoint  = new THREE.Vector2();
+        const tapPoint = new THREE.Vector2();
 
         // ─────────────────────────────────────────────
         //  Estado y color
         // ─────────────────────────────────────────────
 
         function obtenerEstadoEvento(evento) {
-            const ahora       = new Date();
-            const hoy         = ahora.toISOString().slice(0, 10);
-            const fechaEvento = String(evento.hora_inicio).slice(0, 10);
-            if (fechaEvento < hoy) return 'pasado';
-            if (fechaEvento > hoy) return 'futuro';
-            const inicio = new Date(String(evento.hora_inicio).replace(' ', 'T'));
-            const fin    = new Date(String(evento.hora_fin).replace(' ', 'T'));
-            if (ahora < inicio) return 'por_iniciar';
-            if (ahora > fin)    return 'terminado';
-            return 'en_curso';
-        }
+            const ahora = new Date();
 
+            // Reemplazar el espacio por 'T' para asegurar compatibilidad ISO estándar en navegadores móviles (iOS/Android)
+            const inicioStr = String(evento.hora_inicio).replace(' ', 'T');
+            const finStr = String(evento.hora_fin).replace(' ', 'T');
+
+            const inicio = new Date(inicioStr);
+            const fin = new Date(finStr);
+
+            // Validar si las fechas se parsearon correctamente
+            if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+                return 'futuro';
+            }
+
+            // Creamos instancias de solo fecha (año-mes-día) para comparar los días
+            const hoySoloFecha = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
+            const inicioSoloFecha = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate()).getTime();
+
+            // 1. Si el evento fue en días anteriores
+            if (inicioSoloFecha < hoySoloFecha) return 'pasado';
+
+            // 2. Si el evento es en días posteriores
+            if (inicioSoloFecha > hoySoloFecha) return 'futuro';
+
+            // 3. Si el evento es HOY, evaluamos las horas detalladamente
+            if (ahora < inicio) {
+                return 'por_iniciar'; // Es hoy, pero todavía no ha empezado la hora
+            } else if (ahora >= inicio && ahora <= fin) {
+                return 'en_curso';     // ¡Está pasando ahora mismo!
+            } else {
+                return 'terminado';    // Fue hoy, pero ya finalizó la hora
+            }
+        }
         function colorPin(estado) {
             const map = { en_curso: '#00C853', por_iniciar: '#FFD600', terminado: '#F44336', futuro: '#9E9E9E' };
             return map[estado] || '#9E9E9E';
@@ -417,13 +752,13 @@
             en_curso: '● En curso', por_iniciar: '● Por iniciar',
             terminado: '● Terminado hoy', futuro: '● Próximo'
         };
-        
+
         // ─────────────────────────────────────────────
         //  Utilidades
         // ─────────────────────────────────────────────
 
         function $(id) { return document.getElementById(id); }
-        
+
         function log(msg) {
             const d = $('debug');
             const lines = d.innerHTML.split('<br>');
@@ -431,20 +766,20 @@
             d.innerHTML += msg + '<br>';
             d.scrollTop = d.scrollHeight;
         }
-        
-        function setStatus(msg)      { $('status').textContent = msg; }
-        
+
+        function setStatus(msg) { $('status').textContent = msg; }
+
         function setProgress(txt, p) { $('splash-progress-text').textContent = txt; $('splash-bar-fill').style.width = p + '%'; }
-        
-        function clamp(v, a, b)      { return Math.max(a, Math.min(b, v)); }
-        
-        function wrap360(a)          { return ((a % 360) + 360) % 360; }
-        
-        function degToRad(d)         { return d * Math.PI / 180; }
-        
-        function radToDeg(r)         { return r * 180 / Math.PI; }
-        
-        function esNumero(n)         { return typeof n === 'number' && Number.isFinite(n); }
+
+        function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+        function wrap360(a) { return ((a % 360) + 360) % 360; }
+
+        function degToRad(d) { return d * Math.PI / 180; }
+
+        function radToDeg(r) { return r * 180 / Math.PI; }
+
+        function esNumero(n) { return typeof n === 'number' && Number.isFinite(n); }
 
         function getScreenOrientationDeg() {
             if (screen.orientation && typeof screen.orientation.angle === 'number') return screen.orientation.angle;
@@ -460,14 +795,14 @@
         function sanitizarEvento(e) {
             return {
                 ...e,
-                id:           e.id ?? `${e.titulo}-${e.latitud}-${e.longitud}`,
-                titulo:       String(e.titulo        ?? 'Evento'),
-                lugar_nombre: String(e.lugar_nombre  ?? 'Ubicación'),
-                descripcion:  String(e.descripcion   ?? e.description ?? ''),
-                hora_inicio:  String(e.hora_inicio   ?? '1970-01-01 00:00:00'),
-                hora_fin:     String(e.hora_fin      ?? '1970-01-01 00:00:00'),
-                latitud:      Number(e.latitud),
-                longitud:     Number(e.longitud)
+                id: e.id ?? `${e.titulo}-${e.latitud}-${e.longitud}`,
+                titulo: String(e.titulo ?? 'Evento'),
+                lugar_nombre: String(e.lugar_nombre ?? 'Ubicación'),
+                descripcion: String(e.descripcion ?? e.description ?? ''),
+                hora_inicio: String(e.hora_inicio ?? '1970-01-01 00:00:00'),
+                hora_fin: String(e.hora_fin ?? '1970-01-01 00:00:00'),
+                latitud: Number(e.latitud),
+                longitud: Number(e.longitud)
             };
         }
 
@@ -476,25 +811,25 @@
         // ─────────────────────────────────────────────
 
         let eventoDetalleActual = null;
-        
+
         function mostrarDetallePin(evento) {
             eventoDetalleActual = evento;
             const estado = obtenerEstadoEvento(evento);
-            const color  = colorPin(estado);
-            const dist   = calcularDistancia(evento.latitud, evento.longitud);
+            const color = colorPin(estado);
+            const dist = calcularDistancia(evento.latitud, evento.longitud);
 
             const badge = $('pin-detalle-estado');
-            badge.textContent      = ESTADO_LABEL[estado] || estado;
+            badge.textContent = ESTADO_LABEL[estado] || estado;
             badge.style.background = color + '22';
-            badge.style.color      = color;
-            badge.style.border     = `1px solid ${color}44`;
+            badge.style.color = color;
+            badge.style.border = `1px solid ${color}44`;
 
             $('pin-detalle-titulo').textContent = evento.titulo;
-            $('pin-detalle-lugar').textContent  = evento.lugar_nombre;
-            $('pin-detalle-dist').textContent   = formatDist(dist);
-            $('pin-detalle-hora').textContent   = `${String(evento.hora_inicio).slice(11, 16)} – ${String(evento.hora_fin).slice(11, 16)}`;
-            
-            const desc     = evento.descripcion || '';
+            $('pin-detalle-lugar').textContent = evento.lugar_nombre;
+            $('pin-detalle-dist').textContent = formatDist(dist);
+            $('pin-detalle-hora').textContent = `${String(evento.hora_inicio).slice(11, 16)} – ${String(evento.hora_fin).slice(11, 16)}`;
+
+            const desc = evento.descripcion || '';
             const descWrap = $('pin-detalle-desc-wrap');
             if (desc) {
                 $('pin-detalle-desc').textContent = desc;
@@ -516,7 +851,7 @@
         // ─────────────────────────────────────────────
 
         let touchStartX = 0, touchStartY = 0;
-        
+
         function onTouchStartAR(e) {
             if (e.changedTouches) {
                 touchStartX = e.changedTouches[0].clientX;
@@ -542,8 +877,8 @@
                 clientY = e.clientY;
             }
 
-            tapPoint.x = (clientX / window.innerWidth)   * 2 - 1;
-            tapPoint.y = (clientY / window.innerHeight)  * -2 + 1;
+            tapPoint.x = (clientX / window.innerWidth) * 2 - 1;
+            tapPoint.y = (clientY / window.innerHeight) * -2 + 1;
 
             raycaster.setFromCamera(tapPoint, camera);
             const hits = raycaster.intersectObjects(indicadores.filter(m => m.visible));
@@ -555,7 +890,7 @@
         // ─────────────────────────────────────────────
 
         let panelExpandido = false;
-        
+
         function togglePanel() {
             panelExpandido = !panelExpandido;
             $('panel-eventos').classList.toggle('expandido', panelExpandido);
@@ -565,10 +900,10 @@
             const lista = $('lista-eventos');
             lista.innerHTML = '';
             eventosData.forEach(evento => {
-                const dist          = calcularDistancia(evento.latitud, evento.longitud);
+                const dist = calcularDistancia(evento.latitud, evento.longitud);
                 const estaNavegando = navegandoA?.id === evento.id;
-                const estado        = obtenerEstadoEvento(evento);
-                const color         = colorPin(estado);
+                const estado = obtenerEstadoEvento(evento);
+                const color = colorPin(estado);
 
                 const item = document.createElement('div');
                 item.className = 'evento-item' + (estaNavegando ? ' navegando' : '');
@@ -605,7 +940,7 @@
             $('debug').style.display = devVisible ? 'block' : 'none';
         });
         $('panel-zona-toque').addEventListener('click', togglePanel);
-        
+
         // Listener interactivo para el botón "Salir" de la pestaña de detalles
         $('pin-detalle-cerrar').addEventListener('click', cerrarDetallePin);
 
@@ -622,7 +957,7 @@
                 return;
             }
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try { await DeviceOrientationEvent.requestPermission(); } catch(_) {}
+                try { await DeviceOrientationEvent.requestPermission(); } catch (_) { }
             }
         }
 
@@ -639,14 +974,14 @@
                     audio: false
                 });
                 video.srcObject = stream;
-                await video.play().catch(() => {});
+                await video.play().catch(() => { });
                 log('Cámara OK');
             } catch (e) {
                 log('Cámara exact falló: ' + e.message);
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
                     video.srcObject = stream;
-                    await video.play().catch(() => {});
+                    await video.play().catch(() => { });
                     log('Cámara fallback OK');
                 } catch (e2) { throw new Error('No se pudo acceder a la cámara: ' + e2.message); }
             }
@@ -666,7 +1001,7 @@
                     if (err.code !== 1) {
                         navigator.geolocation.getCurrentPosition(
                             p => registrarGPS(p.coords),
-                            () => {},
+                            () => { },
                             { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 }
                         );
                     }
@@ -717,7 +1052,7 @@
 
         function distanciaEntre(lat1, lng1, lat2, lng2) {
             const dLat = degToRad(lat2 - lat1), dLng = degToRad(lng2 - lng1);
-            const a = Math.sin(dLat/2)**2 + Math.cos(degToRad(lat1)) * Math.cos(degToRad(lat2)) * Math.sin(dLng/2)**2;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(degToRad(lat1)) * Math.cos(degToRad(lat2)) * Math.sin(dLng / 2) ** 2;
             return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
@@ -773,44 +1108,44 @@
             try {
                 gnInstance = new GyroNorm();
                 gnInstance.init({ frequency: 50, gravityNormalized: true, orientationBase: GyroNorm.WORLD, decimalCount: 2, logger: null, screenAdjusted: false })
-                .then(() => {
-                    gnInstance.start(data => {
-                        if (!data?.do) return;
-                        if (!esNumero(data.do.alpha) || !esNumero(data.do.beta) || !esNumero(data.do.gamma)) return;
-                        if (performance.now() - lastAbsoluteOrientationMs < 900) return;
-                        deviceAlpha = data.do.alpha;
-                        deviceBeta = data.do.beta;
-                        deviceGamma = data.do.gamma;
-                        orientationAvailable = true;
-                        orientationSource = 'GyroNorm';
-                    });
-                    log('GyroNorm OK');
-                }).catch(err => log('GyroNorm err: ' + err.message));
+                    .then(() => {
+                        gnInstance.start(data => {
+                            if (!data?.do) return;
+                            if (!esNumero(data.do.alpha) || !esNumero(data.do.beta) || !esNumero(data.do.gamma)) return;
+                            if (performance.now() - lastAbsoluteOrientationMs < 900) return;
+                            deviceAlpha = data.do.alpha;
+                            deviceBeta = data.do.beta;
+                            deviceGamma = data.do.gamma;
+                            orientationAvailable = true;
+                            orientationSource = 'GyroNorm';
+                        });
+                        log('GyroNorm OK');
+                    }).catch(err => log('GyroNorm err: ' + err.message));
             } catch (err) { log('GyroNorm exc: ' + err.message); }
         }
 
         function diffAngDeg(a, b) { return ((a - b + 540) % 360) - 180; }
-        
+
         function suavizarAnguloDeg(actual, objetivo, alpha) {
             if (!esNumero(actual)) return wrap360(objetivo);
             return wrap360(actual + diffAngDeg(objetivo, actual) * alpha);
         }
-        
+
         function calcularAlphaYawIOS(diffAbs) {
             const t = clamp(diffAbs / IOS_YAW_FULL_SPEED_DEG, 0, 1);
             return IOS_YAW_ALPHA_MIN + (IOS_YAW_ALPHA_MAX - IOS_YAW_ALPHA_MIN) * t;
         }
-        
+
         function calcularPitchDesdeQuaternionIOS(q) {
             tmpVec3.set(0, 0, -1).applyQuaternion(q);
             return clamp(radToDeg(Math.asin(clamp(tmpVec3.y, -1, 1))), -IOS_MAX_PITCH_DEG, IOS_MAX_PITCH_DEG);
         }
-        
+
         function construirQuaternionRawIOS() {
-            orientationEuler.set(degToRad(deviceBeta||0), degToRad(deviceAlpha||0), -degToRad(deviceGamma||0), 'YXZ');
+            orientationEuler.set(degToRad(deviceBeta || 0), degToRad(deviceAlpha || 0), -degToRad(deviceGamma || 0), 'YXZ');
             iosQRaw.setFromEuler(orientationEuler);
             iosQRaw.multiply(q1);
-            iosQRaw.multiply(q0.setFromAxisAngle(zee, -degToRad(screenOrientationDeg||0)));
+            iosQRaw.multiply(q0.setFromAxisAngle(zee, -degToRad(screenOrientationDeg || 0)));
             return iosQRaw;
         }
 
@@ -824,14 +1159,14 @@
             else iosPitchDeg += (rawPitchDeg - iosPitchDeg) * IOS_PITCH_ALPHA;
 
             if (iosLastRawPitchDeg !== null && now - iosLastPitchMs > 5) {
-                iosPitchSpeedDegS = Math.abs(rawPitchDeg - iosLastRawPitchDeg) / ((now - iosLastPitchMs)/1000);
+                iosPitchSpeedDegS = Math.abs(rawPitchDeg - iosLastRawPitchDeg) / ((now - iosLastPitchMs) / 1000);
             }
             iosLastRawPitchDeg = rawPitchDeg;
             iosLastPitchMs = now;
 
             let targetYawDeg = wrap360(-rawCompassHeading + IOS_YAW_OFFSET_DEG);
             if (iosLastRawHeadingDeg !== null && now - iosLastHeadingSampleMs < 350) {
-                let speedHeading = Math.abs(diffAngDeg(rawCompassHeading, iosLastRawHeadingDeg)) / ((now - iosLastHeadingSampleMs)/1000);
+                let speedHeading = Math.abs(diffAngDeg(rawCompassHeading, iosLastRawHeadingDeg)) / ((now - iosLastHeadingSampleMs) / 1000);
                 if (speedHeading > IOS_FREEZE_YAW_PITCH_SPEED || iosPitchSpeedDegS > IOS_FREEZE_YAW_PITCH_SPEED) {
                     iosYawFrozen = true;
                 } else { iosYawFrozen = false; }
@@ -857,7 +1192,7 @@
         function actualizarOrientacionCamaraEstandar() {
             if (!esNumero(deviceAlpha) || !esNumero(deviceBeta) || !esNumero(deviceGamma)) return;
             let alphaRad = degToRad(deviceAlpha);
-            let betaRad  = degToRad(deviceBeta);
+            let betaRad = degToRad(deviceBeta);
             let gammaRad = degToRad(deviceGamma);
             let orientRad = degToRad(screenOrientationDeg);
 
@@ -880,7 +1215,7 @@
 
         function iniciarThree() {
             const w = window.innerWidth, h = window.innerHeight;
-            scene  = new THREE.Scene();
+            scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(70, w / h, 0.5, 1200);
             renderer = new THREE.WebGLRenderer({ canvas: $('canvas'), alpha: true, antialias: true });
             renderer.setSize(w, h);
@@ -911,9 +1246,9 @@
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const json = await res.json();
                 let datosRaw = Array.isArray(json) ? json : (json.data || []);
-                
+
                 eventosData = datosRaw.map(sanitizarEvento).filter(e => {
-                    return esNumero(e.latitud) && esNumero(e.longitud) && Math.abs(e.latitud)<=90 && Math.abs(e.longitud)<=180;
+                    return esNumero(e.latitud) && esNumero(e.longitud) && Math.abs(e.latitud) <= 90 && Math.abs(e.longitud) <= 180;
                 });
 
                 if (FILTRO_EVENTO_ID) {
@@ -1001,7 +1336,7 @@
             if (miLat !== null && frameCount % 12 === 0) {
                 let eventoCercanoId = null;
                 let minDist = 999999;
-                
+
                 eventosData.forEach(ev => {
                     const d = calcularDistancia(ev.latitud, ev.longitud);
                     if (d !== null && d < minDist) { minDist = d; eventoCercanoId = ev.id; }
@@ -1066,4 +1401,5 @@
         $('btn-iniciar-ar').addEventListener('click', iniciar);
     </script>
 </body>
+
 </html>
