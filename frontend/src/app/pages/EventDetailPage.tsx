@@ -325,6 +325,11 @@ export function EventDetailPage() {
                 Compartir evento
               </Button>
 
+              <Button variant="outline" className="w-full" onClick={handleShare}>
+                <Share2 className="h-4 w-4 mr-2" />
+                Compartir evento
+              </Button>
+
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
                 <h3 className="text-sm mb-1" style={{ fontWeight: 600 }}>Organizadores</h3>
                 {allOrganizers.map((org: any) => (
