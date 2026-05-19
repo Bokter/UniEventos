@@ -50,18 +50,7 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
 
       map.on('click', (e: L.LeafletMouseEvent) => {
         const { lat, lng } = e.latlng;
-        
-        // Límites aproximados del campus de Uninorte
-        // (Ajustar si es necesario, estos valores cubren el campus principal)
-        const isInsideCampus = 
-          lat >= 11.0140 && lat <= 11.0240 &&
-          lng >= -74.8550 && lng <= -74.8460;
-
-        if (!isInsideCampus) {
-          toast.error("La ubicación del evento debe estar dentro del campus de la Universidad del Norte.");
-          return;
-        }
-
+        // Permitir seleccionar cualquier ubicación para fines de prueba
         setLocationCoords([lat, lng]);
       });
 
