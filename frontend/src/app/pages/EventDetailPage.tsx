@@ -14,6 +14,7 @@ import { Label } from "../components/ui/label";
 import { obtenerUsuario } from "../services/auth.service";
 import { eventosApi, favoritosApi } from "../services/api.service";
 import { toast } from "sonner";
+import { Eye } from "lucide-react";
 
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -253,8 +254,8 @@ export function EventDetailPage() {
                   </div>
                 )}
 
-                <LiveStreamPlayer 
-                  url={event.transmisiones.find((t: any) => t.id === (activeStreamId || event.transmisiones[0].id))?.stream_url || ""} 
+                <LiveStreamPlayer
+                  url={event.transmisiones.find((t: any) => t.id === (activeStreamId || event.transmisiones[0].id))?.stream_url || ""}
                 />
               </div>
             )}
@@ -325,9 +326,13 @@ export function EventDetailPage() {
                 Compartir evento
               </Button>
 
-              <Button variant="outline" className="w-full" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Compartir evento
+              <Button
+                variant="default"
+                className="w-full bg-[#EE6C4D] hover:bg-[#d45d3f] text-white"
+                onClick={() => window.location.href = `/ar-viewer.html?eventoId=${evento.id}`}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Ver en Realidad Aumentada
               </Button>
 
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
@@ -386,9 +391,9 @@ export function EventDetailPage() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="stream-url">URL del Stream</Label>
-              <Input 
-                id="stream-url" 
-                placeholder="https://www.youtube.com/watch?v=..." 
+              <Input
+                id="stream-url"
+                placeholder="https://www.youtube.com/watch?v=..."
                 value={streamLink}
                 onChange={(e) => setStreamLink(e.target.value)}
               />
