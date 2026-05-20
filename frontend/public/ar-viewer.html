@@ -1074,7 +1074,7 @@
             const now = performance.now();
             if (now - ultimoLogGPS > 2500) {
                 ultimoLogGPS = now;
-                log(`GPS: ±${gpsAccuracy.toFixed(0)}m`);
+                //log(`GPS: ±${gpsAccuracy.toFixed(0)}m`);
                 actualizarPanel();
                 // Actualizar distancia en detalle abierto
                 if (eventoDetalleActual) {
