@@ -783,13 +783,31 @@
         }
 
         function sanitizarEvento(e) {
+            const rawInicio = String(e.hora_inicio ?? '00:00:00');
+            const rawFin = String(e.hora_fin ?? '00:00:00');
+
+            // El backend manda hora_inicio solo como 'HH:mm:ss'
+            // y la fecha en campo separado 'fecha' → los combinamos
+            // NOTA FUTURA: si migra a 'YYYY-MM-DD HH:mm:ss' en hora_inicio,
+            // el check rawInicio.length >= 16 lo detectará y usará directo
+            const fecha = String(e.fecha ?? '').slice(0, 10);
+
+            const horaInicio = rawInicio.length >= 16
+                ? rawInicio
+                : (fecha ? `${fecha} ${rawInicio}` : rawInicio);
+
+            const horaFin = rawFin.length >= 16
+                ? rawFin
+                : (fecha ? `${fecha} ${rawFin}` : rawFin);
+
             return {
                 ...e,
                 id: e.id ?? `${e.titulo}-${e.latitud}-${e.longitud}`,
                 titulo: String(e.titulo ?? 'Evento'),
                 lugar_nombre: String(e.lugar_nombre ?? 'Ubicación'),
-                hora_inicio: String(e.hora_inicio ?? '00:00:00'),
-                hora_fin: String(e.hora_fin ?? '00:00:00'),
+                descripcion: String(e.descripcion ?? e.description ?? ''),
+                hora_inicio: horaInicio,
+                hora_fin: horaFin,
                 latitud: Number(e.latitud),
                 longitud: Number(e.longitud)
             };
@@ -1448,7 +1466,7 @@
             if (!Array.isArray(data)) throw new Error('API no devolvió array');
 
             // Ver estructura cruda del primer evento
-            if (data.length > 0) log(`RAW[0]: ${JSON.stringify(data[0]).slice(0, 300)}`);
+            if (data.length > 0) log(`RAW[0]: ${JSON.stringify(data[0])}`); // sin slice para ver todo
 
             eventosData = data
                 .map(sanitizarEvento)
@@ -1480,7 +1498,7 @@
                     ? (smoothCompassHeading?.toFixed(0) ?? '?')
                     : lastHeadingDeg.toFixed(0);
                 setStatus(`GPS ${acc} · ${heading}° · ${orientationSource}`);
-                if (esIOS) log(`yaw=${(iosYawDeg ?? 0).toFixed(0)} pitch=${(iosPitchDeg ?? 0).toFixed(0)} speed=${iosPitchSpeedDegS.toFixed(0)} frozen=${iosYawFrozen ? 'sí' : 'no'}`);
+                //if (esIOS) log(`yaw=${(iosYawDeg ?? 0).toFixed(0)} pitch=${(iosPitchDeg ?? 0).toFixed(0)} speed=${iosPitchSpeedDegS.toFixed(0)} frozen=${iosYawFrozen ? 'sí' : 'no'}`);
             }
             renderer.render(scene, camera);
         }
