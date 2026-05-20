@@ -739,33 +739,13 @@
             const dia = String(ahora.getDate()).padStart(2, '0');
             const hoyLocal = `${anio}-${mes}-${dia}`;
 
-            // Buscar campo de fecha en varios nombres posibles
-            // NOTA FUTURA: si hora_inicio migra a 'YYYY-MM-DD HH:mm:ss', usar .slice(0,10)
-            const rawFecha = String(evento.fecha ?? evento.date ?? evento.fecha_evento ?? '');
-            let fechaEvento = '';
+            // El endpoint /eventos/ar NO devuelve campo 'fecha' —
+            // solo hora_inicio y hora_fin como 'HH:mm:ss'.
+            // Asumimos que todos los eventos son de hoy y comparamos por hora.
+            // NOTA FUTURA: si el endpoint agrega campo 'fecha' (YYYY-MM-DD),
+            // reemplazar hoyLocal por: String(evento.fecha).slice(0,10)
+            const fechaEvento = hoyLocal;
 
-            if (rawFecha.length >= 10) {
-                if (rawFecha.includes('T') || rawFecha.includes('Z')) {
-                    // ISO completo → extraer fecha LOCAL para evitar desfase UTC-5
-                    const d = new Date(rawFecha);
-                    if (!isNaN(d.getTime())) {
-                        fechaEvento = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                    }
-                } else {
-                    fechaEvento = rawFecha.slice(0, 10);
-                }
-            }
-
-            // Si el endpoint AR no devuelve fecha, asumir que el evento es de hoy
-            // y comparar solo por hora (el endpoint ya filtra eventos relevantes del campus)
-            if (!fechaEvento) {
-                fechaEvento = hoyLocal;
-            }
-
-            if (fechaEvento < hoyLocal) return 'pasado';
-            if (fechaEvento > hoyLocal) return 'futuro';
-
-            // Es hoy → comparar horas exactas
             const horaInicio = String(evento.hora_inicio ?? '00:00:00').slice(0, 8);
             const horaFin = String(evento.hora_fin ?? '23:59:59').slice(0, 8);
 
@@ -831,7 +811,6 @@
                 titulo: String(e.titulo ?? 'Evento'),
                 lugar_nombre: String(e.lugar_nombre ?? 'Ubicación'),
                 descripcion: String(e.descripcion ?? e.description ?? ''),
-                fecha: String(e.fecha ?? ''),   // YYYY-MM-DD separado
                 hora_inicio: String(e.hora_inicio ?? '00:00:00'),
                 hora_fin: String(e.hora_fin ?? '00:00:00'),
                 latitud: Number(e.latitud),
