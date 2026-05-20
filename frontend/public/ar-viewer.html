@@ -739,38 +739,33 @@
             const dia = String(ahora.getDate()).padStart(2, '0');
             const hoyLocal = `${anio}-${mes}-${dia}`;
 
-            // 'fecha' puede venir como 'YYYY-MM-DD' o como ISO completo 'YYYY-MM-DDTHH:mm:ss.000Z'
-            // Usamos fecha LOCAL del objeto Date para evitar desfase UTC vs Colombia (UTC-5)
-            // NOTA FUTURA: si hora_inicio migra a 'YYYY-MM-DD HH:mm:ss' combinado,
-            // obtener fechaEvento con: String(evento.hora_inicio).slice(0,10)
+            // Buscar campo de fecha en varios nombres posibles
+            // NOTA FUTURA: si hora_inicio migra a 'YYYY-MM-DD HH:mm:ss', usar .slice(0,10)
+            const rawFecha = String(evento.fecha ?? evento.date ?? evento.fecha_evento ?? '');
             let fechaEvento = '';
-            const rawFecha = String(evento.fecha ?? '');
 
             if (rawFecha.length >= 10) {
-                // Si viene como ISO (tiene T o Z), parsear como Date y extraer fecha local
                 if (rawFecha.includes('T') || rawFecha.includes('Z')) {
+                    // ISO completo → extraer fecha LOCAL para evitar desfase UTC-5
                     const d = new Date(rawFecha);
                     if (!isNaN(d.getTime())) {
                         fechaEvento = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                     }
                 } else {
-                    // Ya viene como 'YYYY-MM-DD' simple
                     fechaEvento = rawFecha.slice(0, 10);
                 }
             }
 
-            // Fallback: si fecha está vacía, intentar extraerla de hora_inicio
-            // (por si el backend combina ambos en ese campo en el futuro)
-            if (!fechaEvento && String(evento.hora_inicio ?? '').length >= 10) {
-                fechaEvento = String(evento.hora_inicio).slice(0, 10);
+            // Si el endpoint AR no devuelve fecha, asumir que el evento es de hoy
+            // y comparar solo por hora (el endpoint ya filtra eventos relevantes del campus)
+            if (!fechaEvento) {
+                fechaEvento = hoyLocal;
             }
 
-            if (!fechaEvento) return 'futuro';          // sin fecha → siempre visible
             if (fechaEvento < hoyLocal) return 'pasado';
             if (fechaEvento > hoyLocal) return 'futuro';
 
             // Es hoy → comparar horas exactas
-            // NOTA FUTURA: si hora_inicio viene como datetime completo, quitar el fechaEvento+'T'
             const horaInicio = String(evento.hora_inicio ?? '00:00:00').slice(0, 8);
             const horaFin = String(evento.hora_fin ?? '23:59:59').slice(0, 8);
 
@@ -1429,7 +1424,10 @@
             if (!Array.isArray(data)) throw new Error('API no devolvió array');
 
             // Log del primer evento para diagnóstico (abrir DEV para verlo)
-            if (data.length > 0) log(`RAW[0]: ${JSON.stringify(data[0])}`);
+            if (data.length > 0) {
+                log(`CAMPOS: ${Object.keys(data[0]).join(', ')}`);
+                log(`fecha="${data[0].fecha}" hora_inicio="${data[0].hora_inicio}"`);
+            }
 
             eventosData = data
                 .map(sanitizarEvento)
