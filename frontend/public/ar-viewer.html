@@ -783,41 +783,15 @@
         }
 
         function sanitizarEvento(e) {
-            const fecha = String(e.fecha ?? '').slice(0, 10); // 'YYYY-MM-DD'
-            const rawInicio = String(e.hora_inicio ?? '00:00:00');
-            const rawFin = String(e.hora_fin ?? '00:00:00');
-
-            // NOTA FUTURA: si el backend migra a mandar hora_inicio como 'YYYY-MM-DD HH:mm:ss'
-            // (campo combinado), descomentar esto y eliminar el bloque de abajo:
-            // const horaInicio = rawInicio;
-            // const horaFin    = rawFin;
-
-            // Formato actual: fecha y hora llegan separados → los combinamos
-            const horaInicio = rawInicio.length >= 16
-                ? rawInicio                      // ya viene combinado, úsalo directo
-                : (fecha ? `${fecha} ${rawInicio}` : rawInicio);
-            const horaFin = rawFin.length >= 16
-                ? rawFin
-                : (fecha ? `${fecha} ${rawFin}` : rawFin);
-
-            // latitud/longitud puede venir directo o anidado en lugar{}
-            const latitud = Number(e.latitud ?? e.lugar?.latitud ?? e.lugar?.lat ?? 0);
-            const longitud = Number(e.longitud ?? e.lugar?.longitud ?? e.lugar?.lng ?? 0);
-
-            const lugar_nombre = String(
-                e.lugar_nombre ?? e.lugar?.nombre ?? e.location?.name ?? 'Ubicación'
-            );
-
             return {
                 ...e,
-                id: e.id ?? `${e.titulo}-${latitud}-${longitud}`,
-                titulo: String(e.titulo ?? e.title ?? 'Evento'),
-                lugar_nombre,
-                descripcion: String(e.descripcion ?? e.description ?? ''),
-                hora_inicio: horaInicio,  // siempre sale como 'YYYY-MM-DD HH:mm:ss'
-                hora_fin: horaFin,
-                latitud,
-                longitud
+                id: e.id ?? `${e.titulo}-${e.latitud}-${e.longitud}`,
+                titulo: String(e.titulo ?? 'Evento'),
+                lugar_nombre: String(e.lugar_nombre ?? 'Ubicación'),
+                hora_inicio: String(e.hora_inicio ?? '00:00:00'),
+                hora_fin: String(e.hora_fin ?? '00:00:00'),
+                latitud: Number(e.latitud),
+                longitud: Number(e.longitud)
             };
         }
 
@@ -1473,15 +1447,20 @@
             const data = await res.json();
             if (!Array.isArray(data)) throw new Error('API no devolvió array');
 
+            // Ver estructura cruda del primer evento
+            if (data.length > 0) log(`RAW[0]: ${JSON.stringify(data[0]).slice(0, 300)}`);
+
             eventosData = data
                 .map(sanitizarEvento)
                 .filter(e => esNumero(e.latitud) && esNumero(e.longitud))
-                // Ocultar días anteriores; hoy-terminado se muestra en rojo
-                .filter(e => obtenerEstadoEvento(e) !== 'pasado')
-                // Filtro opcional por ID (botón "Ver en AR" del frontend)
+                .filter(e => {
+                    const estado = obtenerEstadoEvento(e);
+                    log(`"${e.titulo}" hora_inicio="${e.hora_inicio}" → ${estado}`);
+                    return estado !== 'pasado';
+                })
                 .filter(e => !FILTRO_EVENTO_ID || String(e.id) === String(FILTRO_EVENTO_ID));
 
-            log(`${eventosData.length} eventos cargados`);
+            log(`${eventosData.length} visibles de ${data.length} totales`);
             if (eventosData.length === 0) setStatus('Sin eventos disponibles');
             else actualizarPanel();
         }
