@@ -1276,17 +1276,22 @@
 
             // Nombre
             const titulo = evento.titulo.length > 13 ? evento.titulo.slice(0, 11) + '…' : evento.titulo;
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            const esAmarillo = color === '#FFD600';                    // ← agrega esto
-            ctx.fillStyle = esAmarillo ? '#000' : '#fff';              // ← cambia esto
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const esAmarillo = color === '#FFD600';
+            ctx.fillStyle = esAmarillo ? '#000' : '#fff';
             ctx.font = 'bold 22px system-ui, sans-serif';
-            ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 2;
+            ctx.shadowColor = esAmarillo ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 6;
+            ctx.shadowOffsetY = 2;
             ctx.fillText(titulo, cx, topY - 14);
 
             // Distancia
-            const distTxt = dist === null ? '...' : dist < 1000 ? `${Math.round(dist)} m` : `${(dist / 1000).toFixed(1)} km`;
+            const distTxt = dist === null ? '...'
+                : dist < 1000 ? `${Math.round(dist)} m`
+                    : `${(dist / 1000).toFixed(1)} km`;
             ctx.font = '18px system-ui, sans-serif';
-            ctx.fillStyle = esAmarillo ? '#111' : 'rgba(255,255,255,0.92)'; // ← cambia esto
+            ctx.fillStyle = esAmarillo ? '#111' : 'rgba(255,255,255,0.92)';
             ctx.fillText(distTxt, cx, topY + 18);
 
             ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
