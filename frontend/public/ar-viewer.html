@@ -14,12 +14,11 @@
         #video  { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
         #canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
 
-        /* Capa transparente para capturar toques en el AR (encima del canvas, debajo de UI) */
+        /* Capa de toque AR: encima del canvas, debajo de la UI */
         #ar-touch { position: fixed; inset: 0; z-index: 2; }
 
         #ui {
-            position: fixed;
-            top: 0; left: 0; right: 0;
+            position: fixed; top: 0; left: 0; right: 0;
             padding: 12px 16px;
             background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
             z-index: 10; color: white; pointer-events: none;
@@ -33,22 +32,19 @@
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
             color: white; border-radius: 8px;
-            padding: 6px 10px; font-size: 11px;
-            cursor: pointer;
+            padding: 6px 10px; font-size: 11px; cursor: pointer;
         }
 
         /* ── Splash ── */
         #splash {
-            position: fixed;
-            inset: 0; background: #293241;
+            position: fixed; inset: 0; background: #293241;
             z-index: 50; display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 20px;
             transition: opacity 0.4s ease;
         }
         #splash.oculto { opacity: 0; pointer-events: none; }
         #splash-logo {
-            width: 72px;
-            height: 72px; background: #EE6C4D; border-radius: 50%;
+            width: 72px; height: 72px; background: #EE6C4D; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-size: 22px; font-weight: 700; color: #fff;
             animation: logoPulse 1s ease-in-out infinite alternate;
@@ -57,11 +53,9 @@
         #splash-titulo { color: #E0FBFC; font-size: 24px; font-weight: 700; letter-spacing: 0.06em; }
         #splash-sub    { color: rgba(224,251,252,0.65); font-size: 14px; font-weight: 300; max-width: 280px; text-align: center; line-height: 1.6; }
         #btn-iniciar-ar {
-            background: #EE6C4D;
-            color: #fff; border: none; border-radius: 12px;
+            background: #EE6C4D; color: #fff; border: none; border-radius: 12px;
             padding: 16px 28px; font-size: 17px; font-weight: 700; font-family: 'Outfit', sans-serif;
-            cursor: pointer;
-            box-shadow: 0 8px 32px rgba(238,108,77,0.4);
+            cursor: pointer; box-shadow: 0 8px 32px rgba(238,108,77,0.4);
             min-width: 210px; transition: opacity 0.2s;
         }
         #btn-iniciar-ar:disabled { opacity: 0.6; cursor: wait; }
@@ -72,9 +66,7 @@
 
         /* ── Loading GPS ── */
         #loading {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             color: white; font-size: 16px; text-align: center; z-index: 35; display: none;
         }
         #loading-bar  { width: 200px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin: 10px auto 0; }
@@ -82,8 +74,7 @@
 
         /* ── Panel lista de eventos ── */
         #panel-eventos {
-            position: fixed;
-            bottom: 0; left: 0; right: 0; z-index: 20;
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
             background: rgba(15,15,46,0.95); border-radius: 20px 20px 0 0;
             padding: 0 0 24px;
             transform: translateY(calc(100% - 56px));
@@ -92,20 +83,17 @@
         }
         #panel-eventos.expandido { transform: translateY(0); }
         #panel-zona-toque {
-            height: 56px;
-            display: flex; flex-direction: column;
+            height: 56px; display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 8px; cursor: pointer;
         }
         #panel-handle { width: 60px; height: 5px; background: rgba(255,255,255,0.3); border-radius: 4px; pointer-events: none; }
         #panel-titulo-eventos { color: white; font-size: 14px; font-weight: 700; opacity: 0.7; pointer-events: none; }
         #lista-eventos {
-            overflow-y: auto;
-            max-height: calc(60vh - 56px);
+            overflow-y: auto; max-height: calc(60vh - 56px);
             padding: 0 12px; display: flex; flex-direction: column; gap: 8px;
         }
         .evento-item {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(108,99,255,0.3);
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(108,99,255,0.3);
             border-radius: 12px; padding: 12px 14px; cursor: pointer;
             display: flex; justify-content: space-between; align-items: center;
             transition: all 0.2s ease; color: white;
@@ -120,9 +108,7 @@
 
         /* ── Panel detalle del pin ── */
         #pin-detalle {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            z-index: 30;
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
             background: rgba(10,10,36,0.97);
             border-radius: 22px 22px 0 0;
             padding: 22px 20px 36px;
@@ -133,64 +119,40 @@
             border-top: 1px solid rgba(255,255,255,0.08);
         }
         #pin-detalle.visible { transform: translateY(0); }
-
         #pin-detalle-header {
-            display: flex;
-            justify-content: space-between; align-items: flex-start;
+            display: flex; justify-content: space-between; align-items: flex-start;
             margin-bottom: 16px;
         }
         #pin-detalle-header-left { flex: 1; padding-right: 12px; }
-
         #pin-detalle-estado {
-            display: inline-flex;
-            align-items: center; gap: 5px;
+            display: inline-flex; align-items: center; gap: 5px;
             padding: 3px 10px; border-radius: 20px;
             font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
             margin-bottom: 8px;
         }
         #pin-detalle-titulo {
-            color: #fff;
-            font-size: 20px; font-weight: 700;
+            color: #fff; font-size: 20px; font-weight: 700;
             font-family: 'Outfit', sans-serif; line-height: 1.25;
         }
         #pin-detalle-cerrar {
-            width: 34px;
-            height: 34px; border-radius: 50%; flex-shrink: 0;
+            width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
             color: rgba(255,255,255,0.85); font-size: 17px; cursor: pointer;
-            display: flex;
-            align-items: center; justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             transition: background 0.15s; line-height: 1;
         }
         #pin-detalle-cerrar:active { background: rgba(255,255,255,0.22); }
-
-        .pin-meta-row {
-            display: flex;
-            align-items: center; gap: 8px;
-            margin-bottom: 8px;
-        }
+        .pin-meta-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         .pin-meta-icon  { font-size: 14px; opacity: 0.7; flex-shrink: 0; }
         .pin-meta-label { color: rgba(255,255,255,0.38); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; min-width: 56px; }
         .pin-meta-val   { color: rgba(255,255,255,0.82); font-size: 13px; font-weight: 500; }
-
         #pin-detalle-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 14px 0; }
-
-        #pin-detalle-desc-label {
-            color: rgba(255,255,255,0.38);
-            font-size: 11px;
-            text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px;
-        }
-        #pin-detalle-desc {
-            color: rgba(255,255,255,0.75);
-            font-size: 14px;
-            font-family: system-ui; line-height: 1.65;
-        }
+        #pin-detalle-desc-label { color: rgba(255,255,255,0.38); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+        #pin-detalle-desc { color: rgba(255,255,255,0.75); font-size: 14px; font-family: system-ui; line-height: 1.65; }
 
         /* ── Llegada ── */
         #llegada {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,255,136,0.15); border: 2px solid #00ff88;
             border-radius: 20px; padding: 24px 36px; color: #00ff88;
             font-size: 24px; font-weight: 800; text-align: center; z-index: 35; display: none;
@@ -200,8 +162,7 @@
 
         /* ── Leyenda ── */
         #leyenda {
-            position: fixed;
-            top: 70px; right: 12px; z-index: 10;
+            position: fixed; top: 70px; right: 12px; z-index: 10;
             display: flex; flex-direction: column; gap: 5px; pointer-events: none;
         }
         .leyenda-item { display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.55); border-radius: 8px; padding: 4px 8px; }
@@ -210,19 +171,16 @@
 
         /* ── Debug ── */
         #debug {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
+            position: fixed; bottom: 0; left: 0; right: 0;
             background: rgba(0,0,0,0.86); color: #78ff78;
             font-family: monospace; font-size: 10px; padding: 6px;
-            z-index: 99; max-height: 22vh;
-            overflow-y: auto; display: none;
+            z-index: 99; max-height: 22vh; overflow-y: auto; display: none;
         }
     </style>
 </head>
 <body>
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
-
     <div id="ar-touch"></div>
 
     <div id="splash">
@@ -272,7 +230,6 @@
             </div>
             <button id="pin-detalle-cerrar" aria-label="Cerrar">✕</button>
         </div>
-
         <div class="pin-meta-row">
             <span class="pin-meta-icon">📍</span>
             <span class="pin-meta-label">Lugar</span>
@@ -288,9 +245,7 @@
             <span class="pin-meta-label">Distancia</span>
             <span class="pin-meta-val" id="pin-detalle-dist"></span>
         </div>
-
         <div id="pin-detalle-sep"></div>
-
         <div id="pin-detalle-desc-wrap">
             <div id="pin-detalle-desc-label">Descripción</div>
             <div id="pin-detalle-desc"></div>
@@ -302,13 +257,14 @@
 
     <script>
         'use strict';
-        const API_URL        = 'https://unieventos-s25a.onrender.com/eventos/ar';
-        const DIST_MAXIMA    = 500;
-        const DIST_LLEGADA   = 10;
-        const EARTH_RADIUS   = 6378137;
-        const ORIENTATION_SLERP = 0.15;
-        const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const GPS_BUFFER_SIZE = 5;
+
+        const API_URL             = 'https://unieventos-s25a.onrender.com/eventos/ar';
+        const DIST_MAXIMA         = 500;
+        const DIST_LLEGADA        = 10;
+        const EARTH_RADIUS        = 6378137;
+        const ORIENTATION_SLERP   = 0.15;
+        const esIOS               = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const GPS_BUFFER_SIZE     = 5;
 
         // Filtro por evento individual desde ?eventoId=123
         const urlParams        = new URLSearchParams(window.location.search);
@@ -333,24 +289,27 @@
         let screenOrientationDeg = getScreenOrientationDeg();
         let gnInstance = null;
         let lastHeadingDeg = 0;
+
         let llegadaTimer = null, llegadaEventoId = null, navegandoA = null;
 
         // iOS
         let rawCompassHeading = null, smoothCompassHeading = null;
         let iosYawDeg = null, iosPitchDeg = null;
         let iosLastRawHeadingDeg = null, iosLastHeadingSampleMs = 0;
-        const IOS_YAW_ALPHA_MIN        = 0.06;
-        const IOS_YAW_ALPHA_MAX        = 0.42;
-        const IOS_YAW_FULL_SPEED_DEG   = 45;
-        const IOS_PITCH_ALPHA          = 0.58;
-        const IOS_CAMERA_SLERP         = 0.82;
-        const IOS_MAX_PITCH_DEG        = 78;
-        const IOS_FREEZE_YAW_PITCH_SPEED = 32;
-        const IOS_YAW_OFFSET_DEG       = 0;
+
+        const IOS_YAW_ALPHA_MIN          = 0.06;
+        const IOS_YAW_ALPHA_MAX          = 0.42;
+        const IOS_YAW_FULL_SPEED_DEG     = 45;
+        const IOS_PITCH_ALPHA            = 0.58;
+        const IOS_CAMERA_SLERP           = 0.82;
+        const IOS_MAX_PITCH_DEG          = 78;
+        const IOS_FREEZE_YAW_PITCH_SPEED = 32;   // ← NO tocar
+        const IOS_YAW_OFFSET_DEG         = 0;
 
         const zee              = new THREE.Vector3(0, 0, 1);
         const orientationEuler = new THREE.Euler();
         const q0               = new THREE.Quaternion();
+        // ← NO tocar esta fórmula exacta de DeviceOrientationControls
         const q1               = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
         const qTarget          = new THREE.Quaternion();
         const tmpVec3          = new THREE.Vector3();
@@ -360,50 +319,39 @@
         const iosQYaw          = new THREE.Quaternion();
         const iosQPitch        = new THREE.Quaternion();
         let iosLastRawPitchDeg = null, iosLastPitchMs = 0;
-        let iosPitchSpeedDegS = 0, iosYawFrozen = false;
+        let iosPitchSpeedDegS  = 0, iosYawFrozen = false;
 
-        // Raycaster para toques en pines
+        // Raycaster — detecta toques sobre los PlaneGeometry de los pines
         const raycaster = new THREE.Raycaster();
         const tapPoint  = new THREE.Vector2();
 
         // ─────────────────────────────────────────────
-        //  Estado y color (CORREGIDO LOCALMENTE)
+        //  Estado y color del pin
+        //  (usa fecha local del dispositivo, no UTC)
         // ─────────────────────────────────────────────
 
         function obtenerEstadoEvento(evento) {
             const ahora = new Date();
-            
-            // Extraer año, mes y día en formato local del dispositivo del usuario (YYYY-MM-DD)
-            const anio = ahora.getFullYear();
-            const mes  = String(ahora.getMonth() + 1).padStart(2, '0');
-            const dia  = String(ahora.getDate()).padStart(2, '0');
+
+            // Fecha local "YYYY-MM-DD" del dispositivo
+            const anio     = ahora.getFullYear();
+            const mes      = String(ahora.getMonth() + 1).padStart(2, '0');
+            const dia      = String(ahora.getDate()).padStart(2, '0');
             const hoyLocal = `${anio}-${mes}-${dia}`;
-            
-            // Extraer solo la parte de la fecha ("YYYY-MM-DD") proveniente del evento
+
             const fechaEvento = String(evento.hora_inicio).slice(0, 10);
 
-            // 1. Comparación estricta por calendario local
             if (fechaEvento < hoyLocal) return 'pasado';
             if (fechaEvento > hoyLocal) return 'futuro';
 
-            // 2. Si el evento se celebra HOY, medimos de forma exacta los objetos Date
-            const inicioStr = String(evento.hora_inicio).replace(' ', 'T');
-            const finStr    = String(evento.hora_fin).replace(' ', 'T');
-            
-            const inicio = new Date(inicioStr);
-            const fin    = new Date(finStr);
+            // Es hoy → compara horas exactas
+            const inicio = new Date(String(evento.hora_inicio).replace(' ', 'T'));
+            const fin    = new Date(String(evento.hora_fin).replace(' ', 'T'));
 
-            if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
-                return 'futuro';
-            }
-
-            if (ahora < inicio) {
-                return 'por_iniciar'; 
-            } else if (ahora >= inicio && ahora <= fin) {
-                return 'en_curso';    
-            } else {
-                return 'terminado';   
-            }
+            if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return 'futuro';
+            if (ahora < inicio) return 'por_iniciar';
+            if (ahora > fin)    return 'terminado';
+            return 'en_curso';
         }
 
         function colorPin(estado) {
@@ -412,8 +360,10 @@
         }
 
         const ESTADO_LABEL = {
-            en_curso: '● En curso', por_iniciar: '● Por iniciar',
-            terminado: '● Terminado hoy', futuro: '● Próximo'
+            en_curso:    '● En curso',
+            por_iniciar: '● Por iniciar',
+            terminado:   '● Terminado hoy',
+            futuro:      '● Próximo'
         };
 
         // ─────────────────────────────────────────────
@@ -421,7 +371,7 @@
         // ─────────────────────────────────────────────
 
         function $(id) { return document.getElementById(id); }
-        
+
         function log(msg) {
             const d = $('debug');
             const lines = d.innerHTML.split('<br>');
@@ -429,7 +379,7 @@
             d.innerHTML += msg + '<br>';
             d.scrollTop = d.scrollHeight;
         }
-        
+
         function setStatus(msg)      { $('status').textContent = msg; }
         function setProgress(txt, p) { $('splash-progress-text').textContent = txt; $('splash-bar-fill').style.width = p + '%'; }
         function clamp(v, a, b)      { return Math.max(a, Math.min(b, v)); }
@@ -468,6 +418,7 @@
         // ─────────────────────────────────────────────
 
         let eventoDetalleActual = null;
+
         function mostrarDetallePin(evento) {
             eventoDetalleActual = evento;
             const estado = obtenerEstadoEvento(evento);
@@ -483,8 +434,9 @@
             $('pin-detalle-titulo').textContent = evento.titulo;
             $('pin-detalle-lugar').textContent  = evento.lugar_nombre;
             $('pin-detalle-dist').textContent   = formatDist(dist);
-            $('pin-detalle-hora').textContent   = `${String(evento.hora_inicio).slice(11, 16)} – ${String(evento.hora_fin).slice(11, 16)}`;
-            
+            $('pin-detalle-hora').textContent   =
+                `${String(evento.hora_inicio).slice(11, 16)} – ${String(evento.hora_fin).slice(11, 16)}`;
+
             const desc     = evento.descripcion || '';
             const descWrap = $('pin-detalle-desc-wrap');
             if (desc) {
@@ -504,9 +456,12 @@
 
         // ─────────────────────────────────────────────
         //  Raycasting — toque en AR
+        //  IMPORTANTE: indicadores son THREE.Mesh (PlaneGeometry),
+        //  NO grupos — el raycaster los detecta directamente.
         // ─────────────────────────────────────────────
 
         let touchStartX = 0, touchStartY = 0;
+
         function onTouchStartAR(e) {
             if (e.changedTouches) {
                 touchStartX = e.changedTouches[0].clientX;
@@ -515,27 +470,34 @@
         }
 
         function onTapAR(e) {
+            // Si el detalle está abierto, un toque fuera lo cierra
             if ($('pin-detalle').classList.contains('visible')) {
                 cerrarDetallePin();
                 return;
             }
             if (!animacionIniciada || !camera) return;
+
             let clientX, clientY;
             if (e.changedTouches) {
                 clientX = e.changedTouches[0].clientX;
                 clientY = e.changedTouches[0].clientY;
+                // Ignorar si fue un scroll (movimiento > 10 px)
                 if (Math.abs(clientX - touchStartX) > 10 || Math.abs(clientY - touchStartY) > 10) return;
             } else {
                 clientX = e.clientX;
                 clientY = e.clientY;
             }
 
-            tapPoint.x = (clientX / window.innerWidth)   * 2 - 1;
+            tapPoint.x = (clientX / window.innerWidth)  *  2 - 1;
             tapPoint.y = (clientY / window.innerHeight)  * -2 + 1;
 
             raycaster.setFromCamera(tapPoint, camera);
+
+            // indicadores son Mesh directos → sin recursive
             const hits = raycaster.intersectObjects(indicadores.filter(m => m.visible));
-            if (hits.length > 0) mostrarDetallePin(hits[0].object.userData.evento);
+            if (hits.length > 0) {
+                mostrarDetallePin(hits[0].object.userData.evento);
+            }
         }
 
         // ─────────────────────────────────────────────
@@ -543,6 +505,7 @@
         // ─────────────────────────────────────────────
 
         let panelExpandido = false;
+
         function togglePanel() {
             panelExpandido = !panelExpandido;
             $('panel-eventos').classList.toggle('expandido', panelExpandido);
@@ -599,14 +562,16 @@
 
         async function solicitarPermisosSensores() {
             if (esIOS) {
-                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                if (typeof DeviceOrientationEvent !== 'undefined' &&
+                    typeof DeviceOrientationEvent.requestPermission === 'function') {
                     const r = await DeviceOrientationEvent.requestPermission();
                     if (r !== 'granted') throw new Error('Permiso de orientación denegado. Actívalo en Ajustes > Safari.');
                 }
                 return;
             }
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try { await DeviceOrientationEvent.requestPermission(); } catch(_) {}
+            if (typeof DeviceOrientationEvent !== 'undefined' &&
+                typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try { await DeviceOrientationEvent.requestPermission(); } catch (_) {}
             }
         }
 
@@ -649,7 +614,10 @@
                     const msgs = { 1: 'Permiso denegado', 2: 'GPS no disponible', 3: 'GPS timeout' };
                     log(`GPS ERR: ${msgs[err.code] || err.message}`);
                     if (err.code !== 1) {
-                        navigator.geolocation.getCurrentPosition(p => registrarGPS(p.coords), () => {}, { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 });
+                        navigator.geolocation.getCurrentPosition(
+                            p => registrarGPS(p.coords), () => {},
+                            { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 }
+                        );
                     }
                 },
                 { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
@@ -667,12 +635,10 @@
                 log(`GPS ${gpsBuffer.length}/${GPS_BUFFER_SIZE} ±${gpsAccuracy.toFixed(0)}m`);
                 if (gpsBuffer.length < GPS_BUFFER_SIZE) return;
 
-                originLat = gpsBuffer.reduce((s, p) => s + p.lat, 0) / gpsBuffer.length;
-                originLng = gpsBuffer.reduce((s, p) => s + p.lng, 0) / gpsBuffer.length;
+                originLat   = gpsBuffer.reduce((s, p) => s + p.lat, 0) / gpsBuffer.length;
+                originLng   = gpsBuffer.reduce((s, p) => s + p.lng, 0) / gpsBuffer.length;
                 gpsAccuracy = gpsBuffer.reduce((s, p) => s + p.acc, 0) / gpsBuffer.length;
-                miLat = originLat; miLng = originLng;
-                gpsBuffer = [];
-
+                miLat = originLat; miLng = originLng; gpsBuffer = [];
                 $('loading').style.display = 'none';
                 log(`Origen GPS: ±${gpsAccuracy.toFixed(0)}m`);
                 posicionarTodosLosIndicadores();
@@ -680,11 +646,11 @@
                 return;
             }
 
-            const salto = distanciaEntre(miLat, miLng, coords.latitude, coords.longitude);
+            const salto   = distanciaEntre(miLat, miLng, coords.latitude, coords.longitude);
             const minMove = Math.max(2.5, gpsAccuracy * 0.35);
             if (salto > minMove) {
                 const alpha = clamp(salto / 40, 0.10, 0.45);
-                miLat += (coords.latitude - miLat) * alpha;
+                miLat += (coords.latitude  - miLat) * alpha;
                 miLng += (coords.longitude - miLng) * alpha;
                 posicionarTodosLosIndicadores();
             }
@@ -694,9 +660,11 @@
                 ultimoLogGPS = now;
                 log(`GPS: ±${gpsAccuracy.toFixed(0)}m`);
                 actualizarPanel();
-
+                // Actualizar distancia en el detalle abierto
                 if (eventoDetalleActual) {
-                    $('pin-detalle-dist').textContent = formatDist(calcularDistancia(eventoDetalleActual.latitud, eventoDetalleActual.longitud));
+                    $('pin-detalle-dist').textContent = formatDist(
+                        calcularDistancia(eventoDetalleActual.latitud, eventoDetalleActual.longitud)
+                    );
                 }
             }
         }
@@ -715,44 +683,39 @@
         function latLngToWorld(lat, lng, y = 0) {
             if (originLat === null) return new THREE.Vector3(0, y, -10);
             const lat0 = degToRad(originLat);
-            const x = degToRad(lng - originLng) * EARTH_RADIUS * Math.cos(lat0);
-            const z = -degToRad(lat - originLat) * EARTH_RADIUS;
+            const x    = degToRad(lng - originLng) * EARTH_RADIUS * Math.cos(lat0);
+            const z    = -degToRad(lat - originLat) * EARTH_RADIUS;
             return new THREE.Vector3(x, y, z);
         }
 
         // ─────────────────────────────────────────────
-        //  Orientación
+        //  Orientación — NO modificar las fórmulas
         // ─────────────────────────────────────────────
 
         async function iniciarOrientacion() {
             screenOrientationDeg = getScreenOrientationDeg();
             window.addEventListener('orientationchange', () => { screenOrientationDeg = getScreenOrientationDeg(); });
             window.addEventListener('deviceorientationabsolute', onDeviceOrientation, true);
-            window.addEventListener('deviceorientation', onDeviceOrientation, true);
+            window.addEventListener('deviceorientation',         onDeviceOrientation, true);
             setTimeout(() => { if (!orientationAvailable) iniciarGyroNormFallback(); }, 1400);
             log('Orientación activa');
         }
 
         function onDeviceOrientation(e) {
             if (!esNumero(e.alpha) || !esNumero(e.beta) || !esNumero(e.gamma)) return;
-            const now = performance.now();
+            const now           = performance.now();
             const hasIOSCompass = esNumero(e.webkitCompassHeading);
-            const isAbsolute = e.type === 'deviceorientationabsolute' || e.absolute === true || hasIOSCompass;
-
+            const isAbsolute    = e.type === 'deviceorientationabsolute' || e.absolute === true || hasIOSCompass;
             if (!isAbsolute && now - lastAbsoluteOrientationMs < 900) return;
             if (isAbsolute) lastAbsoluteOrientationMs = now;
-
-            deviceAlpha = e.alpha;
-            deviceBeta = e.beta;
-            deviceGamma = e.gamma;
+            deviceAlpha = e.alpha; deviceBeta = e.beta; deviceGamma = e.gamma;
             orientationAvailable = true;
-            orientationSource = isAbsolute ? 'absolute' : 'relative';
-
+            orientationSource    = isAbsolute ? 'absolute' : 'relative';
             if (hasIOSCompass) {
-                rawCompassHeading = wrap360(e.webkitCompassHeading);
-                compassHeading = rawCompassHeading;
+                rawCompassHeading      = wrap360(e.webkitCompassHeading);
+                compassHeading         = rawCompassHeading;
                 iosLastHeadingSampleMs = now;
-                orientationSource = 'iOS compass';
+                orientationSource      = 'iOS compass';
             }
         }
 
@@ -769,11 +732,8 @@
                         if (!data?.do) return;
                         if (!esNumero(data.do.alpha) || !esNumero(data.do.beta) || !esNumero(data.do.gamma)) return;
                         if (performance.now() - lastAbsoluteOrientationMs < 900) return;
-                        deviceAlpha = data.do.alpha;
-                        deviceBeta = data.do.beta;
-                        deviceGamma = data.do.gamma;
-                        orientationAvailable = true;
-                        orientationSource = 'GyroNorm';
+                        deviceAlpha = data.do.alpha; deviceBeta = data.do.beta; deviceGamma = data.do.gamma;
+                        orientationAvailable = true; orientationSource = 'GyroNorm';
                     });
                     log('GyroNorm OK');
                 }).catch(err => log('GyroNorm err: ' + err.message));
@@ -781,6 +741,7 @@
         }
 
         function diffAngDeg(a, b) { return ((a - b + 540) % 360) - 180; }
+
         function suavizarAnguloDeg(actual, objetivo, alpha) {
             if (!esNumero(actual)) return wrap360(objetivo);
             return wrap360(actual + diffAngDeg(objetivo, actual) * alpha);
@@ -797,6 +758,7 @@
         }
 
         function construirQuaternionRawIOS() {
+            // Fórmula exacta de DeviceOrientationControls — NO modificar
             orientationEuler.set(degToRad(deviceBeta||0), degToRad(deviceAlpha||0), -degToRad(deviceGamma||0), 'YXZ');
             iosQRaw.setFromEuler(orientationEuler);
             iosQRaw.multiply(q1);
@@ -807,219 +769,337 @@
         function actualizarOrientacionCamaraIOS() {
             if (!esNumero(rawCompassHeading) || !esNumero(deviceAlpha) || !esNumero(deviceBeta) || !esNumero(deviceGamma)) return;
             const now = performance.now();
+
             const rawPitchDeg = calcularPitchDesdeQuaternionIOS(construirQuaternionRawIOS());
-
             if (iosPitchDeg === null) iosPitchDeg = rawPitchDeg;
-            else iosPitchDeg = iosPitchDeg + (rawPitchDeg - iosPitchDeg) * IOS_PITCH_ALPHA;
+            else iosPitchDeg += (rawPitchDeg - iosPitchDeg) * IOS_PITCH_ALPHA;
 
-            let targetYawDeg = wrap360(360 - rawCompassHeading + IOS_YAW_OFFSET_DEG);
-            if (iosYawDeg === null) iosYawDeg = targetYawDeg;
-            else {
-                const diff = Math.abs(diffAngDeg(targetYawDeg, iosYawDeg));
-                const alphaYaw = calcularAlphaYawIOS(diff);
-                iosYawDeg = suavizarAnguloDeg(iosYawDeg, targetYawDeg, alphaYaw);
+            // Velocidad de pitch para congelar yaw al inclinar
+            if (iosLastRawPitchDeg !== null) {
+                const dt = Math.max(0.001, (now - iosLastPitchMs) / 1000);
+                iosPitchSpeedDegS = Math.abs(rawPitchDeg - iosLastRawPitchDeg) / dt;
+            }
+            iosLastRawPitchDeg = rawPitchDeg; iosLastPitchMs = now;
+
+            const rawYaw = wrap360(rawCompassHeading);
+            if (iosYawDeg === null) {
+                iosYawDeg = rawYaw; smoothCompassHeading = rawYaw; iosLastRawHeadingDeg = rawYaw;
+            } else {
+                // Congelar yaw cuando el pitch cambia rápido — NO tocar IOS_FREEZE_YAW_PITCH_SPEED
+                iosYawFrozen = iosPitchSpeedDegS > IOS_FREEZE_YAW_PITCH_SPEED;
+                iosYawDeg    = suavizarAnguloDeg(
+                    iosYawDeg, rawYaw,
+                    iosYawFrozen ? 0.008 : calcularAlphaYawIOS(Math.abs(diffAngDeg(rawYaw, iosYawDeg)))
+                );
+                smoothCompassHeading = iosYawDeg; iosLastRawHeadingDeg = rawYaw;
             }
 
-            iosQYaw.setFromAxisAngle(iosAxisY, degToRad(iosYawDeg));
+            const yaw = wrap360(iosYawDeg + IOS_YAW_OFFSET_DEG);
+            // Dos quaterniones separados — NO mezclar en uno
+            iosQYaw.setFromAxisAngle(iosAxisY, degToRad(-yaw));
             iosQPitch.setFromAxisAngle(iosAxisX, degToRad(iosPitchDeg));
             qTarget.copy(iosQYaw).multiply(iosQPitch);
             camera.quaternion.slerp(qTarget, IOS_CAMERA_SLERP);
+            lastHeadingDeg = yaw;
         }
 
-        function actualizarOrientacionCamaraEstandar() {
-            if (!esNumero(deviceAlpha) || !esNumero(deviceBeta) || !esNumero(deviceGamma)) return;
-            orientationEuler.set(degToRad(deviceBeta), degToRad(deviceAlpha), -degToRad(deviceGamma), 'YXZ');
-            qTarget.setFromEuler(orientationEuler);
-            qTarget.multiply(q1);
-            qTarget.multiply(q0.setFromAxisAngle(zee, -degToRad(screenOrientationDeg)));
-            camera.quaternion.slerp(qTarget, ORIENTATION_SLERP);
-        }
-
-        // ─────────────────────────────────────────────
-        //  API y Carga de Eventos (CORREGIDA)
-        // ─────────────────────────────────────────────
-
-        async function cargarEventos() {
-            try {
-                setStatus('Cargando eventos...');
-                const res = await fetch(API_URL);
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const data = await res.json();
-                
-                if (!Array.isArray(data)) {
-                    eventosData = [];
-                } else {
-                    eventosData = data
-                        .map(sanitizarEvento)
-                        // CORRECCIÓN: Filtro robusto por ID convirtiendo de forma segura ambos a String
-                        .filter(e => !FILTRO_EVENTO_ID || String(e.id) === String(FILTRO_EVENTO_ID));
-                }
-                
-                log(`API: ${eventosData.length} eventos válidos cargados.`);
-                setStatus(eventosData.length === 0 ? '0 eventos encontrados' : 'AR Listo');
-            } catch (e) {
-                log('Error API: ' + e.message);
-                setStatus('Error al cargar eventos');
-                eventosData = [];
+        function actualizarOrientacionCamara() {
+            if (!camera || !orientationAvailable) return;
+            if (esIOS) {
+                actualizarOrientacionCamaraIOS();
+            } else {
+                // Fórmula exacta de DeviceOrientationControls — NO modificar
+                orientationEuler.set(degToRad(deviceBeta||0), degToRad(deviceAlpha||0), -degToRad(deviceGamma||0), 'YXZ');
+                qTarget.setFromEuler(orientationEuler);
+                qTarget.multiply(q1);
+                qTarget.multiply(q0.setFromAxisAngle(zee, -degToRad(screenOrientationDeg||0)));
+                camera.quaternion.slerp(qTarget, ORIENTATION_SLERP);
+                lastHeadingDeg = headingDesdeQuaternion(camera.quaternion);
             }
         }
 
-        // ─────────────────────────────────────────────
-        //  Creación de gráficos (CORREGIDA)
-        // ─────────────────────────────────────────────
-
-        function crearIndicadorMesh(colorHex) {
-            const group = new THREE.Group();
-            const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 1, depthTest: false });
-
-            // Esfera principal flotante
-            const geoEsfera = new THREE.SphereGeometry(1.2, 16, 16);
-            const mEsfera = new THREE.Mesh(geoEsfera, mat);
-            mEsfera.position.y = 2.4;
-            group.add(mEsfera);
-
-            // Cono invertido (Pin clásico)
-            const geoCono = new THREE.ConeGeometry(0.7, 2.0, 16);
-            const mCono = new THREE.Mesh(geoCono, mat);
-            mCono.rotation.x = Math.PI; 
-            mCono.position.y = 1.0;
-            group.add(mCono);
-
-            return group;
+        function headingDesdeQuaternion(q) {
+            tmpVec3.set(0, 0, -1).applyQuaternion(q);
+            return wrap360(radToDeg(Math.atan2(tmpVec3.x, -tmpVec3.z)));
         }
 
+        // ─────────────────────────────────────────────
+        //  Three.js
+        // ─────────────────────────────────────────────
+
+        function iniciarThree() {
+            const canvas = $('canvas');
+            renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+
+            scene  = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 1200);
+            camera.position.set(0, 0, 0);
+            scene.add(camera);
+
+            window.addEventListener('resize', () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            });
+
+            // Listeners de toque sobre la capa AR
+            const arTouch = $('ar-touch');
+            arTouch.addEventListener('touchstart', onTouchStartAR, { passive: true });
+            arTouch.addEventListener('touchend',   onTapAR,        { passive: true });
+            arTouch.addEventListener('click',      onTapAR);
+
+            $('pin-detalle-cerrar').addEventListener('click', cerrarDetallePin);
+
+            log('Three.js OK');
+        }
+
+        // ─────────────────────────────────────────────
+        //  Dibujo del pin (CanvasTexture sobre PlaneGeometry)
+        //  → Raycaster funciona directamente con Mesh plano
+        // ─────────────────────────────────────────────
+
+        function dibujarPin(ctx, evento, dist) {
+            const cw = 220, ch = 300;
+            ctx.clearRect(0, 0, cw, ch);
+
+            const estado = obtenerEstadoEvento(evento);
+            const color  = colorPin(estado);
+            const cx = cw / 2, r = 85, topY = r + 10, tipY = ch - 12;
+
+            const tearPath = () => {
+                ctx.beginPath();
+                ctx.moveTo(cx, tipY);
+                ctx.quadraticCurveTo(cx - 30, topY + r * 0.78, cx - r, topY);
+                ctx.arc(cx, topY, r, Math.PI, 0, false);
+                ctx.quadraticCurveTo(cx + 30, topY + r * 0.78, cx, tipY);
+                ctx.closePath();
+            };
+
+            // Sombra
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.50)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10;
+            tearPath(); ctx.fillStyle = color; ctx.fill();
+            ctx.restore();
+
+            // Relleno sólido
+            tearPath(); ctx.fillStyle = color; ctx.fill();
+
+            // Borde
+            tearPath();
+            ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 3; ctx.stroke();
+
+            // Gradiente de volumen
+            const grad = ctx.createRadialGradient(cx - 20, topY - 25, 5, cx, topY, r);
+            grad.addColorStop(0, 'rgba(255,255,255,0.30)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.18)');
+            tearPath(); ctx.fillStyle = grad; ctx.fill();
+
+            // Brillo
+            ctx.beginPath();
+            ctx.arc(cx - 30, topY - 32, 16, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.30)'; ctx.fill();
+
+            // Nombre
+            const titulo = evento.titulo.length > 13 ? evento.titulo.slice(0, 11) + '…' : evento.titulo;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 22px system-ui, sans-serif';
+            ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 2;
+            ctx.fillText(titulo, cx, topY - 14);
+
+            // Distancia
+            const distTxt = dist === null ? '...' : dist < 1000 ? `${Math.round(dist)} m` : `${(dist / 1000).toFixed(1)} km`;
+            ctx.font = '18px system-ui, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.92)';
+            ctx.fillText(distTxt, cx, topY + 18);
+
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        }
+
+        // ─────────────────────────────────────────────
+        //  Indicadores 3D — PlaneGeometry + CanvasTexture
+        //  Un Mesh por evento → raycaster.intersectObjects funciona
+        // ─────────────────────────────────────────────
+
         function crearIndicadores() {
-            indicadores.forEach(m => scene.remove(m));
+            indicadores.forEach(mesh => {
+                scene.remove(mesh);
+                mesh.geometry?.dispose();
+                mesh.material?.map?.dispose();
+                mesh.material?.dispose();
+            });
             indicadores = [];
 
             eventosData.forEach(evento => {
-                const estado = obtenerEstadoEvento(evento);
-                
-                // CORRECCIÓN: Permitimos que dibuje los pines que ocurren HOY ('en_curso', 'por_iniciar', 'terminado') o 'futuro'
-                if (estado === 'pasado') {
-                    log(`Saltando indicador pasado: ${evento.titulo}`);
-                    return; 
-                }
+                if (!esNumero(evento.latitud) || !esNumero(evento.longitud)) return;
 
-                const color = colorPin(estado);
-                const mesh = crearIndicadorMesh(color);
-                
-                mesh.userData = { evento: evento };
+                const canvasTex  = document.createElement('canvas');
+                canvasTex.width  = 220;
+                canvasTex.height = 300;
+                const ctx = canvasTex.getContext('2d');
+                dibujarPin(ctx, evento, null);
+
+                const texture = new THREE.CanvasTexture(canvasTex);
+                texture.minFilter = THREE.LinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+
+                const mesh = new THREE.Mesh(
+                    new THREE.PlaneGeometry(1.4, 1.9),
+                    new THREE.MeshBasicMaterial({
+                        map: texture, transparent: true,
+                        side: THREE.DoubleSide, depthWrite: false, depthTest: true
+                    })
+                );
+                mesh.userData = { evento, texture, canvasTex, ctx, gpsPositioned: false, lastDist: null };
+                mesh.visible     = false;
+                mesh.renderOrder = 10;
                 scene.add(mesh);
                 indicadores.push(mesh);
             });
 
             posicionarTodosLosIndicadores();
-            actualizarPanel();
+            log(`${indicadores.length} indicadores creados`);
         }
 
         function posicionarTodosLosIndicadores() {
-            if (originLat === null) return;
+            if (originLat === null || !scene) return;
             indicadores.forEach(mesh => {
-                const ev = mesh.userData.evento;
-                const pos = latLngToWorld(ev.latitud, ev.longitud, 0);
+                const pos = latLngToWorld(mesh.userData.evento.latitud, mesh.userData.evento.longitud, 1.70);
                 mesh.position.copy(pos);
+                mesh.userData.gpsPositioned = true;
+            });
+        }
+
+        function actualizarIndicadores() {
+            if (!camera) return;
+            if (esIOS) actualizarIndicadoresIOS();
+            else        actualizarIndicadoresAndroid();
+        }
+
+        function procesarMesh(mesh) {
+            const { evento, texture, ctx } = mesh.userData;
+            const dist = calcularDistancia(evento.latitud, evento.longitud);
+
+            if (!mesh.userData.gpsPositioned || dist === null || dist > DIST_MAXIMA) {
+                mesh.visible = false; return;
+            }
+            if (navegandoA) {
+                if (evento.id !== navegandoA.id) { mesh.visible = false; return; }
+                if (dist < DIST_LLEGADA) {
+                    mesh.visible = false;
+                    mostrarLlegada(evento);
+                    navegandoA = null;
+                    actualizarPanel();
+                    actualizarOpacidadIndicadores();
+                    return;
+                }
+            } else if (dist < DIST_LLEGADA) { mesh.visible = false; return; }
+
+            if (llegadaEventoId === evento.id) ocultarLlegada();
+            mesh.visible = true;
+
+            const escala = esIOS
+                ? (dist <= 50 ? 3.5 : 3.5 * Math.pow(50 / dist, 0.4))
+                : (dist <= 50 ? 5.0 : 5.0 * Math.pow(50 / dist, 0.4));
+            mesh.scale.setScalar(escala);
+
+            const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
+            if (distCambio > 2) {
+                mesh.userData.lastDist = dist;
+                dibujarPin(ctx, evento, dist);
+                texture.needsUpdate = true;
+            }
+        }
+
+        // ← lookAt intacto para Android
+        function actualizarIndicadoresAndroid() {
+            if (miLat !== null) camera.position.copy(latLngToWorld(miLat, miLng, 1.60));
+            indicadores.forEach(mesh => {
+                procesarMesh(mesh);
+                if (mesh.visible) mesh.lookAt(camera.position);
+            });
+        }
+
+        // ← atan2 + rotation.set intacto para iOS (NO lookAt)
+        function actualizarIndicadoresIOS() {
+            if (miLat === null) return;
+            camera.position.copy(latLngToWorld(miLat, miLng, 1.60));
+            indicadores.forEach(mesh => {
+                procesarMesh(mesh);
+                if (mesh.visible) {
+                    const dx = camera.position.x - mesh.position.x;
+                    const dz = camera.position.z - mesh.position.z;
+                    mesh.rotation.set(0, Math.atan2(dx, dz), 0);
+                }
             });
         }
 
         // ─────────────────────────────────────────────
-        //  Tres.js Loop
+        //  Llegada
         // ─────────────────────────────────────────────
 
-        function iniciarThree() {
-            const canvas = $('canvas');
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-            scene  = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.5, 1100);
-
-            const light = new THREE.AmbientLight(0xffffff, 1.0);
-            scene.add(light);
-
-            window.addEventListener('resize', onWindowResize);
-
-            const arTouch = $('ar-touch');
-            arTouch.addEventListener('touchstart', onTouchStartAR, { passive: true });
-            arTouch.addEventListener('touchend', onTapAR, { passive: true });
-            arTouch.addEventListener('click', onTapAR);
-
-            log('Three.js Inicializado');
+        function mostrarLlegada(evento) {
+            if (llegadaEventoId === evento.id) return;
+            llegadaEventoId = evento.id;
+            if (llegadaTimer) clearTimeout(llegadaTimer);
+            $('llegada').innerHTML = `¡Llegaste!<br><span style="font-size:18px">${evento.titulo}</span>`;
+            $('llegada').style.display = 'block';
+            llegadaTimer = setTimeout(() => ocultarLlegada(), 5000);
         }
 
-        function onWindowResize() {
-            if (!camera || !renderer) return;
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        function ocultarLlegada() {
+            $('llegada').style.display = 'none';
+            llegadaEventoId = null; llegadaTimer = null;
         }
+
+        // ─────────────────────────────────────────────
+        //  Carga de eventos
+        // ─────────────────────────────────────────────
+
+        async function cargarEventos() {
+            log('Cargando eventos...');
+            const res = await fetch(API_URL, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`API ${res.status}`);
+            const data = await res.json();
+            if (!Array.isArray(data)) throw new Error('API no devolvió array');
+
+            eventosData = data
+                .map(sanitizarEvento)
+                .filter(e => esNumero(e.latitud) && esNumero(e.longitud))
+                // Ocultar días anteriores; hoy-terminado se muestra en rojo
+                .filter(e => obtenerEstadoEvento(e) !== 'pasado')
+                // Filtro opcional por ID (botón "Ver en AR" del frontend)
+                .filter(e => !FILTRO_EVENTO_ID || String(e.id) === String(FILTRO_EVENTO_ID));
+
+            log(`${eventosData.length} eventos cargados`);
+            if (eventosData.length === 0) setStatus('Sin eventos disponibles');
+            else actualizarPanel();
+        }
+
+        // ─────────────────────────────────────────────
+        //  Loop de animación
+        // ─────────────────────────────────────────────
 
         function animar() {
             requestAnimationFrame(animar);
             frameCount++;
-
-            if (esIOS && orientationSource === 'iOS compass') {
-                actualizarOrientacionCamaraIOS();
-            } else {
-                actualizarOrientacionCamaraEstandar();
+            actualizarOrientacionCamara();
+            actualizarIndicadores();
+            if (frameCount % 60 === 0) {
+                const acc     = gpsAccuracy < 999 ? `±${gpsAccuracy.toFixed(0)}m` : 'sin GPS';
+                const heading = esIOS
+                    ? (smoothCompassHeading?.toFixed(0) ?? '?')
+                    : lastHeadingDeg.toFixed(0);
+                setStatus(`GPS ${acc} · ${heading}° · ${orientationSource}`);
+                if (esIOS) log(`yaw=${(iosYawDeg??0).toFixed(0)} pitch=${(iosPitchDeg??0).toFixed(0)} speed=${iosPitchSpeedDegS.toFixed(0)} frozen=${iosYawFrozen?'sí':'no'}`);
             }
-
-            // Animación sutil de rebote en los pines
-            const t = performance.now() * 0.003;
-            indicadores.forEach(mesh => {
-                mesh.children.forEach(child => {
-                    if (child instanceof THREE.Mesh) {
-                        child.rotation.y += 0.015;
-                    }
-                });
-                // Oscilación vertical controlada
-                mesh.position.y = Math.sin(t + mesh.position.x) * 0.4;
-            });
-
-            // Lógica de Proximidad / Llegada
-            if (miLat !== null && frameCount % 30 === 0) {
-                let masCercanoId = null;
-                let masCercanoDist = 99999;
-
-                eventosData.forEach(ev => {
-                    const d = calcularDistancia(ev.latitud, ev.longitud);
-                    if (d !== null && d < masCercanoDist) {
-                        masCercanoDist = d;
-                        masCercanoId = ev.id;
-                    }
-                });
-
-                if (masCercanoId && masCercanoDist <= DIST_LLEGADA) {
-                    if (llegadaEventoId !== masCercanoId) {
-                        llegadaEventoId = masCercanoId;
-                        const evObj = eventosData.find(x => x.id === masCercanoId);
-                        const divl = $('llegada');
-                        divl.innerHTML = `🎉 ¡Has llegado!<br><span style="font-size:15px;font-weight:400;color:#fff">${evObj?.titulo}</span>`;
-                        divl.style.display = 'block';
-
-                        if (llegadaTimer) clearTimeout(llegadaTimer);
-                        llegadaTimer = setTimeout(() => { divl.style.display = 'none'; }, 6000);
-                    }
-                } else {
-                    if (masCercanoDist > DIST_LLEGADA + 4) {
-                        llegadaEventoId = null;
-                        $('llegada').style.display = 'none';
-                    }
-                }
-            }
-
-            // Ocultar pines demasiado lejanos para optimizar rendimiento de cámara
-            indicadores.forEach(mesh => {
-                const d = calcularDistancia(mesh.userData.evento.latitud, mesh.userData.evento.longitud);
-                mesh.visible = (d !== null && d <= DIST_MAXIMA);
-            });
-
             renderer.render(scene, camera);
         }
 
         // ─────────────────────────────────────────────
-        //  Controlador de Flujo Inicial
+        //  Init
         // ─────────────────────────────────────────────
 
         async function iniciar() {
@@ -1046,7 +1126,7 @@
                 }, 300);
                 log('Listo');
             } catch (err) {
-                btn.disabled = false;
+                btn.disabled    = false;
                 btn.textContent = 'Reintentar';
                 $('splash-progress').style.display = 'none';
                 setStatus('Error al iniciar');

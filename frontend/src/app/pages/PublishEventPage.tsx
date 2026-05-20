@@ -53,6 +53,7 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
         
         // Límites aproximados del campus de Uninorte
         // (Ajustar si es necesario, estos valores cubren el campus principal)
+        /*
         const isInsideCampus = 
           lat >= 11.0140 && lat <= 11.0240 &&
           lng >= -74.8550 && lng <= -74.8460;
@@ -60,7 +61,7 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
         if (!isInsideCampus) {
           toast.error("La ubicación del evento debe estar dentro del campus de la Universidad del Norte.");
           return;
-        }
+        } */
 
         setLocationCoords([lat, lng]);
       });

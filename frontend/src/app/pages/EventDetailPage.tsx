@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, MapPin, Share2, ArrowLeft, User, Star, Video, VideoOff } from "lucide-react";
+import { Calendar, MapPin, Share2, ArrowLeft, User, Star, Video, VideoOff, Glasses } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { CategoryBadge } from "../components/CategoryBadge";
 import { Button } from "../components/ui/button";
@@ -14,6 +14,7 @@ import { Label } from "../components/ui/label";
 import { obtenerUsuario } from "../services/auth.service";
 import { eventosApi, favoritosApi } from "../services/api.service";
 import { toast } from "sonner";
+
 
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -253,8 +254,8 @@ export function EventDetailPage() {
                   </div>
                 )}
 
-                <LiveStreamPlayer 
-                  url={event.transmisiones.find((t: any) => t.id === (activeStreamId || event.transmisiones[0].id))?.stream_url || ""} 
+                <LiveStreamPlayer
+                  url={event.transmisiones.find((t: any) => t.id === (activeStreamId || event.transmisiones[0].id))?.stream_url || ""}
                 />
               </div>
             )}
@@ -325,6 +326,14 @@ export function EventDetailPage() {
                 Compartir evento
               </Button>
 
+              <Button
+                className="w-full bg-[#293241] hover:bg-[#1a2130] text-white"
+                onClick={() => window.open(`/ar-viewer.html?eventoId=${id}`, '_blank')}
+              >
+                <Glasses className="h-4 w-4 mr-2" />
+                Ver evento en AR
+              </Button>
+
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
                 <h3 className="text-sm mb-1" style={{ fontWeight: 600 }}>Organizadores</h3>
                 {allOrganizers.map((org: any) => (
@@ -381,9 +390,9 @@ export function EventDetailPage() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="stream-url">URL del Stream</Label>
-              <Input 
-                id="stream-url" 
-                placeholder="https://www.youtube.com/watch?v=..." 
+              <Input
+                id="stream-url"
+                placeholder="https://www.youtube.com/watch?v=..."
                 value={streamLink}
                 onChange={(e) => setStreamLink(e.target.value)}
               />
