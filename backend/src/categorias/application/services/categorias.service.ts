@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { ICategoriaRepository } from '../../domain/repositories/categoria.repository.interface';
 import { CATEGORIA_REPOSITORY } from '../../domain/repositories/categoria.repository.interface';
 
@@ -17,8 +17,19 @@ export class CategoriasService {
     return this.categoriaRepository.findAll();
   }
 
-  create(nombre: string) {
-    return this.categoriaRepository.create(nombre);
+  async create(nombre: string) {
+    if (!nombre || !nombre.trim()) {
+      throw new BadRequestException('El nombre de la categoría no puede estar vacío');
+    }
+    const all = await this.categoriaRepository.findAll();
+    const existing = all.find(c => c.nombre.trim().toLowerCase() === nombre.trim().toLowerCase());
+    if (existing) {
+      if (!existing.activa) {
+        throw new BadRequestException(`La categoría "${existing.nombre}" ya existe y está desactivada. Por favor, actívala en la lista.`);
+      }
+      throw new BadRequestException(`La categoría "${existing.nombre}" ya existe.`);
+    }
+    return this.categoriaRepository.create(nombre.trim());
   }
 
   async update(id: number, nombre?: string, activa?: boolean) {
@@ -26,7 +37,17 @@ export class CategoriasService {
     if (!categoria) {
       throw new NotFoundException(`Categoría con ID ${id} no encontrada`);
     }
-    if (nombre !== undefined) categoria.nombre = nombre;
+    if (nombre !== undefined && nombre.trim() !== '') {
+      const trimmedNombre = nombre.trim();
+      if (trimmedNombre.toLowerCase() !== categoria.nombre.toLowerCase()) {
+        const all = await this.categoriaRepository.findAll();
+        const existing = all.find(c => c.nombre.trim().toLowerCase() === trimmedNombre.toLowerCase() && c.id !== id);
+        if (existing) {
+          throw new BadRequestException(`La categoría "${existing.nombre}" ya existe.`);
+        }
+      }
+      categoria.nombre = trimmedNombre;
+    }
     if (activa !== undefined) categoria.activa = activa;
     return this.categoriaRepository.save(categoria);
   }

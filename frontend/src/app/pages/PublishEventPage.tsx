@@ -47,10 +47,9 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
-
       map.on('click', (e: L.LeafletMouseEvent) => {
         const { lat, lng } = e.latlng;
-        
+
         // Límites aproximados del campus de Uninorte
         // (Ajustar si es necesario, estos valores cubren el campus principal)
         const isInsideCampus = 

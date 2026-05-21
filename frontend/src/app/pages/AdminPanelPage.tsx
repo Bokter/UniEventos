@@ -90,7 +90,7 @@ export function AdminPanelPage() {
         .catch(() => toast.error("Error al cargar los usuarios"));
     }
     if (activeTab === 'categories') {
-      categoriasApi.getAll()
+      categoriasApi.getAllAdmin()
         .then(data => setCategorias(data as CategoriaBackend[]))
         .catch(() => toast.error("Error al cargar las categorías"));
     }
