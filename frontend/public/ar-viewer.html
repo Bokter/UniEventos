@@ -45,7 +45,7 @@
             pointer-events: none;
         }
 
-        /* Capa de toque AR — entre canvas y UI */
+        /* Capa invisible que recibe los toques AR. Está entre el canvas 3D y la UI superior. */
         #ar-touch {
             position: fixed;
             inset: 0;
@@ -236,7 +236,7 @@
             transition: width 0.3s ease;
         }
 
-        /* ── Panel lista eventos ── */
+        /* Panel inferior que muestra la lista de eventos cercanos. */
         #panel-eventos {
             position: fixed;
             bottom: 0;
@@ -353,7 +353,7 @@
             flex-shrink: 0;
         }
 
-        /* ── Panel detalle pin ── */
+        /* Panel inferior que muestra el detalle del pin seleccionado en AR. */
         #pin-detalle {
             position: fixed;
             bottom: 0;
@@ -475,7 +475,7 @@
             line-height: 1.65;
         }
 
-        /* ── Leyenda ── */
+        /* Leyenda fija que explica el significado de los colores de los pines. */
         #leyenda {
             position: fixed;
             top: 70px;
@@ -560,7 +560,7 @@
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
 
-    <!-- Capa de toque AR -->
+    <!-- Capa transparente usada para detectar toques sobre objetos AR. -->
     <div id="ar-touch"></div>
 
     <div id="splash">
@@ -584,7 +584,7 @@
         <button id="btn-dev">DEV</button>
     </div>
 
-    <!-- Leyenda de colores -->
+    <!-- Leyenda visual de colores por estado del evento. -->
     <div id="leyenda">
         <div class="leyenda-item">
             <div class="leyenda-dot" style="background:#00C853"></div><span class="leyenda-txt">En curso</span>
@@ -615,7 +615,7 @@
         <div id="lista-eventos"></div>
     </div>
 
-    <!-- Panel detalle del pin -->
+    <!-- Panel de detalle que aparece cuando el usuario toca un pin AR. -->
     <div id="pin-detalle">
         <div id="pin-detalle-header">
             <div id="pin-detalle-header-left">
@@ -652,29 +652,46 @@
     <script>
         'use strict';
 
+        // Endpoint del backend que entrega los eventos que se deben mostrar en AR.
         const API_URL = 'https://unieventos-s25a.onrender.com/eventos/ar';
+
+        // Distancia máxima, en metros, para mostrar un evento en pantalla.
         const DIST_MAXIMA = 500;
+
+        // Distancia, en metros, para considerar que el usuario llegó al evento seleccionado.
         const DIST_LLEGADA = 10;
+
+        // Radio de la Tierra usado para convertir latitud/longitud a coordenadas 3D locales.
         const EARTH_RADIUS = 6378137;
+
+        // Factor de suavizado para la rotación de la cámara en Android/no iOS.
         const ORIENTATION_SLERP = 0.15;
+
+        // Detecta iOS para aplicar una lógica distinta de orientación y brújula.
         const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        // Cantidad de muestras GPS iniciales usadas para calcular un origen estable.
         const GPS_BUFFER_SIZE = 5;
 
-        // Filtro opcional por evento individual (?eventoId=123)
+        // Filtro opcional por evento individual. Permite abrir ar-viewer.html?eventoId=123.
         const urlParams = new URLSearchParams(window.location.search);
         const FILTRO_EVENTO_ID = urlParams.get('eventoId');
 
+        // Limpia calibraciones antiguas guardadas en navegador para evitar offsets heredados.
         localStorage.removeItem('unieventos_alphaOffsetRad');
 
+        // Objetos principales de Three.js y estado general de la animación.
         let renderer, scene, camera;
         let eventosData = [], indicadores = [];
         let frameCount = 0, animacionIniciada = false;
 
+        // Estado GPS del usuario y origen local usado para el mundo 3D.
         let miLat = null, miLng = null, gpsAccuracy = 999;
         let originLat = null, originLng = null;
         let ultimoLogGPS = 0;
         let gpsBuffer = [];
 
+        // Estado de orientación del dispositivo.
         let orientationAvailable = false;
         let lastAbsoluteOrientationMs = 0;
         let orientationSource = 'sin orientación';
@@ -684,11 +701,13 @@
         let gnInstance = null;
         let lastHeadingDeg = 0;
 
+        // Estado de navegación y mensaje de llegada.
         let llegadaTimer = null;
         let llegadaEventoId = null;
         let navegandoA = null;
 
-        // iOS
+        // Estado específico de orientación para iOS.
+        // iOS maneja brújula y sensores distinto a Android; por eso se suavizan yaw, pitch y heading.
         let rawCompassHeading = null;
         let smoothCompassHeading = null;
         let iosYawDeg = null;
@@ -696,6 +715,7 @@
         let iosLastRawHeadingDeg = null;
         let iosLastHeadingSampleMs = 0;
 
+        // Parámetros de suavizado y límites usados por la cámara en iOS.
         const IOS_YAW_ALPHA_MIN = 0.06;
         const IOS_YAW_ALPHA_MAX = 0.42;
         const IOS_YAW_FULL_SPEED_DEG = 45;
@@ -705,6 +725,7 @@
         const IOS_FREEZE_YAW_PITCH_SPEED = 32;
         const IOS_YAW_OFFSET_DEG = 0;
 
+        // Objetos temporales de Three.js reutilizados para evitar crear memoria en cada frame.
         const zee = new THREE.Vector3(0, 0, 1);
         const orientationEuler = new THREE.Euler();
         const q0 = new THREE.Quaternion();
@@ -721,15 +742,18 @@
         let iosPitchSpeedDegS = 0;
         let iosYawFrozen = false;
 
-        // Raycaster para detectar toques sobre pines
+        // Raycaster usado para detectar si un toque intersecta un pin visible.
         const raycaster = new THREE.Raycaster();
         const tapPoint = new THREE.Vector2();
 
         // ─────────────────────────────────────────────
         //  Estado y color del pin
-        //  El backend manda 'fecha' (YYYY-MM-DD) y 'hora_inicio' (HH:mm:ss) SEPARADOS
-        //  NOTA FUTURA: si hora_inicio migra a 'YYYY-MM-DD HH:mm:ss' combinado,
-        //  reemplazar fetchFecha por: String(evento.hora_inicio).slice(0,10)
+        //  Calcula si un evento está en curso, por iniciar o terminado.
+        //  El color del pin depende de ese estado.
+        //  Actualmente el endpoint /eventos/ar entrega hora_inicio y hora_fin,
+        //  pero no una fecha completa, por eso se asume que los eventos son del día actual.
+        //  NOTA FUTURA: si el backend agrega evento.fecha,
+        //  usar String(evento.fecha).slice(0, 10) como fechaEvento.
         // ─────────────────────────────────────────────
 
         function obtenerEstadoEvento(evento) {
@@ -739,11 +763,7 @@
             const dia = String(ahora.getDate()).padStart(2, '0');
             const hoyLocal = `${anio}-${mes}-${dia}`;
 
-            // El endpoint /eventos/ar NO devuelve campo 'fecha' —
-            // solo hora_inicio y hora_fin como 'HH:mm:ss'.
-            // Asumimos que todos los eventos son de hoy y comparamos por hora.
-            // NOTA FUTURA: si el endpoint agrega campo 'fecha' (YYYY-MM-DD),
-            // reemplazar hoyLocal por: String(evento.fecha).slice(0,10)
+            // Como el endpoint no trae fecha, se compara contra el día actual del usuario.
             const fechaEvento = hoyLocal;
 
             const horaInicio = String(evento.hora_inicio ?? '00:00:00').slice(0, 8);
@@ -769,10 +789,13 @@
         };
 
         // ─────────────────────────────────────────────
-        //  Utilidades — IGUAL AL ORIGINAL
+        //  Utilidades generales
+        //  Funciones reutilizadas para DOM, logs, progreso, ángulos,
+        //  distancias y validación de números.
         // ─────────────────────────────────────────────
 
         function $(id) { return document.getElementById(id); }
+
         function log(msg) {
             const d = $('debug');
             const lines = d.innerHTML.split('<br>');
@@ -780,11 +803,14 @@
             d.innerHTML += msg + '<br>';
             d.scrollTop = d.scrollHeight;
         }
+
         function setStatus(msg) { $('status').textContent = msg; }
+
         function setProgress(text, pct) {
             $('splash-progress-text').textContent = text;
             $('splash-bar-fill').style.width = pct + '%';
         }
+
         function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
         function wrap360(a) { return ((a % 360) + 360) % 360; }
         function degToRad(d) { return d * Math.PI / 180; }
@@ -803,7 +829,8 @@
             return `${(d / 1000).toFixed(1)} km`;
         }
 
-        // sanitizarEvento — igual al original + preserva 'fecha' y 'descripcion'
+        // Normaliza los datos recibidos desde la API.
+        // Garantiza valores por defecto y convierte coordenadas a número para evitar fallos en GPS/Three.js.
         function sanitizarEvento(e) {
             return {
                 ...e,
@@ -820,11 +847,13 @@
 
         // ─────────────────────────────────────────────
         //  Panel detalle del pin
+        //  Muestra la información completa del evento seleccionado en AR.
         // ─────────────────────────────────────────────
 
         let eventoDetalleActual = null;
 
         function mostrarDetallePin(evento) {
+            // Guarda el evento actual para poder refrescar su distancia mientras el panel esté abierto.
             eventoDetalleActual = evento;
             const estado = obtenerEstadoEvento(evento);
             const color = colorPin(estado);
@@ -851,16 +880,18 @@
         }
 
         function cerrarDetallePin() {
+            // Oculta el panel y limpia la referencia del evento seleccionado.
             $('pin-detalle').classList.remove('visible');
             eventoDetalleActual = null;
         }
 
         // ─────────────────────────────────────────────
-        //  Raycasting — toque sobre un pin
+        //  Raycasting — detección de toque sobre pines AR
+        //  Convierte el toque en coordenadas normalizadas de pantalla,
+        //  lanza un rayo desde la cámara y detecta si intersecta algún pin visible.
         // ─────────────────────────────────────────────
 
         let touchStartX = 0, touchStartY = 0;
-
         let lastTouchEndMs = 0;
 
         function onTouchStartAR(e) {
@@ -871,8 +902,8 @@
         }
 
         function onTapAR(e) {
-            // El navegador dispara touchend Y click sintético en móvil.
-            // Ignoramos el click si ya procesamos un touchend reciente.
+            // El navegador móvil suele disparar touchend y luego un click sintético.
+            // Se ignora el click si ya se procesó un touchend reciente para evitar doble selección.
             if (e.type === 'touchend') {
                 lastTouchEndMs = Date.now();
             } else if (e.type === 'click') {
@@ -886,23 +917,32 @@
             if (e.changedTouches) {
                 clientX = e.changedTouches[0].clientX;
                 clientY = e.changedTouches[0].clientY;
+
+                // Si el dedo se movió demasiado, se interpreta como arrastre y no como tap.
                 if (Math.abs(clientX - touchStartX) > 10 || Math.abs(clientY - touchStartY) > 10) return;
             } else {
                 clientX = e.clientX; clientY = e.clientY;
             }
 
+            // Convierte la posición del toque a coordenadas normalizadas de Three.js.
             tapPoint.x = (clientX / window.innerWidth) * 2 - 1;
             tapPoint.y = (clientY / window.innerHeight) * -2 + 1;
+
             raycaster.setFromCamera(tapPoint, camera);
+
+            // Solo se evalúan pines visibles para no seleccionar eventos ocultos o fuera de rango.
             const hits = raycaster.intersectObjects(indicadores.filter(m => m.visible));
             if (hits.length > 0) mostrarDetallePin(hits[0].object.userData.evento);
         }
 
         // ─────────────────────────────────────────────
         //  Panel lista de eventos
+        //  Renderiza la lista inferior, permite expandir/contraer
+        //  y seleccionar un evento para navegar hacia él.
         // ─────────────────────────────────────────────
 
         let panelExpandido = false;
+
         function togglePanel() {
             panelExpandido = !panelExpandido;
             $('panel-eventos').classList.toggle('expandido', panelExpandido);
@@ -911,12 +951,14 @@
         function actualizarPanel() {
             const lista = $('lista-eventos');
             lista.innerHTML = '';
+
             eventosData.forEach(evento => {
                 const dist = calcularDistancia(evento.latitud, evento.longitud);
                 const estaNavegando = navegandoA?.id === evento.id;
                 const estado = obtenerEstadoEvento(evento);
                 const color = colorPin(estado);
                 const item = document.createElement('div');
+
                 item.className = 'evento-item' + (estaNavegando ? ' navegando' : '');
                 item.innerHTML = `
                     <div class="evento-item-dot" style="background:${color}"></div>
@@ -929,31 +971,41 @@
                         ${estaNavegando ? '<div class="evento-item-badge">Navegando</div>' : ''}
                     </div>
                 `;
+
                 item.addEventListener('click', () => {
+                    // Tocar un evento activa/desactiva navegación hacia ese destino.
                     navegandoA = navegandoA?.id === evento.id ? null : evento;
                     if (navegandoA) { panelExpandido = false; $('panel-eventos').classList.remove('expandido'); }
                     actualizarPanel();
                     actualizarOpacidadIndicadores();
                 });
+
                 lista.appendChild(item);
             });
         }
 
         function actualizarOpacidadIndicadores() {
+            // Cuando se navega a un evento específico, los demás pines se atenúan.
             indicadores.forEach(mesh => {
                 mesh.material.opacity = !navegandoA || mesh.userData.evento.id === navegandoA.id ? 1 : 0.25;
             });
         }
 
         let devVisible = false;
+
+        // Botón DEV: muestra u oculta el panel de logs de depuración.
         $('btn-dev').addEventListener('click', () => {
             devVisible = !devVisible;
             $('debug').style.display = devVisible ? 'block' : 'none';
         });
+
+        // Zona superior del panel inferior: expande o contrae la lista de eventos.
         $('panel-zona-toque').addEventListener('click', togglePanel);
 
         // ─────────────────────────────────────────────
-        //  Permisos — IGUAL AL ORIGINAL
+        //  Permisos de sensores
+        //  Solicita acceso a DeviceOrientation cuando el navegador lo requiere.
+        //  En iOS debe pedirse explícitamente después de una acción del usuario.
         // ─────────────────────────────────────────────
 
         async function solicitarPermisosSensores() {
@@ -965,6 +1017,7 @@
                 }
                 return;
             }
+
             if (typeof DeviceOrientationEvent !== 'undefined' &&
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try { await DeviceOrientationEvent.requestPermission(); } catch (_) { }
@@ -972,14 +1025,19 @@
         }
 
         // ─────────────────────────────────────────────
-        //  Cámara — IGUAL AL ORIGINAL
+        //  Cámara del dispositivo
+        //  Abre la cámara trasera y la usa como fondo de la experiencia AR.
+        //  Primero intenta facingMode exacto y luego usa un fallback más flexible.
         // ─────────────────────────────────────────────
 
         async function iniciarCamara() {
             if (!navigator.mediaDevices?.getUserMedia)
                 throw new Error('Cámara no disponible. Asegúrate de usar HTTPS.');
+
             const video = $('video');
+
             try {
+                // Intenta abrir específicamente la cámara trasera con resolución ideal.
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
                     audio: false
@@ -990,6 +1048,7 @@
             } catch (e) {
                 log('Cámara exact falló, probando fallback: ' + e.message);
                 try {
+                    // Si el navegador no acepta facingMode exacto, usa una configuración menos estricta.
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
                     video.srcObject = stream;
                     await video.play().catch(() => { });
@@ -999,16 +1058,21 @@
         }
 
         // ─────────────────────────────────────────────
-        //  GPS — IGUAL AL ORIGINAL
+        //  GPS y posicionamiento
+        //  Escucha cambios de ubicación, calcula un origen estable con varias muestras iniciales
+        //  y actualiza la posición del usuario y de los pines en el mundo 3D.
         // ─────────────────────────────────────────────
 
         function iniciarGPS() {
             if (!navigator.geolocation) { log('GPS no soportado'); return; }
+
             navigator.geolocation.watchPosition(pos => {
                 registrarGPS(pos.coords);
             }, err => {
                 const msgs = { 1: 'Permiso de ubicación denegado', 2: 'GPS no disponible', 3: 'GPS timeout' };
                 log(`GPS ERR: ${msgs[err.code] || err.message}`);
+
+                // Si falla el modo de alta precisión, intenta una lectura menos estricta.
                 if (err.code !== 1) {
                     navigator.geolocation.getCurrentPosition(
                         p => registrarGPS(p.coords), () => { },
@@ -1023,11 +1087,14 @@
             gpsAccuracy = coords.accuracy || 999;
 
             if (originLat === null) {
+                // Durante el arranque se toman varias muestras para reducir ruido del GPS
+                // y definir un origen más estable para convertir lat/lng a coordenadas 3D.
                 gpsBuffer.push({ lat: coords.latitude, lng: coords.longitude, acc: gpsAccuracy });
                 const loading = $('loading');
                 loading.style.display = 'block';
                 $('loading-fill').style.width = (gpsBuffer.length / GPS_BUFFER_SIZE * 100) + '%';
                 log(`GPS ${gpsBuffer.length}/${GPS_BUFFER_SIZE} ±${gpsAccuracy.toFixed(0)}m`);
+
                 if (gpsBuffer.length < GPS_BUFFER_SIZE) return;
 
                 originLat = gpsBuffer.reduce((s, p) => s + p.lat, 0) / gpsBuffer.length;
@@ -1041,6 +1108,7 @@
                 return;
             }
 
+            // Filtra saltos pequeños o ruido GPS; solo actualiza si el movimiento es significativo.
             const salto = distanciaEntre(miLat, miLng, coords.latitude, coords.longitude);
             const minMove = Math.max(2.5, gpsAccuracy * 0.35);
             if (salto > minMove) {
@@ -1053,9 +1121,9 @@
             const now = performance.now();
             if (now - ultimoLogGPS > 2500) {
                 ultimoLogGPS = now;
-                //log(`GPS: ±${gpsAccuracy.toFixed(0)}m`);
                 actualizarPanel();
-                // Actualizar distancia en detalle abierto
+
+                // Si el detalle está abierto, refresca la distancia sin cerrar el panel.
                 if (eventoDetalleActual) {
                     $('pin-detalle-dist').textContent = formatDist(
                         calcularDistancia(eventoDetalleActual.latitud, eventoDetalleActual.longitud)
@@ -1075,6 +1143,8 @@
             return distanciaEntre(miLat, miLng, lat2, lng2);
         }
 
+        // Convierte coordenadas geográficas a coordenadas locales de Three.js.
+        // El origen es la primera ubicación GPS estabilizada del usuario.
         function latLngToWorld(lat, lng, y = 0) {
             if (originLat === null) return new THREE.Vector3(0, y, -10);
             const lat0 = degToRad(originLat);
@@ -1084,7 +1154,10 @@
         }
 
         // ─────────────────────────────────────────────
-        //  Orientación — IGUAL AL ORIGINAL (NO TOCAR)
+        //  Orientación del dispositivo
+        //  Lee sensores de orientación para rotar la cámara virtual según hacia dónde apunta el celular.
+        //  Usa eventos nativos cuando están disponibles y GyroNorm como respaldo en Android.
+        //  En iOS se aplica una lógica especial por el comportamiento de la brújula.
         // ─────────────────────────────────────────────
 
         async function iniciarOrientacion() {
@@ -1092,20 +1165,28 @@
             window.addEventListener('orientationchange', () => { screenOrientationDeg = getScreenOrientationDeg(); });
             window.addEventListener('deviceorientationabsolute', onDeviceOrientation, true);
             window.addEventListener('deviceorientation', onDeviceOrientation, true);
+
+            // Si no llega orientación válida después de un tiempo, intenta usar GyroNorm.
             setTimeout(() => { if (!orientationAvailable) iniciarGyroNormFallback(); }, 1400);
             log('Orientación activa');
         }
 
         function onDeviceOrientation(e) {
             if (!esNumero(e.alpha) || !esNumero(e.beta) || !esNumero(e.gamma)) return;
+
             const now = performance.now();
             const hasIOSCompass = esNumero(e.webkitCompassHeading);
             const isAbsolute = e.type === 'deviceorientationabsolute' || e.absolute === true || hasIOSCompass;
+
+            // Si ya llegó orientación absoluta recientemente, se ignoran datos relativos más débiles.
             if (!isAbsolute && now - lastAbsoluteOrientationMs < 900) return;
             if (isAbsolute) lastAbsoluteOrientationMs = now;
+
             deviceAlpha = e.alpha; deviceBeta = e.beta; deviceGamma = e.gamma;
             orientationAvailable = true;
             orientationSource = isAbsolute ? 'absolute' : 'relative';
+
+            // iOS expone el heading de brújula mediante webkitCompassHeading.
             if (hasIOSCompass) {
                 rawCompassHeading = wrap360(e.webkitCompassHeading);
                 compassHeading = rawCompassHeading;
@@ -1117,6 +1198,7 @@
         function iniciarGyroNormFallback() {
             if (esIOS) { log('iOS — sin GyroNorm'); return; }
             if (typeof GyroNorm === 'undefined' || gnInstance) return;
+
             try {
                 gnInstance = new GyroNorm();
                 gnInstance.init({ frequency: 50, gravityNormalized: true, orientationBase: GyroNorm.WORLD, decimalCount: 2, logger: null, screenAdjusted: false })
@@ -1125,6 +1207,7 @@
                             if (!data?.do) return;
                             if (!esNumero(data.do.alpha) || !esNumero(data.do.beta) || !esNumero(data.do.gamma)) return;
                             if (performance.now() - lastAbsoluteOrientationMs < 900) return;
+
                             deviceAlpha = data.do.alpha; deviceBeta = data.do.beta; deviceGamma = data.do.gamma;
                             orientationAvailable = true; orientationSource = 'GyroNorm';
                         });
@@ -1134,18 +1217,22 @@
         }
 
         function diffAngDeg(a, b) { return ((a - b + 540) % 360) - 180; }
+
         function suavizarAnguloDeg(actual, objetivo, alpha) {
             if (!esNumero(actual)) return wrap360(objetivo);
             return wrap360(actual + diffAngDeg(objetivo, actual) * alpha);
         }
+
         function calcularAlphaYawIOS(diffAbs) {
             const t = clamp(diffAbs / IOS_YAW_FULL_SPEED_DEG, 0, 1);
             return IOS_YAW_ALPHA_MIN + (IOS_YAW_ALPHA_MAX - IOS_YAW_ALPHA_MIN) * t;
         }
+
         function calcularPitchDesdeQuaternionIOS(q) {
             tmpVec3.set(0, 0, -1).applyQuaternion(q);
             return clamp(radToDeg(Math.asin(clamp(tmpVec3.y, -1, 1))), -IOS_MAX_PITCH_DEG, IOS_MAX_PITCH_DEG);
         }
+
         function construirQuaternionRawIOS() {
             orientationEuler.set(degToRad(deviceBeta || 0), degToRad(deviceAlpha || 0), -degToRad(deviceGamma || 0), 'YXZ');
             iosQRaw.setFromEuler(orientationEuler);
@@ -1153,17 +1240,24 @@
             iosQRaw.multiply(q0.setFromAxisAngle(zee, -degToRad(screenOrientationDeg || 0)));
             return iosQRaw;
         }
+
         function actualizarOrientacionCamaraIOS() {
             if (!esNumero(rawCompassHeading) || !esNumero(deviceAlpha) || !esNumero(deviceBeta) || !esNumero(deviceGamma)) return;
+
             const now = performance.now();
             const rawPitchDeg = calcularPitchDesdeQuaternionIOS(construirQuaternionRawIOS());
+
+            // Suaviza inclinación vertical para reducir vibración visual.
             if (iosPitchDeg === null) iosPitchDeg = rawPitchDeg;
             else iosPitchDeg += (rawPitchDeg - iosPitchDeg) * IOS_PITCH_ALPHA;
+
+            // Calcula velocidad de pitch para congelar yaw cuando hay movimientos bruscos.
             if (iosLastRawPitchDeg !== null) {
                 const dt = Math.max(0.001, (now - iosLastPitchMs) / 1000);
                 iosPitchSpeedDegS = Math.abs(rawPitchDeg - iosLastRawPitchDeg) / dt;
             }
             iosLastRawPitchDeg = rawPitchDeg; iosLastPitchMs = now;
+
             const rawYaw = wrap360(rawCompassHeading);
             if (iosYawDeg === null) {
                 iosYawDeg = rawYaw; smoothCompassHeading = rawYaw; iosLastRawHeadingDeg = rawYaw;
@@ -1172,6 +1266,7 @@
                 iosYawDeg = suavizarAnguloDeg(iosYawDeg, rawYaw, iosYawFrozen ? 0.008 : calcularAlphaYawIOS(Math.abs(diffAngDeg(rawYaw, iosYawDeg))));
                 smoothCompassHeading = iosYawDeg; iosLastRawHeadingDeg = rawYaw;
             }
+
             const yaw = wrap360(iosYawDeg + IOS_YAW_OFFSET_DEG);
             iosQYaw.setFromAxisAngle(iosAxisY, degToRad(-yaw));
             iosQPitch.setFromAxisAngle(iosAxisX, degToRad(iosPitchDeg));
@@ -1179,8 +1274,11 @@
             camera.quaternion.slerp(qTarget, IOS_CAMERA_SLERP);
             lastHeadingDeg = yaw;
         }
+
         function actualizarOrientacionCamara() {
             if (!camera || !orientationAvailable) return;
+
+            // Aplica rotación a la cámara. iOS y Android se separan porque reportan sensores distinto.
             if (esIOS) {
                 actualizarOrientacionCamaraIOS();
             } else {
@@ -1192,32 +1290,40 @@
                 lastHeadingDeg = headingDesdeQuaternion(camera.quaternion);
             }
         }
+
         function headingDesdeQuaternion(q) {
             tmpVec3.set(0, 0, -1).applyQuaternion(q);
             return wrap360(radToDeg(Math.atan2(tmpVec3.x, -tmpVec3.z)));
         }
 
         // ─────────────────────────────────────────────
-        //  Three.js — IGUAL AL ORIGINAL + listeners AR
+        //  Inicialización de Three.js
+        //  Crea el renderer transparente sobre el video,
+        //  configura escena/cámara y registra listeners de interacción AR.
         // ─────────────────────────────────────────────
 
         function iniciarThree() {
             const canvas = $('canvas');
+
+            // El canvas de Three.js se dibuja encima del video de cámara con fondo transparente.
             renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
             renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setClearColor(0x000000, 0);
+
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 1200);
             camera.position.set(0, 0, 0);
             scene.add(camera);
+
+            // Mantiene el render y la cámara ajustados al tamaño de pantalla.
             window.addEventListener('resize', () => {
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
             });
 
-            // Listeners de toque sobre la capa AR
+            // La capa ar-touch recibe toques porque el canvas no captura eventos directamente.
             const arTouch = $('ar-touch');
             arTouch.addEventListener('touchstart', onTouchStartAR, { passive: true });
             arTouch.addEventListener('touchend', onTapAR, { passive: true });
@@ -1229,7 +1335,9 @@
         }
 
         // ─────────────────────────────────────────────
-        //  Dibujo del pin (reemplaza dibujarCard)
+        //  Dibujo visual del pin
+        //  Cada pin se dibuja en un canvas 2D y luego se usa como textura en Three.js.
+        //  El color representa el estado del evento y el texto muestra nombre/distancia.
         //  Canvas 220×300 → PlaneGeometry 1.4×1.9
         // ─────────────────────────────────────────────
 
@@ -1241,6 +1349,7 @@
             const color = colorPin(estado);
             const cx = cw / 2, r = 85, topY = r + 10, tipY = ch - 12;
 
+            // Forma tipo marcador de mapa: círculo superior con punta inferior.
             const tearPath = () => {
                 ctx.beginPath();
                 ctx.moveTo(cx, tipY);
@@ -1250,43 +1359,43 @@
                 ctx.closePath();
             };
 
-            // Sombra
+            // Sombra del marcador.
             ctx.save();
             ctx.shadowColor = 'rgba(0,0,0,0.50)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10;
             tearPath(); ctx.fillStyle = color; ctx.fill();
             ctx.restore();
 
-            // Relleno
+            // Relleno principal.
             tearPath(); ctx.fillStyle = color; ctx.fill();
 
-            // Borde
+            // Borde claro para separarlo del fondo de cámara.
             tearPath();
             ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 3; ctx.stroke();
 
-            // Gradiente de volumen
+            // Gradiente para dar volumen visual al pin.
             const grad = ctx.createRadialGradient(cx - 20, topY - 25, 5, cx, topY, r);
             grad.addColorStop(0, 'rgba(255,255,255,0.30)');
             grad.addColorStop(1, 'rgba(0,0,0,0.18)');
             tearPath(); ctx.fillStyle = grad; ctx.fill();
 
-            // Brillo
+            // Brillo pequeño en la parte superior.
             ctx.beginPath();
             ctx.arc(cx - 30, topY - 32, 16, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255,255,255,0.30)'; ctx.fill();
 
-            // Nombre
+            // Texto principal del pin. Se recorta el título para que no se salga del marcador.
             const titulo = evento.titulo.length > 13 ? evento.titulo.slice(0, 11) + '…' : evento.titulo;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const esAmarillo = color === '#FFD600';
-            ctx.fillStyle = '#fff';                                              // ← siempre blanco
+            ctx.fillStyle = '#fff';
             ctx.font = 'bold 22px system-ui, sans-serif';
-            ctx.shadowColor = esAmarillo ? 'rgba(0,0,0,0.95)' : 'rgba(0,0,0,0.6)'; // ← sombra más fuerte en amarillo
-            ctx.shadowBlur = esAmarillo ? 10 : 6;                                 // ← blur mayor en amarillo
+            ctx.shadowColor = esAmarillo ? 'rgba(0,0,0,0.95)' : 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = esAmarillo ? 10 : 6;
             ctx.shadowOffsetY = 2;
             ctx.fillText(titulo, cx, topY - 14);
 
-            // Distancia
+            // Distancia mostrada debajo del nombre del evento.
             const distTxt = dist === null ? '...'
                 : dist < 1000 ? `${Math.round(dist)} m`
                     : `${(dist / 1000).toFixed(1)} km`;
@@ -1298,39 +1407,50 @@
         }
 
         // ─────────────────────────────────────────────
-        //  Indicadores — misma lógica del original,
-        //  PlaneGeometry en vez de Group para que el
-        //  raycaster funcione directamente
+        //  Indicadores AR
+        //  Crea, posiciona y actualiza los pines 3D de cada evento.
+        //  Cada indicador es un PlaneGeometry con una textura generada desde canvas,
+        //  lo que permite que el raycaster detecte el toque directamente sobre el pin.
         // ─────────────────────────────────────────────
 
         function crearIndicadores() {
+            // Elimina indicadores anteriores para evitar duplicados y liberar memoria.
             indicadores.forEach(mesh => {
                 scene.remove(mesh);
                 mesh.geometry?.dispose(); mesh.material?.map?.dispose(); mesh.material?.dispose();
             });
             indicadores = [];
+
             eventosData.forEach(evento => {
                 if (!esNumero(evento.latitud) || !esNumero(evento.longitud)) return;
+
                 const canvasTex = document.createElement('canvas');
                 canvasTex.width = 220; canvasTex.height = 300;
                 const ctx = canvasTex.getContext('2d');
                 dibujarPin(ctx, evento, null);
+
                 const texture = new THREE.CanvasTexture(canvasTex);
                 texture.minFilter = THREE.LinearFilter; texture.magFilter = THREE.LinearFilter;
+
                 const mesh = new THREE.Mesh(
                     new THREE.PlaneGeometry(1.4, 1.9),
                     new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, depthWrite: false, depthTest: true })
                 );
+
+                // Guarda referencias necesarias para actualizar textura, distancia y datos del evento.
                 mesh.userData = { evento, texture, canvasTex, ctx, gpsPositioned: false, lastDist: null };
                 mesh.visible = false; mesh.renderOrder = 10;
                 scene.add(mesh); indicadores.push(mesh);
             });
+
             posicionarTodosLosIndicadores();
             log(`${indicadores.length} indicadores creados`);
         }
 
         function posicionarTodosLosIndicadores() {
             if (originLat === null || !scene) return;
+
+            // Recalcula la posición 3D de todos los pines usando el origen GPS actual.
             indicadores.forEach(mesh => {
                 const pos = latLngToWorld(mesh.userData.evento.latitud, mesh.userData.evento.longitud, 1.70);
                 mesh.position.copy(pos);
@@ -1340,6 +1460,8 @@
 
         function actualizarIndicadores() {
             if (!camera) return;
+
+            // Selecciona la estrategia de orientación del pin según el sistema operativo.
             if (esIOS) actualizarIndicadoresIOS();
             else actualizarIndicadoresAndroid();
         }
@@ -1347,31 +1469,47 @@
         function procesarMesh(mesh) {
             const { evento, texture, ctx } = mesh.userData;
             const dist = calcularDistancia(evento.latitud, evento.longitud);
+
+            // Oculta pines sin posición GPS válida o fuera del rango máximo permitido.
             if (!mesh.userData.gpsPositioned || dist === null || dist > DIST_MAXIMA) { mesh.visible = false; return; }
+
+            // Si se navega a un evento específico, solo ese evento permanece visible.
             if (navegandoA) {
                 if (evento.id !== navegandoA.id) { mesh.visible = false; return; }
                 if (dist < DIST_LLEGADA) {
                     mesh.visible = false; mostrarLlegada(evento);
                     navegandoA = null; actualizarPanel(); actualizarOpacidadIndicadores(); return;
                 }
-            } else if (dist < DIST_LLEGADA) { mesh.visible = false; return; }
+            } else if (dist < DIST_LLEGADA) {
+                // Si no se está navegando, se ocultan eventos demasiado cercanos para evitar ruido visual.
+                mesh.visible = false; return;
+            }
+
             if (llegadaEventoId === evento.id) ocultarLlegada();
             mesh.visible = true;
+
+            // Ajusta tamaño visual del pin para que eventos lejanos no ocupen demasiado espacio.
             const escala = esIOS ? (dist <= 50 ? 5.0 : 5.0 * Math.pow(50 / dist, 0.4))
                 : (dist <= 50 ? 7.0 : 7.0 * Math.pow(50 / dist, 0.4));
             mesh.scale.setScalar(escala);
+
             const distCambio = mesh.userData.lastDist === null ? 999 : Math.abs(dist - mesh.userData.lastDist);
-            if (distCambio > 2) { mesh.userData.lastDist = dist; dibujarPin(ctx, evento, dist); texture.needsUpdate = true; }
+            if (distCambio > 2) {
+                // Redibuja la textura solo si la distancia cambió lo suficiente.
+                mesh.userData.lastDist = dist;
+                dibujarPin(ctx, evento, dist);
+                texture.needsUpdate = true;
+            }
         }
 
-        // lookAt para Android — IGUAL AL ORIGINAL
         function actualizarIndicadoresAndroid() {
+            // En Android los pines miran directamente hacia la cámara usando lookAt.
             if (miLat !== null) camera.position.copy(latLngToWorld(miLat, miLng, 1.60));
             indicadores.forEach(mesh => { procesarMesh(mesh); if (mesh.visible) mesh.lookAt(camera.position); });
         }
 
-        // atan2 + rotation.set para iOS — IGUAL AL ORIGINAL
         function actualizarIndicadoresIOS() {
+            // En iOS se rota manualmente sobre el eje Y para evitar comportamientos raros con lookAt.
             if (miLat === null) return;
             camera.position.copy(latLngToWorld(miLat, miLng, 1.60));
             indicadores.forEach(mesh => {
@@ -1385,6 +1523,7 @@
         }
 
         function mostrarLlegada(evento) {
+            // Muestra una alerta temporal cuando el usuario llega al evento seleccionado.
             if (llegadaEventoId === evento.id) return;
             llegadaEventoId = evento.id;
             if (llegadaTimer) clearTimeout(llegadaTimer);
@@ -1392,14 +1531,17 @@
             $('llegada').style.display = 'block';
             llegadaTimer = setTimeout(() => ocultarLlegada(), 5000);
         }
+
         function ocultarLlegada() {
             $('llegada').style.display = 'none';
             llegadaEventoId = null; llegadaTimer = null;
         }
 
         // ─────────────────────────────────────────────
-        //  cargarEventos — misma estructura que el original,
-        //  sin filtro de fechas que rompía todo
+        //  Carga de eventos desde la API
+        //  Obtiene eventos del backend, normaliza los datos,
+        //  aplica el filtro opcional por eventoId y actualiza el panel.
+        //  No se filtra por fecha porque el endpoint AR trabaja con eventos del día.
         // ─────────────────────────────────────────────
 
         async function cargarEventos() {
@@ -1409,7 +1551,7 @@
             const data = await res.json();
             if (!Array.isArray(data)) throw new Error('API no devolvió array');
 
-            // Log del primer evento para diagnóstico (abrir DEV para verlo)
+            // Log del primer evento para diagnóstico. Se ve al abrir el panel DEV.
             if (data.length > 0) {
                 log(`CAMPOS: ${Object.keys(data[0]).join(', ')}`);
                 log(`fecha="${data[0].fecha}" hora_inicio="${data[0].hora_inicio}"`);
@@ -1418,7 +1560,7 @@
             eventosData = data
                 .map(sanitizarEvento)
                 .filter(e => esNumero(e.latitud) && esNumero(e.longitud))
-                // Filtro opcional por ID desde el botón "Ver en AR"
+                // Filtro opcional por ID desde el botón "Ver en AR".
                 .filter(e => !FILTRO_EVENTO_ID || String(e.id) === String(FILTRO_EVENTO_ID));
 
             log(`${eventosData.length} eventos cargados`);
@@ -1427,45 +1569,72 @@
         }
 
         // ─────────────────────────────────────────────
-        //  Loop — IGUAL AL ORIGINAL
+        //  Loop principal de renderizado
+        //  En cada frame actualiza orientación de cámara, visibilidad/posición de pines,
+        //  texto de estado y renderiza la escena Three.js.
         // ─────────────────────────────────────────────
 
         function animar() {
+            // Mantiene el renderizado continuo de la experiencia AR.
             requestAnimationFrame(animar);
             frameCount++;
+
             actualizarOrientacionCamara();
             actualizarIndicadores();
+
+            // Cada 60 frames actualiza el texto de estado para no modificar el DOM en exceso.
             if (frameCount % 60 === 0) {
                 const acc = gpsAccuracy < 999 ? `±${gpsAccuracy.toFixed(0)}m` : 'sin GPS';
                 const heading = esIOS ? (smoothCompassHeading?.toFixed(0) ?? '?') : lastHeadingDeg.toFixed(0);
                 setStatus(`GPS ${acc} · ${heading}° · ${orientationSource}`);
                 if (esIOS) log(`yaw=${(iosYawDeg ?? 0).toFixed(0)} pitch=${(iosPitchDeg ?? 0).toFixed(0)} speed=${iosPitchSpeedDegS.toFixed(0)} frozen=${iosYawFrozen ? 'sí' : 'no'}`);
             }
+
             renderer.render(scene, camera);
         }
 
         // ─────────────────────────────────────────────
-        //  Init — IGUAL AL ORIGINAL
+        //  Flujo de inicio de la experiencia AR
+        //  Se ejecuta al tocar "Iniciar AR".
+        //  Pide permisos, abre cámara, inicia Three.js, GPS y sensores,
+        //  carga eventos, crea indicadores y arranca el loop de renderizado.
         // ─────────────────────────────────────────────
 
         async function iniciar() {
             const btn = $('btn-iniciar-ar');
             if (btn.disabled) return;
+
+            // Desactiva el botón para evitar múltiples inicializaciones simultáneas.
             btn.disabled = true;
             const progress = $('splash-progress');
             progress.style.display = 'flex';
+
             try {
                 setProgress('Solicitando permisos...', 10);
+                // Solicita permisos necesarios para sensores de orientación.
                 await solicitarPermisosSensores();
+
                 setProgress('Abriendo cámara...', 30);
+                // Abre la cámara trasera y la coloca como fondo de la experiencia.
                 await iniciarCamara();
+
                 setProgress('Iniciando sensores...', 50);
+                // Configura escena, cámara, renderer y listeners de interacción AR.
                 iniciarThree();
+
+                // Comienza a escuchar ubicación GPS del usuario.
                 iniciarGPS();
+
+                // Activa sensores de orientación para mover la cámara virtual.
                 await iniciarOrientacion();
+
                 setProgress('Cargando eventos...', 75);
+                // Descarga los eventos disponibles desde el backend.
                 await cargarEventos();
+
+                // Crea los pines AR asociados a los eventos cargados.
                 crearIndicadores();
+
                 setProgress('Listo', 100);
                 setTimeout(() => {
                     $('splash').classList.add('oculto');
@@ -1473,6 +1642,7 @@
                 }, 300);
                 log('Listo');
             } catch (err) {
+                // Si algo falla durante el arranque, permite reintentar y muestra el error en pantalla.
                 btn.disabled = false;
                 btn.textContent = 'Reintentar';
                 progress.style.display = 'none';
@@ -1482,6 +1652,8 @@
             }
         }
 
+        // Punto de entrada: AR inicia solo después de una interacción del usuario.
+        // Esto es necesario para permisos de cámara y sensores en navegadores móviles.
         $('btn-iniciar-ar').addEventListener('click', iniciar);
     </script>
 </body>
