@@ -1279,10 +1279,10 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const esAmarillo = color === '#FFD600';
-            ctx.fillStyle = esAmarillo ? '#000' : '#fff';
+            ctx.fillStyle = '#fff';                                              // ← siempre blanco
             ctx.font = 'bold 22px system-ui, sans-serif';
-            ctx.shadowColor = esAmarillo ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.6)';
-            ctx.shadowBlur = 6;
+            ctx.shadowColor = esAmarillo ? 'rgba(0,0,0,0.95)' : 'rgba(0,0,0,0.6)'; // ← sombra más fuerte en amarillo
+            ctx.shadowBlur = esAmarillo ? 10 : 6;                                 // ← blur mayor en amarillo
             ctx.shadowOffsetY = 2;
             ctx.fillText(titulo, cx, topY - 14);
 
