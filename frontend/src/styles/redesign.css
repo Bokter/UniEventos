@@ -6,8 +6,45 @@
 
 /* ── Animación de entrada de página ── */
 @keyframes fadeInPage {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════════════════
+   HERO — FLOATING COLOR ORBS
+   Soft blurred blobs that float in the hero background
+══════════════════════════════════════════════════ */
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: orbFloat var(--orb-duration, 10s) ease-in-out infinite alternate;
+}
+
+@keyframes orbFloat {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  25%  { transform: translate(18px, -14px) scale(1.04); }
+  50%  { transform: translate(-10px, 22px) scale(0.97); }
+  75%  { transform: translate(24px, 8px) scale(1.06); }
+  100% { transform: translate(-6px, -18px) scale(1.02); }
+}
+
+/* ══════════════════════════════════════════════════
+   HERO — DOT GRID VISUALIZER (complex effect)
+   A slowly scrolling radial-dot pattern overlay
+══════════════════════════════════════════════════ */
+.hero-dot-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+  animation: dotGridScroll 24s linear infinite;
+}
+
+@keyframes dotGridScroll {
+  from { background-position: 0 0; }
+  to   { background-position: 28px 28px; }
 }
 
 body {
@@ -79,7 +116,7 @@ h1, h2, h3, h4 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2rem;
+  gap: 1.6rem;
   z-index: 9999;
   transition: opacity 0.5s ease, visibility 0.5s ease;
 }
@@ -92,38 +129,53 @@ h1, h2, h3, h4 {
 
 .loader-logo {
   color: #EE6C4D;
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.8rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-family: 'Urbanist', 'Lato', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .loader-tagline {
-  color: rgba(224, 251, 252, 0.6);
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.8rem;
+  color: rgba(224, 251, 252, 0.55);
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
   font-weight: 300;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  margin-top: -1.5rem;
+  margin-top: -1.2rem;
 }
 
-.loader-bar {
-  width: 200px;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 99px;
-  overflow: hidden;
+/* ── Orbital Rings Loader ── */
+.loader-rings {
+  position: relative;
+  width: 76px;
+  height: 76px;
 }
 
-.loader-fill {
-  height: 100%;
-  width: 0%;
-  background: #EE6C4D;
-  border-radius: 99px;
-  animation: loadFill 1.2s ease forwards;
+.loader-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
 }
 
-@keyframes loadFill {
-  to { width: 100%; }
+.loader-ring.r1 {
+  border-top-color: #EE6C4D;
+  animation: spinRing 1.4s linear infinite;
+}
+
+.loader-ring.r2 {
+  inset: 10px;
+  border-right-color: #98C1D9;
+  animation: spinRing 2.1s linear infinite reverse;
+}
+
+.loader-ring.r3 {
+  inset: 21px;
+  border-bottom-color: #A4D4B4;
+  animation: spinRing 2.8s linear infinite;
+}
+
+@keyframes spinRing {
+  to { transform: rotate(360deg); }
 }

@@ -140,13 +140,14 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Outfit', 'Inter', sans-serif;
+    font-family: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 300;
   }
 
   /**
   * Default typography styles for HTML elements (h1-h4, p, label, button, input).
   * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
+  * Headings: Urbanist (modern geometric sans) — Body: Lato (warm, readable)
   */
 
   html {
@@ -154,26 +155,31 @@
   }
 
   h1 {
+    font-family: 'Urbanist', sans-serif;
     font-size: var(--text-2xl);
-    font-weight: 700;
-    line-height: 1.5;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
   }
 
   h2 {
+    font-family: 'Urbanist', sans-serif;
     font-size: var(--text-xl);
     font-weight: 700;
-    line-height: 1.5;
+    line-height: 1.3;
   }
 
   h3 {
+    font-family: 'Urbanist', sans-serif;
     font-size: var(--text-lg);
     font-weight: 700;
-    line-height: 1.5;
+    line-height: 1.4;
   }
 
   h4 {
+    font-family: 'Urbanist', sans-serif;
     font-size: var(--text-base);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.5;
   }
 
