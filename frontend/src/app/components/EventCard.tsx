@@ -45,9 +45,19 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
   // Etiqueta a mostrar
   let etiquetaEstado = null;
   if (esCancelado) {
-    etiquetaEstado = <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 uppercase tracking-wide">Cancelado</span>;
+    etiquetaEstado = (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide"
+        style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#F87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+        Cancelado
+      </span>
+    );
   } else if (esPasado) {
-    etiquetaEstado = <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide">Finalizado</span>;
+    etiquetaEstado = (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide"
+        style={{ background: 'rgba(100, 116, 139, 0.15)', color: '#94A3B8', border: '1px solid rgba(100, 116, 139, 0.3)' }}>
+        Finalizado
+      </span>
+    );
   }
 
   // Manejo de ubicación
@@ -59,18 +69,32 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
   const nombreOrganizador = primerOrganizador?.nombre_completo || primerOrganizador?.name || "Organizador";
 
   return (
-    <Link to={`/event/${id}`}>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 rounded-lg h-full flex flex-col">
-        <div className="aspect-video overflow-hidden bg-gray-100">
+    <Link to={`/event/${id}`} className="block stagger-item">
+      <Card className="card-glow overflow-hidden h-full flex flex-col"
+        style={{ 
+          background: '#1E293B', 
+          borderColor: 'rgba(148, 163, 184, 0.1)',
+          borderRadius: '0.75rem'
+        }}>
+        <div className="aspect-video overflow-hidden relative"
+          style={{ background: '#334155' }}>
           <img
             src={imagenPortada}
             alt={titulo}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1E293B] via-transparent to-transparent opacity-60" />
         </div>
         <CardContent className="p-4 flex-1">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="line-clamp-2 flex-1" style={{ fontWeight: 600 }}>
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <h3 className="line-clamp-2 flex-1 text-base"
+              style={{ 
+                fontFamily: "'Space Grotesk', 'Outfit', sans-serif",
+                fontWeight: 600, 
+                color: '#F8FAFC',
+                letterSpacing: '-0.01em'
+              }}>
               {titulo}
             </h3>
             <div className="flex flex-col gap-1 items-end">
@@ -78,28 +102,38 @@ export function EventCard({ event: evento }: PropiedadesTarjetaEvento) {
               {etiquetaEstado}
             </div>
           </div>
-          <div className="space-y-1.5 text-sm text-muted-foreground">
+          <div className="space-y-2 text-sm" style={{ color: '#94A3B8' }}>
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 flex-shrink-0" />
+              <Calendar className="h-4 w-4 flex-shrink-0" style={{ color: '#7C3AED' }} />
               <span className="line-clamp-1 capitalize">
                 {fechaFormateada}
               </span>
             </div>
             {rangoHora && (
-              <div className="text-xs text-muted-foreground/70 pl-6">Hora: {rangoHora}</div>
+              <div className="text-xs pl-6" style={{ color: '#64748B' }}>
+                Hora: {rangoHora}
+              </div>
             )}
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <MapPin className="h-4 w-4 flex-shrink-0" style={{ color: '#F43F5E' }} />
               <span className="line-clamp-1">{lugarNombre}</span>
             </div>
           </div>
         </CardContent>
-        <CardFooter className="px-4 py-3 bg-gray-50 border-t border-gray-100">
+        <CardFooter className="px-4 py-3"
+          style={{ 
+            background: 'rgba(15, 23, 42, 0.5)', 
+            borderTop: '1px solid rgba(148, 163, 184, 0.08)' 
+          }}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
+              style={{ 
+                background: 'linear-gradient(135deg, #7C3AED 0%, #1E40AF 100%)', 
+                color: '#FFFFFF' 
+              }}>
               {nombreOrganizador.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm text-muted-foreground line-clamp-1">
+            <span className="text-sm line-clamp-1" style={{ color: '#94A3B8' }}>
               {nombreOrganizador}
               {organizadores.length > 1 && ` +${organizadores.length - 1}`}
             </span>

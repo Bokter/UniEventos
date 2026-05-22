@@ -6,7 +6,7 @@ import { Label } from "../components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import { type Rol, resendCode } from "../services/auth.service";
-import { LogIn, UserPlus, ShieldCheck } from "lucide-react";
+import { LogIn, UserPlus, ShieldCheck, Sparkles } from "lucide-react";
 
 // Redirige al usuario según su rol con fade-out
 function redirigirPorRol(rol: Rol, navigate: ReturnType<typeof useNavigate>) {
@@ -35,17 +35,14 @@ export function LoginPage() {
   const [emailToVerify, setEmailToVerify] = useState("");
   const [activeTab, setActiveTab] = useState<'signin' | 'register'>('signin');
 
-  // Estado del formulario de inicio de sesión
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
 
-  // Estado del formulario de registro
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
 
-  // ─── Manejador de inicio de sesión ──────────────────────────
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -65,7 +62,6 @@ export function LoginPage() {
     }
   };
 
-  // ─── Manejador de registro ───────────────────────────────────
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (registerPassword !== registerConfirmPassword) {
@@ -95,7 +91,6 @@ export function LoginPage() {
     }
   };
 
-  // ─── Manejador de verificación ──────────────────────────────
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -122,18 +117,21 @@ export function LoginPage() {
     }
   };
 
-  // ─── Pantalla de verificación ───────────────────────────────
+  // Pantalla de verificación
   if (showVerify) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e8f5ed] via-[#d4ecdd] to-[#c8e8d4] p-6">
-        <div className="bg-white rounded-[20px] shadow-[0_8px_40px_rgba(41,50,65,0.12)] p-8 md:p-10 w-full max-w-[420px] flex flex-col items-center">
-          <div style={iconCircle}>
-            <ShieldCheck size={28} color="#EE6C4D" />
+      <div className="min-h-screen flex items-center justify-center p-6"
+        style={{ background: 'linear-gradient(160deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)' }}>
+        <div className="rounded-xl p-8 md:p-10 w-full max-w-[420px] flex flex-col items-center"
+          style={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.1)' }}>
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
+            style={{ background: 'rgba(124, 58, 237, 0.15)' }}>
+            <ShieldCheck size={28} style={{ color: '#A78BFA' }} />
           </div>
           <h1 style={titleStyle}>Verifica tu cuenta</h1>
           <p style={subtitleStyle}>
             Ingresa el código que enviamos a<br />
-            <strong style={{ color: '#293241' }}>{emailToVerify}</strong>
+            <strong style={{ color: '#F8FAFC' }}>{emailToVerify}</strong>
           </p>
           <form onSubmit={handleVerify} className="w-full">
             <div style={fieldGroup}>
@@ -165,24 +163,42 @@ export function LoginPage() {
     );
   }
 
-  // ─── Pantalla principal de login ────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-[#e8f5ed] via-[#d4ecdd] to-[#c8e8d4]">
+    <div className="min-h-screen flex flex-col md:flex-row"
+      style={{ background: '#0F172A' }}>
       {/* Panel izquierdo decorativo */}
-      <div className="hidden md:flex md:w-[40%] bg-gradient-to-br from-[#293241] to-[#3D5A80] items-center justify-center p-12 relative overflow-hidden">
-        <div style={heroContentStyle}>
-          <div style={logoBadgeStyle}>UN</div>
-          <h1 className="text-white text-[2.2rem] font-extrabold mt-6 mb-3 tracking-tight leading-[1.2]">
+      <div className="hidden md:flex md:w-[45%] items-center justify-center p-12 relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #0F172A 0%, #1E293B 100%)' }}>
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-30"
+            style={{ background: 'radial-gradient(circle, #7C3AED 0%, transparent 70%)' }} />
+          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full opacity-20"
+            style={{ background: 'radial-gradient(circle, #F43F5E 0%, transparent 70%)' }} />
+        </div>
+
+        <div className="relative z-10 flex flex-col items-start">
+          <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
+            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #F43F5E 100%)' }}>
+            <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: '1.2rem' }}>UN</span>
+          </div>
+          <h1 className="text-4xl mb-3 gradient-text-violet-rose"
+            style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, letterSpacing: '-0.02em' }}>
             UniEventos
           </h1>
-          <p className="text-white/75 text-base font-light leading-[1.7] max-w-[260px]">
+          <p className="text-base leading-relaxed max-w-[280px] mb-10"
+            style={{ color: '#94A3B8', fontWeight: 400 }}>
             Descubre, organiza y vive los eventos de tu comunidad universitaria.
           </p>
-          <div className="mt-10 flex flex-col gap-3">
-            {['Eventos en tiempo real', 'Visor AR interactivo', 'Comunidad universitaria'].map(f => (
-              <div key={f} className="flex items-center gap-[0.6rem]">
-                <div className="w-2 h-2 rounded-full bg-[#A4D4B4]" />
-                <span className="text-white/85 text-[0.9rem] font-light">{f}</span>
+          <div className="flex flex-col gap-4">
+            {[
+              { icon: '🎯', text: 'Eventos en tiempo real' },
+              { icon: '🥽', text: 'Visor AR interactivo' },
+              { icon: '🎓', text: 'Comunidad universitaria' }
+            ].map(f => (
+              <div key={f.text} className="flex items-center gap-3">
+                <span className="text-lg">{f.icon}</span>
+                <span style={{ color: '#F8FAFC', fontSize: '0.95rem', fontWeight: 400 }}>{f.text}</span>
               </div>
             ))}
           </div>
@@ -190,12 +206,16 @@ export function LoginPage() {
       </div>
 
       {/* Panel derecho con formulario */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12">
-        <div className="bg-white rounded-[20px] shadow-[0_8px_40px_rgba(41,50,65,0.12)] p-8 md:p-10 w-full max-w-[420px] flex flex-col items-center">
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12"
+        style={{ background: 'linear-gradient(160deg, #1E293B 0%, #0F172A 100%)' }}>
+        <div className="rounded-xl p-8 md:p-10 w-full max-w-[420px] flex flex-col items-center"
+          style={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.1)' }}>
           {/* Tabs */}
-          <div style={tabsContainerStyle}>
+          <div className="flex w-full rounded-lg p-1 mb-6 gap-1"
+            style={{ background: 'rgba(15, 23, 42, 0.6)' }}>
             <button
               type="button"
+              className="flex-1 py-2.5 rounded-md text-sm flex items-center justify-center transition-all"
               style={activeTab === 'signin' ? activeTabStyle : inactiveTabStyle}
               onClick={() => setActiveTab('signin')}
             >
@@ -204,6 +224,7 @@ export function LoginPage() {
             </button>
             <button
               type="button"
+              className="flex-1 py-2.5 rounded-md text-sm flex items-center justify-center transition-all"
               style={activeTab === 'register' ? activeTabStyle : inactiveTabStyle}
               onClick={() => setActiveTab('register')}
             >
@@ -245,7 +266,7 @@ export function LoginPage() {
                 {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
               </button>
               <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                <Link to="/" style={{ color: '#3D5A80', fontSize: '0.85rem', textDecoration: 'none' }}>
+                <Link to="/" style={{ color: '#60A5FA', fontSize: '0.85rem', textDecoration: 'none' }}>
                   Continuar como invitado →
                 </Link>
               </div>
@@ -280,7 +301,7 @@ export function LoginPage() {
                   required
                   style={inputStyle}
                 />
-                <p style={{ fontSize: '0.75rem', color: '#4a7a5a', marginTop: '0.25rem' }}>
+                <p style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>
                   Usa tu correo institucional si eres organizador
                 </p>
               </div>
@@ -323,111 +344,18 @@ export function LoginPage() {
 
 // ── Estilos inline ─────────────────────────────────────────────
 
-const pageStyle: React.CSSProperties = {
-  minHeight: '100vh',
-  display: 'flex',
-  background: 'linear-gradient(135deg, #e8f5ed 0%, #d4ecdd 50%, #c8e8d4 100%)',
-};
-
-const heroPanelStyle: React.CSSProperties = {
-  width: '40%',
-  background: 'linear-gradient(160deg, #293241 0%, #3D5A80 100%)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '3rem',
-  position: 'relative',
-  overflow: 'hidden',
-};
-
-const heroContentStyle: React.CSSProperties = {
-  position: 'relative',
-  zIndex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-};
-
-const logoBadgeStyle: React.CSSProperties = {
-  width: 56,
-  height: 56,
-  borderRadius: '14px',
-  background: '#EE6C4D',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: '#fff',
-  fontSize: '1.2rem',
-  fontWeight: 800,
-  letterSpacing: '0.05em',
-};
-
-const formPanelStyle: React.CSSProperties = {
-  flex: 1,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '2rem',
-};
-
-const cardStyle: React.CSSProperties = {
-  background: '#ffffff',
-  borderRadius: '20px',
-  boxShadow: '0 8px 40px rgba(41, 50, 65, 0.12)',
-  padding: '2.5rem',
-  width: '100%',
-  maxWidth: '420px',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '0',
-};
-
-const iconCircle: React.CSSProperties = {
-  width: 56,
-  height: 56,
-  borderRadius: '50%',
-  background: 'rgba(238,108,77,0.1)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginBottom: '1rem',
-};
-
-const tabsContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  width: '100%',
-  background: '#f0faf4',
-  borderRadius: '12px',
-  padding: '4px',
-  marginBottom: '1.5rem',
-  gap: '4px',
-};
-
 const activeTabStyle: React.CSSProperties = {
-  flex: 1,
-  padding: '0.6rem 0',
-  border: 'none',
-  borderRadius: '9px',
-  background: '#ffffff',
-  color: '#293241',
-  fontWeight: 700,
-  fontSize: '0.85rem',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxShadow: '0 2px 8px rgba(41,50,65,0.1)',
+  background: 'rgba(124, 58, 237, 0.2)',
+  color: '#A78BFA',
+  fontWeight: 600,
   fontFamily: "'Outfit', sans-serif",
-  transition: 'all 0.2s ease',
 };
 
 const inactiveTabStyle: React.CSSProperties = {
-  ...activeTabStyle,
   background: 'transparent',
-  color: '#4a7a5a',
-  boxShadow: 'none',
+  color: '#64748B',
   fontWeight: 400,
+  fontFamily: "'Outfit', sans-serif",
 };
 
 const formStyle: React.CSSProperties = {
@@ -438,18 +366,19 @@ const formStyle: React.CSSProperties = {
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: '1.4rem',
+  fontSize: '1.5rem',
   fontWeight: 700,
-  color: '#293241',
+  color: '#F8FAFC',
   marginBottom: '0.25rem',
-  letterSpacing: '0.02em',
+  letterSpacing: '-0.01em',
   textAlign: 'center' as const,
+  fontFamily: "'Space Grotesk', sans-serif",
 };
 
 const subtitleStyle: React.CSSProperties = {
-  fontSize: '0.88rem',
-  color: '#4a7a5a',
-  fontWeight: 300,
+  fontSize: '0.9rem',
+  color: '#94A3B8',
+  fontWeight: 400,
   marginBottom: '1.5rem',
   textAlign: 'center' as const,
   lineHeight: 1.5,
@@ -461,64 +390,61 @@ const fieldGroup: React.CSSProperties = {
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: '0.82rem',
-  fontWeight: 700,
-  color: '#293241',
+  fontSize: '0.85rem',
+  fontWeight: 600,
+  color: '#F8FAFC',
   marginBottom: '0.35rem',
   display: 'block',
 };
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '0.65rem 0.9rem',
-  border: '1.5px solid rgba(164,212,180,0.5)',
-  borderRadius: '10px',
-  background: 'rgba(240,250,244,0.6)',
-  color: '#293241',
+  padding: '0.75rem 1rem',
+  border: '1px solid rgba(148, 163, 184, 0.15)',
+  borderRadius: '0.75rem',
+  background: 'rgba(30, 41, 59, 0.6)',
+  color: '#F8FAFC',
   fontFamily: "'Outfit', sans-serif",
-  fontWeight: 300,
+  fontWeight: 400,
   fontSize: '0.95rem',
   outline: 'none',
-  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
 };
 
 const btnPrimaryStyle: React.CSSProperties = {
   width: '100%',
-  padding: '0.75rem',
+  padding: '0.85rem',
   border: 'none',
-  borderRadius: '10px',
-  background: 'linear-gradient(135deg, #EE6C4D 0%, #e05a3c 100%)',
-  color: '#ffffff',
-  fontWeight: 700,
+  borderRadius: '0.75rem',
+  background: 'linear-gradient(135deg, #7C3AED 0%, #F43F5E 100%)',
+  color: '#FFFFFF',
+  fontWeight: 600,
   fontSize: '0.95rem',
   cursor: 'pointer',
   marginTop: '0.5rem',
   fontFamily: "'Outfit', sans-serif",
-  transition: 'opacity 0.2s ease, transform 0.15s ease',
-  letterSpacing: '0.02em',
+  letterSpacing: '0.01em',
 };
 
 const btnOutlineStyle: React.CSSProperties = {
   width: '100%',
-  padding: '0.65rem',
-  border: '1.5px solid #A4D4B4',
-  borderRadius: '10px',
-  background: 'transparent',
-  color: '#293241',
-  fontWeight: 400,
+  padding: '0.75rem',
+  border: '1px solid rgba(30, 64, 175, 0.4)',
+  borderRadius: '0.75rem',
+  background: 'rgba(30, 64, 175, 0.1)',
+  color: '#60A5FA',
+  fontWeight: 500,
   fontSize: '0.9rem',
   cursor: 'pointer',
   fontFamily: "'Outfit', sans-serif",
-  transition: 'background 0.2s ease',
 };
 
 const btnGhostStyle: React.CSSProperties = {
   width: '100%',
   padding: '0.6rem',
   border: 'none',
-  borderRadius: '10px',
+  borderRadius: '0.75rem',
   background: 'transparent',
-  color: '#4a7a5a',
+  color: '#64748B',
   fontWeight: 400,
   fontSize: '0.87rem',
   cursor: 'pointer',

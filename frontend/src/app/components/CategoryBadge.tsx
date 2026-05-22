@@ -6,24 +6,25 @@ interface CategoryBadgeProps {
   className?: string;
 }
 
-const categoryColors: Record<string, { bg: string; text: string }> = {
-  // Nuevas de BD
-  Academico: { bg: 'bg-blue-100', text: 'text-blue-700' },
-  'Académico': { bg: 'bg-blue-100', text: 'text-blue-700' },
-  Cultural: { bg: 'bg-purple-100', text: 'text-purple-700' },
-  Deportivo: { bg: 'bg-orange-100', text: 'text-orange-700' },
-  Tecnologia: { bg: 'bg-slate-100', text: 'text-slate-700' },
-  'Tecnología': { bg: 'bg-slate-100', text: 'text-slate-700' },
-  'Arte y Musica': { bg: 'bg-pink-100', text: 'text-pink-700' },
-  'Arte y Música': { bg: 'bg-pink-100', text: 'text-pink-700' },
-  Bienestar: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  Emprendimiento: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+// Dark theme neon colors
+const categoryColors: Record<string, { bg: string; border: string; text: string }> = {
+  // Nuevas de BD - Dark theme neon style
+  Academico: { bg: 'rgba(30, 64, 175, 0.15)', border: 'rgba(30, 64, 175, 0.3)', text: '#60A5FA' },
+  'Académico': { bg: 'rgba(30, 64, 175, 0.15)', border: 'rgba(30, 64, 175, 0.3)', text: '#60A5FA' },
+  Cultural: { bg: 'rgba(124, 58, 237, 0.15)', border: 'rgba(124, 58, 237, 0.3)', text: '#A78BFA' },
+  Deportivo: { bg: 'rgba(249, 115, 22, 0.15)', border: 'rgba(249, 115, 22, 0.3)', text: '#FB923C' },
+  Tecnologia: { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)', text: '#22D3EE' },
+  'Tecnología': { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)', text: '#22D3EE' },
+  'Arte y Musica': { bg: 'rgba(244, 63, 94, 0.15)', border: 'rgba(244, 63, 94, 0.3)', text: '#FB7185' },
+  'Arte y Música': { bg: 'rgba(244, 63, 94, 0.15)', border: 'rgba(244, 63, 94, 0.3)', text: '#FB7185' },
+  Bienestar: { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)', text: '#34D399' },
+  Emprendimiento: { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)', text: '#FBBF24' },
   
   // Viejas (fallback)
-  Academic: { bg: 'bg-blue-100', text: 'text-blue-700' },
-  Sports: { bg: 'bg-orange-100', text: 'text-orange-700' },
-  Workshop: { bg: 'bg-green-100', text: 'text-green-700' },
-  Other: { bg: 'bg-gray-100', text: 'text-gray-700' },
+  Academic: { bg: 'rgba(30, 64, 175, 0.15)', border: 'rgba(30, 64, 175, 0.3)', text: '#60A5FA' },
+  Sports: { bg: 'rgba(249, 115, 22, 0.15)', border: 'rgba(249, 115, 22, 0.3)', text: '#FB923C' },
+  Workshop: { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)', text: '#34D399' },
+  Other: { bg: 'rgba(100, 116, 139, 0.15)', border: 'rgba(100, 116, 139, 0.3)', text: '#94A3B8' },
 };
 
 const categoryLabels: Record<string, string> = {
@@ -37,10 +38,21 @@ export function CategoryBadge({ category, className = "" }: CategoryBadgeProps) 
   // Extraer el nombre si es un objeto, sino usarlo como string
   const categoryName = typeof category === 'object' && category !== null ? category.nombre : category;
   
-  const colors = categoryColors[categoryName] || { bg: 'bg-gray-100', text: 'text-gray-700' };
+  const colors = categoryColors[categoryName] || { 
+    bg: 'rgba(100, 116, 139, 0.15)', 
+    border: 'rgba(100, 116, 139, 0.3)', 
+    text: '#94A3B8' 
+  };
   
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors.bg} ${colors.text} ${className}`}>
+    <span 
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}
+      style={{
+        background: colors.bg,
+        border: `1px solid ${colors.border}`,
+        color: colors.text
+      }}
+    >
       {categoryLabels[categoryName] ?? categoryName}
     </span>
   );

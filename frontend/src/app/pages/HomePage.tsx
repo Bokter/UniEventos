@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { LayoutGrid, Map as MapIcon, Calendar as IconoCalendario } from "lucide-react";
+import { LayoutGrid, Map as MapIcon, Calendar as IconoCalendario, Sparkles } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { EventCard } from "../components/EventCard";
 import { Button } from "../components/ui/button";
@@ -21,7 +21,6 @@ export function HomePage() {
   const [arModalOpen, setArModalOpen] = useState(false);
 
   useEffect(() => {
-    // Cargar categorías del backend para tener los IDs reales
     categoriasApi.getAll().then(data => setCategorias(data as any[])).catch(() => { });
   }, []);
 
@@ -29,7 +28,6 @@ export function HomePage() {
     const fetchEventos = async () => {
       setIsLoading(true);
       try {
-        // Pasar categoria_id numérico al backend si está seleccionada
         const categoriaId = categoriaSeleccionada !== "todas" ? Number(categoriaSeleccionada) : undefined;
         const data = await eventosApi.getAll(categoriaId);
         setEventos(data as any[]);
@@ -41,9 +39,8 @@ export function HomePage() {
       }
     };
     fetchEventos();
-  }, [categoriaSeleccionada]); // Re-fetch cuando cambia la categoría
+  }, [categoriaSeleccionada]);
 
-  // Filtrado local solo para búsqueda y fecha (la categoría ya viene filtrada del backend)
   const eventosFiltrados = eventos.filter(evento => {
     const titulo = evento.titulo || "";
     const descripcion = evento.descripcion || "";
@@ -52,20 +49,16 @@ export function HomePage() {
       titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
       descripcion.toLowerCase().includes(busqueda.toLowerCase());
 
-    // 2. Filtro por categoría — compara por ID numérico
     const categoriaObj = evento.categoria;
     const categoriaIdEvento = categoriaObj?.id ? String(categoriaObj.id) : null;
     const coincideCategoria = categoriaSeleccionada === "todas" || categoriaIdEvento === categoriaSeleccionada;
 
-    // 3. Filtro por fecha
-    // El backend devuelve 'fecha'
     const fechaInicioStr = evento.fecha || evento.fecha_inicio || evento.dateStart;
     if (!fechaInicioStr) return coincideBusqueda && coincideCategoria;
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    // Ajustar si viene como YYYY-MM-DD puro para evitar desfase de timezone
     const fechaParaParsear = fechaInicioStr.includes('T') ? fechaInicioStr : `${fechaInicioStr}T12:00:00`;
     const fechaEvento = new Date(fechaParaParsear);
     fechaEvento.setHours(0, 0, 0, 0);
@@ -89,33 +82,63 @@ export function HomePage() {
   const irAlMapa = () => navegar("/map");
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ background: '#0F172A' }}>
       <Navbar showSearch={true} onSearchChange={setBusqueda} searchValue={busqueda} />
 
+      {/* Hero Section - Dark Theme */}
       <div
-        className="text-white py-12 md:py-20"
+        className="py-16 md:py-24 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #1d2635 0%, #293241 60%, #3D5A80 100%)'
+          background: 'linear-gradient(160deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)'
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center md:items-start text-center md:text-left">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-20"
+            style={{ background: 'radial-gradient(circle, #7C3AED 0%, transparent 70%)' }} />
+          <div className="absolute bottom-10 right-20 w-96 h-96 rounded-full opacity-15"
+            style={{ background: 'radial-gradient(circle, #F43F5E 0%, transparent 70%)' }} />
+          <div className="absolute top-40 right-40 w-48 h-48 rounded-full opacity-10"
+            style={{ background: 'radial-gradient(circle, #1E40AF 0%, transparent 70%)' }} />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center md:items-start text-center md:text-left relative z-10">
           <div className="max-w-2xl">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight" style={{ letterSpacing: '0.02em' }}>
-              Todos los eventos universitarios en un solo lugar
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+              style={{ background: 'rgba(124, 58, 237, 0.15)', border: '1px solid rgba(124, 58, 237, 0.3)' }}>
+              <Sparkles className="h-4 w-4" style={{ color: '#A78BFA' }} />
+              <span className="text-sm" style={{ color: '#A78BFA', fontWeight: 500 }}>
+                Eventos universitarios
+              </span>
+            </div>
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6 leading-tight"
+              style={{ 
+                fontFamily: "'Space Grotesk', 'Outfit', sans-serif",
+                fontWeight: 700, 
+                letterSpacing: '-0.02em',
+                color: '#F8FAFC'
+              }}>
+              Todos los eventos en{' '}
+              <span className="gradient-text-violet-rose">un solo lugar</span>
             </h1>
-            <p className="text-base md:text-lg lg:text-xl mb-10" style={{ color: 'rgba(229,229,229,0.85)', fontWeight: 300 }}>
+            <p className="text-lg md:text-xl mb-10 leading-relaxed" style={{ color: '#94A3B8', fontWeight: 400 }}>
               Descubre, asiste y organiza eventos en tu campus. Mantente conectado con tu comunidad universitaria.
             </p>
             <Button
               size="lg"
-              className="text-lg px-8 h-14 flex items-center justify-center rounded-md shadow-lg mx-auto md:mx-0 transition-all hover:bg-[#d45d3f] active:scale-95"
+              className="text-lg px-8 h-14 flex items-center justify-center rounded-xl btn-shimmer transition-all"
               style={{
-                background: '#EE6C4D',
+                background: 'linear-gradient(135deg, #7C3AED 0%, #F43F5E 100%)',
                 color: '#FFFFFF',
-                fontWeight: 700,
+                fontWeight: 600,
                 border: 'none',
               }}
-              onClick={() => setArModalOpen(true)}
+              onClick={() => {
+                const el = document.getElementById('seccion-eventos');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
             >
               Explorar eventos
             </Button>
@@ -123,16 +146,22 @@ export function HomePage() {
         </div>
       </div>
 
-      <div className="border-b border-gray-100 bg-white sticky top-16 z-40 shadow-sm">
+      {/* Filters Section */}
+      <div className="sticky top-16 z-40 glass-darker"
+        style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.08)' }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <Select value={categoriaSeleccionada} onValueChange={setCategoriaSeleccionada}>
-              <SelectTrigger className="w-full md:w-[200px] h-12 border-gray-200 bg-gray-50">
+              <SelectTrigger className="w-full md:w-[200px] h-12 transition-all"
+                style={{ 
+                  background: 'rgba(30, 41, 59, 0.8)', 
+                  borderColor: 'rgba(148, 163, 184, 0.15)',
+                  color: '#F8FAFC'
+                }}>
                 <SelectValue placeholder="Categoría" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent style={{ background: '#1E293B', borderColor: 'rgba(148, 163, 184, 0.15)' }}>
                 <SelectItem value="todas">Todas las categorías</SelectItem>
-                {/* Categorías dinámicas del backend — con su ID real */}
                 {categorias.map(cat => (
                   <SelectItem key={cat.id} value={String(cat.id)}>{cat.nombre}</SelectItem>
                 ))}
@@ -140,11 +169,16 @@ export function HomePage() {
             </Select>
 
             <Select value={filtroFecha} onValueChange={setFiltroFecha}>
-              <SelectTrigger className="w-full md:w-[200px] h-12 border-gray-200 bg-gray-50">
-                <IconoCalendario className="h-4 w-4 mr-2 text-gray-500" />
+              <SelectTrigger className="w-full md:w-[200px] h-12 transition-all"
+                style={{ 
+                  background: 'rgba(30, 41, 59, 0.8)', 
+                  borderColor: 'rgba(148, 163, 184, 0.15)',
+                  color: '#F8FAFC'
+                }}>
+                <IconoCalendario className="h-4 w-4 mr-2" style={{ color: '#7C3AED' }} />
                 <SelectValue placeholder="Fecha" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent style={{ background: '#1E293B', borderColor: 'rgba(148, 163, 184, 0.15)' }}>
                 <SelectItem value="todas">Cualquier fecha</SelectItem>
                 <SelectItem value="hoy">Hoy</SelectItem>
                 <SelectItem value="semana">Esta semana</SelectItem>
@@ -155,21 +189,37 @@ export function HomePage() {
         </div>
       </div>
 
+      {/* Events Section */}
       <main id="seccion-eventos" className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl"
+            style={{ 
+              fontFamily: "'Space Grotesk', 'Outfit', sans-serif",
+              fontWeight: 700, 
+              color: '#F8FAFC' 
+            }}>
             {isLoading ? "Cargando eventos..." : `Próximos Eventos (${eventosFiltrados.length})`}
           </h2>
-          <div className="flex bg-gray-100 p-1 rounded-lg">
+          <div className="flex p-1 rounded-lg" style={{ background: 'rgba(30, 41, 59, 0.8)' }}>
             <Button
               variant={vista === 'cuadricula' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setVista('cuadricula')}
-              className={vista === 'cuadricula' ? 'bg-white shadow-sm' : 'text-gray-500'}
+              style={vista === 'cuadricula' ? {
+                background: 'rgba(124, 58, 237, 0.2)',
+                color: '#A78BFA'
+              } : {
+                color: '#64748B'
+              }}
             >
               <LayoutGrid className="h-4 w-4 mr-2" />Cuadrícula
             </Button>
-            <Button variant="ghost" size="sm" onClick={irAlMapa} className="text-gray-500">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={irAlMapa}
+              style={{ color: '#64748B' }}
+            >
               <MapIcon className="h-4 w-4 mr-2" />Mapa
             </Button>
           </div>
@@ -177,44 +227,75 @@ export function HomePage() {
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3].map(i => <div key={i} className="h-80 bg-gray-100 animate-pulse rounded-2xl" />)}
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-80 rounded-xl animate-pulse"
+                style={{ background: 'rgba(30, 41, 59, 0.5)' }} />
+            ))}
           </div>
         ) : eventosFiltrados.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {eventosFiltrados.map(evento => <EventCard key={evento.id} event={evento} />)}
           </div>
         ) : (
-          <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-            <p className="text-xl text-gray-500">No se encontraron eventos que coincidan con tu búsqueda.</p>
+          <div className="text-center py-20 rounded-xl"
+            style={{ 
+              background: 'rgba(30, 41, 59, 0.5)', 
+              border: '2px dashed rgba(148, 163, 184, 0.15)' 
+            }}>
+            <p className="text-xl" style={{ color: '#64748B' }}>
+              No se encontraron eventos que coincidan con tu búsqueda.
+            </p>
           </div>
         )}
       </main>
 
-      {/* Modal de advertencia AR */}
+      {/* AR Modal */}
       {arModalOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-[8000] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[8000] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)' }}
           onClick={(e) => { if (e.target === e.currentTarget) setArModalOpen(false); }}
         >
-          <div className="bg-[#293241] border border-[#EE6C4D] rounded-xl p-8 max-w-[360px] w-full text-center shadow-2xl">
+          <div className="rounded-xl p-8 max-w-[360px] w-full text-center"
+            style={{ 
+              background: '#1E293B', 
+              border: '1px solid rgba(124, 58, 237, 0.3)',
+              boxShadow: '0 0 40px rgba(124, 58, 237, 0.2)'
+            }}>
             <div className="text-4xl mb-4">📱</div>
-            <h3 className="text-[#EE6C4D] font-bold text-xl mb-2 tracking-wide">
+            <h3 className="text-xl mb-2"
+              style={{ 
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontWeight: 700, 
+                color: '#A78BFA' 
+              }}>
               Experiencia Móvil
             </h3>
-            <p className="text-[#E0FBFC] font-light leading-relaxed mb-6">
+            <p className="leading-relaxed mb-6" style={{ color: '#94A3B8', fontWeight: 400 }}>
               El visor AR está optimizado para dispositivos móviles.<br />
               Para la mejor experiencia, ábrelo desde tu celular.
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setArModalOpen(false)}
-                className="px-5 py-2 border border-[#98C1D9] bg-transparent text-[#98C1D9] rounded-lg hover:bg-[#98C1D9]/10 transition-colors cursor-pointer"
+                className="px-5 py-2 rounded-lg transition-all"
+                style={{ 
+                  border: '1px solid rgba(30, 64, 175, 0.4)', 
+                  background: 'rgba(30, 64, 175, 0.1)', 
+                  color: '#60A5FA' 
+                }}
               >
                 Cancelar
               </button>
               <button
                 onClick={() => window.location.href = '/ar-viewer.html'}
-                className="px-5 py-2 border-none bg-[#EE6C4D] text-white rounded-lg font-bold hover:bg-[#EE6C4D]/90 transition-colors cursor-pointer"
+                className="px-5 py-2 rounded-lg transition-all btn-shimmer"
+                style={{ 
+                  background: 'linear-gradient(135deg, #7C3AED 0%, #F43F5E 100%)', 
+                  color: '#FFFFFF', 
+                  fontWeight: 600,
+                  border: 'none'
+                }}
               >
                 Continuar
               </button>

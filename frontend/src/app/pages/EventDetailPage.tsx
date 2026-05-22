@@ -39,7 +39,6 @@ export function EventDetailPage() {
         const data = await eventosApi.getById(id) as any;
         setEvent(data);
 
-        // Check if current user is an organizer to set initial stream link
         if (usuario && data.streams) {
           const userStream = data.streams.find((s: any) => String(s.organizerId) === String(usuario.id));
           if (userStream) {
@@ -47,19 +46,16 @@ export function EventDetailPage() {
           }
         }
 
-        // Set first active stream if available
         if (data.streams && data.streams.length > 0) {
           setActiveStreamId(data.streams[0].organizerId);
         }
 
-        // Fetch favorites to set initial state (solo para no-admins)
         if (usuario && usuario.rol !== 'admin') {
           const userFavorites = await favoritosApi.getAll() as any[];
           const isFav = userFavorites.some((f: any) => String(f.id) === String(id));
           setIsFavorite(isFav);
         }
 
-        // Set first active stream if available
         if (data.transmisiones && data.transmisiones.length > 0) {
           setActiveStreamId(data.transmisiones[0].id);
         }
@@ -76,10 +72,10 @@ export function EventDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen" style={{ background: '#0F172A' }}>
         <Navbar showSearch={false} />
         <div className="max-w-5xl mx-auto px-4 py-16 text-center">
-          <p className="text-muted-foreground animate-pulse">Cargando detalles del evento...</p>
+          <p className="animate-pulse" style={{ color: '#94A3B8' }}>Cargando detalles del evento...</p>
         </div>
       </div>
     );
@@ -87,24 +83,23 @@ export function EventDetailPage() {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen" style={{ background: '#0F172A' }}>
         <Navbar showSearch={false} />
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl mb-4" style={{ fontWeight: 600 }}>Evento no encontrado</h1>
+          <h1 className="text-2xl mb-4" style={{ fontWeight: 600, color: '#F8FAFC' }}>Evento no encontrado</h1>
           <Button onClick={() => navigate("/")}>Volver al Inicio</Button>
         </div>
       </div>
     );
   }
 
-  // Mapper helpers for backend names
   const titulo = event.titulo || event.title;
   const descripcion = event.descripcion || event.description;
   const categoria = event.categoria || event.category;
-  // Helper para parsear fechas de forma segura
+  
   const parseSafeDate = (dateVal: any) => {
     const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return new Date(); // Fallback a hoy si es inválida
+    if (isNaN(d.getTime())) return new Date();
     return d;
   };
 
@@ -120,7 +115,6 @@ export function EventDetailPage() {
   const imagenPortada = event.imagen_portada || event.coverImage || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000';
 
   const organizadores = event.organizadores || event.organizers || (event.organizador ? [event.organizador] : []);
-  // Ensure unique organizers by ID to avoid duplicate key warnings
   const allOrganizersMap = new Map();
   [...organizadores, ...(event.coorganizadores || [])].forEach(o => {
     if (o && o.id) allOrganizersMap.set(String(o.id), o);
@@ -145,7 +139,6 @@ export function EventDetailPage() {
       await eventosApi.registrarStream(id, streamLink);
       toast.success("Transmisión iniciada/actualizada");
       setShowStreamDialog(false);
-      // Reload event data
       const data = await eventosApi.getById(id);
       setEvent(data);
     } catch (error) {
@@ -161,7 +154,6 @@ export function EventDetailPage() {
     try {
       await eventosApi.eliminarStream(id);
       toast.success("Transmisión finalizada");
-      // Reload event data
       const data = await eventosApi.getById(id);
       setEvent(data);
       if (activeStreamId === myStream?.id) setActiveStreamId(null);
@@ -212,17 +204,24 @@ export function EventDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ background: '#0F172A' }}>
       <Navbar showSearch={false} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate("/")} 
+          className="mb-4 transition-all"
+          style={{ color: '#94A3B8' }}
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver a Eventos
         </Button>
 
-        <div className="aspect-[16/9] md:aspect-[21/9] rounded-lg overflow-hidden mb-6 bg-gray-100">
+        <div className="aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden mb-6 relative"
+          style={{ background: '#1E293B' }}>
           <img src={imagenPortada} alt={titulo} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent opacity-60" />
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -230,9 +229,12 @@ export function EventDetailPage() {
             {event.transmisiones && event.transmisiones.length > 0 && (
               <div className="mb-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
-                  <h2 className="text-xl font-semibold">Transmisiones en vivo</h2>
-                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs sm:text-sm font-semibold w-fit">
-                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  <h2 className="text-xl" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, color: '#F8FAFC' }}>
+                    Transmisiones en vivo
+                  </h2>
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold w-fit"
+                    style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#F87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                    <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#EF4444' }}></span>
                     EN VIVO
                   </span>
                 </div>
@@ -243,10 +245,11 @@ export function EventDetailPage() {
                       <button
                         key={t.id}
                         onClick={() => setActiveStreamId(t.id)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeStreamId === t.id
-                          ? 'bg-primary text-white'
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                          }`}
+                        className="px-4 py-2 rounded-full text-sm font-medium transition-colors"
+                        style={activeStreamId === t.id
+                          ? { background: 'rgba(124, 58, 237, 0.2)', color: '#A78BFA', border: '1px solid rgba(124, 58, 237, 0.3)' }
+                          : { background: 'rgba(51, 65, 85, 0.5)', color: '#94A3B8', border: '1px solid rgba(148, 163, 184, 0.1)' }
+                        }
                       >
                         En vivo: {t.organizador?.nombre_completo || 'Organizador'}
                       </button>
@@ -260,37 +263,39 @@ export function EventDetailPage() {
               </div>
             )}
 
-
-
             <div className="mb-4">
               <CategoryBadge category={categoria} className="mb-3" />
-              <h1 className="text-3xl md:text-4xl mb-4" style={{ fontWeight: 700 }}>{titulo}</h1>
+              <h1 className="text-3xl md:text-4xl mb-4" 
+                style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: '#F8FAFC' }}>
+                {titulo}
+              </h1>
             </div>
 
-            <div className="space-y-3 mb-6 pb-6 border-b border-gray-200">
+            <div className="space-y-3 mb-6 pb-6"
+              style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.1)' }}>
               <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <Calendar className="h-5 w-5 mt-0.5" style={{ color: '#7C3AED' }} />
                 <div>
-                  <div style={{ fontWeight: 600 }} className="capitalize">
+                  <div style={{ fontWeight: 600, color: '#F8FAFC' }} className="capitalize">
                     {format(fechaInicio, "EEEE, d 'de' MMMM, yyyy", { locale: es })}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm" style={{ color: '#94A3B8' }}>
                     {format(fechaInicio, 'h:mm a', { locale: es })} - {format(fechaFin, 'h:mm a', { locale: es })}
                   </div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <MapPin className="h-5 w-5 mt-0.5" style={{ color: '#F43F5E' }} />
                 <div>
-                  <div style={{ fontWeight: 600 }}>{lugarNombre}</div>
-                  <div className="text-sm text-muted-foreground">Ubicación del evento en el campus</div>
+                  <div style={{ fontWeight: 600, color: '#F8FAFC' }}>{lugarNombre}</div>
+                  <div className="text-sm" style={{ color: '#94A3B8' }}>Ubicación del evento en el campus</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <User className="h-5 w-5 mt-0.5" style={{ color: '#1E40AF' }} />
                 <div>
-                  <div style={{ fontWeight: 600 }}>Organizado por</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div style={{ fontWeight: 600, color: '#F8FAFC' }}>Organizado por</div>
+                  <div className="text-sm" style={{ color: '#94A3B8' }}>
                     {allOrganizers.map((o: any) => o.nombre_completo || o.name).join(', ')}
                   </div>
                 </div>
@@ -298,12 +303,16 @@ export function EventDetailPage() {
             </div>
 
             <div className="mb-6">
-              <h2 className="text-xl mb-3" style={{ fontWeight: 600 }}>Sobre este evento</h2>
-              <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{descripcion}</div>
+              <h2 className="text-xl mb-3" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, color: '#F8FAFC' }}>
+                Sobre este evento
+              </h2>
+              <div className="leading-relaxed whitespace-pre-wrap" style={{ color: '#94A3B8' }}>{descripcion}</div>
             </div>
 
             <div className="mb-6">
-              <h2 className="text-xl mb-3" style={{ fontWeight: 600 }}>Ubicación</h2>
+              <h2 className="text-xl mb-3" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, color: '#F8FAFC' }}>
+                Ubicación
+              </h2>
               <EventMap lat={lat} lng={lng} locationName={lugarNombre} />
             </div>
           </div>
@@ -313,39 +322,51 @@ export function EventDetailPage() {
               {usuario?.rol !== 'admin' && (
                 <Button
                   variant={isFavorite ? "default" : "outline"}
-                  className={isFavorite ? "w-full bg-[#1D9E75] hover:bg-[#188c66] text-white" : "w-full"}
+                  className="w-full transition-all"
                   onClick={handleToggleFavorite}
+                  style={isFavorite 
+                    ? { background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', color: '#FFFFFF', border: 'none' }
+                    : { borderColor: 'rgba(16, 185, 129, 0.4)', color: '#34D399', background: 'rgba(16, 185, 129, 0.1)' }
+                  }
                 >
                   <Star className={`h-4 w-4 mr-2 ${isFavorite ? "fill-current" : ""}`} />
                   {isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
                 </Button>
               )}
 
-              <Button variant="outline" className="w-full" onClick={handleShare}>
+              <Button 
+                variant="outline" 
+                className="w-full transition-all" 
+                onClick={handleShare}
+                style={{ borderColor: 'rgba(30, 64, 175, 0.4)', color: '#60A5FA', background: 'rgba(30, 64, 175, 0.1)' }}
+              >
                 <Share2 className="h-4 w-4 mr-2" />
                 Compartir evento
               </Button>
 
               <Button
-                className="w-full bg-[#293241] hover:bg-[#1a2130] text-white"
+                className="w-full btn-shimmer transition-all"
                 onClick={() => window.open(`/ar-viewer.html?eventoId=${id}`, '_blank')}
+                style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #F43F5E 100%)', color: '#FFFFFF', border: 'none' }}
               >
                 <Glasses className="h-4 w-4 mr-2" />
                 Ver evento en AR
               </Button>
 
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
-                <h3 className="text-sm mb-1" style={{ fontWeight: 600 }}>Organizadores</h3>
+              <div className="rounded-xl p-4 space-y-4"
+                style={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.1)' }}>
+                <h3 className="text-sm mb-1" style={{ fontWeight: 600, color: '#F8FAFC' }}>Organizadores</h3>
                 {allOrganizers.map((org: any) => (
                   <div key={org.id} className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #1E40AF 100%)', color: '#FFFFFF' }}>
                       {(org.nombre_completo || org.name || "?").charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }} className="line-clamp-1">
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#F8FAFC' }} className="line-clamp-1">
                         {org.nombre_completo || org.name}
                       </div>
-                      <div className="text-xs text-muted-foreground line-clamp-1">{org.email}</div>
+                      <div className="text-xs line-clamp-1" style={{ color: '#64748B' }}>{org.email}</div>
                     </div>
                   </div>
                 ))}
@@ -354,20 +375,36 @@ export function EventDetailPage() {
 
               {isOrganizer && (
                 <div className="mt-4 space-y-2">
-                  <h3 className="text-sm font-semibold mb-2">Tu transmisión</h3>
+                  <h3 className="text-sm font-semibold mb-2" style={{ color: '#F8FAFC' }}>Tu transmisión</h3>
                   {myStream ? (
                     <>
-                      <Button variant="outline" className="w-full" onClick={handleStartStream}>
+                      <Button 
+                        variant="outline" 
+                        className="w-full transition-all" 
+                        onClick={handleStartStream}
+                        style={{ borderColor: 'rgba(124, 58, 237, 0.4)', color: '#A78BFA', background: 'rgba(124, 58, 237, 0.1)' }}
+                      >
                         <Video className="h-4 w-4 mr-2" />
                         Cambiar Enlace
                       </Button>
-                      <Button variant="destructive" className="w-full" onClick={handleEndStream} disabled={isLoadingStream}>
+                      <Button 
+                        variant="destructive" 
+                        className="w-full" 
+                        onClick={handleEndStream} 
+                        disabled={isLoadingStream}
+                        style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#F87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                      >
                         <VideoOff className={`h-4 w-4 mr-2 ${isLoadingStream ? "animate-spin" : ""}`} />
                         Finalizar Mi Stream
                       </Button>
                     </>
                   ) : (
-                    <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary/10" onClick={handleStartStream}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full transition-all" 
+                      onClick={handleStartStream}
+                      style={{ borderColor: 'rgba(124, 58, 237, 0.4)', color: '#A78BFA', background: 'rgba(124, 58, 237, 0.1)' }}
+                    >
                       <Video className="h-4 w-4 mr-2" />
                       Iniciar Mi Transmisión
                     </Button>
@@ -380,27 +417,38 @@ export function EventDetailPage() {
       </div>
 
       <Dialog open={showStreamDialog} onOpenChange={setShowStreamDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" style={{ background: '#1E293B', border: '1px solid rgba(148, 163, 184, 0.1)' }}>
           <DialogHeader>
-            <DialogTitle>Iniciar Transmisión</DialogTitle>
-            <DialogDescription>
+            <DialogTitle style={{ color: '#F8FAFC' }}>Iniciar Transmisión</DialogTitle>
+            <DialogDescription style={{ color: '#94A3B8' }}>
               Pega el enlace de YouTube o Twitch para tu transmisión del evento "{titulo}".
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="stream-url">URL del Stream</Label>
+              <Label htmlFor="stream-url" style={{ color: '#F8FAFC' }}>URL del Stream</Label>
               <Input
                 id="stream-url"
                 placeholder="https://www.youtube.com/watch?v=..."
                 value={streamLink}
                 onChange={(e) => setStreamLink(e.target.value)}
+                style={{ background: 'rgba(30, 41, 59, 0.6)', borderColor: 'rgba(148, 163, 184, 0.15)', color: '#F8FAFC' }}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowStreamDialog(false)}>Cancelar</Button>
-            <Button onClick={handleSaveStreamLink} disabled={isLoadingStream} className="bg-primary text-white">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowStreamDialog(false)}
+              style={{ borderColor: 'rgba(148, 163, 184, 0.2)', color: '#94A3B8' }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSaveStreamLink} 
+              disabled={isLoadingStream}
+              style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #F43F5E 100%)', color: '#FFFFFF' }}
+            >
               {isLoadingStream ? "Guardando..." : "Guardar Enlace"}
             </Button>
           </DialogFooter>
