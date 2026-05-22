@@ -13,7 +13,7 @@
   --secondary: var(--bg-elevated);
   --secondary-foreground: var(--text-secondary);
   --muted: var(--bg-elevated);
-  --muted-foreground: var(--text-muted);
+  --muted-foreground: var(--text-secondary);
   --accent: var(--bg-overlay);
   --accent-foreground: var(--text-accent);
   --destructive: var(--status-red);
@@ -83,23 +83,23 @@
   }
 
   h1 {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Manrope', system-ui, sans-serif;
     font-size: var(--text-h1);
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.2;
   }
 
   h2 {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Manrope', system-ui, sans-serif;
     font-size: var(--text-h2);
-    font-weight: 400;
+    font-weight: 700;
     line-height: 1.3;
   }
 
   h3 {
     font-family: 'Manrope', sans-serif;
     font-size: var(--text-h3);
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.35;
   }
 

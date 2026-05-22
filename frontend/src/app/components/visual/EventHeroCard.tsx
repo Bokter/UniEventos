@@ -84,7 +84,7 @@ export function EventHeroCard({
         </div>
         <motion.h1
           variants={motionVariants(fadeUp)}
-          className="font-hero mb-2"
+          className="font-h1 mb-2"
           style={{
             color: "var(--text-primary)",
             textShadow: "0 2px 20px var(--accent-glow)",

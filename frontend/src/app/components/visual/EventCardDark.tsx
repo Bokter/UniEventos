@@ -63,15 +63,7 @@ export function EventCardDark({
       </div>
 
       <div className="p-4 flex-1 flex flex-col gap-3">
-        <h3
-          className="line-clamp-2"
-          style={{
-            fontFamily: "'Playfair Display', serif",
-            fontWeight: 600,
-            fontSize: "1.1rem",
-            color: "var(--text-primary)",
-          }}
-        >
+        <h3 className="font-h3 line-clamp-2">
           {titulo}
         </h3>
 

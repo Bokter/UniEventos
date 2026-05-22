@@ -266,12 +266,12 @@ export function AdminPanelPage() {
                     </TableHeader>
                     <TableBody>
                       {pendingEvents.map((event) => (
-                        <TableRow key={event.id}>
+                        <TableRow key={event.id} className="uni-table-row">
                           <TableCell>
                             <Link
                               to={`/event/${event.id}`}
-                              className="hover:text-accent hover:underline"
-                              style={{ fontWeight: 600 }}
+                              className="hover:underline font-body"
+                              style={{ fontWeight: 600, color: "var(--text-accent)" }}
                             >
                               {event.titulo}
                             </Link>
@@ -315,12 +315,12 @@ export function AdminPanelPage() {
                   </Table>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg mb-2" style={{ fontWeight: 600 }}>
+                <div className="dashboard-panel p-12 text-center">
+                  <FileText className="h-12 w-12 dashboard-empty-icon mx-auto mb-4" />
+                  <h3 className="font-h3 text-lg mb-2">
                     Sin eventos pendientes
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="font-caption">
                     Todos los eventos han sido revisados
                   </p>
                 </div>
@@ -331,16 +331,16 @@ export function AdminPanelPage() {
           {activeTab === 'all' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Todos los Eventos</h1>
-                <p className="text-muted-foreground">
+                <h1 className="font-h1 mb-1">Todos los Eventos</h1>
+                <p className="font-caption">
                   Visualiza y gestiona todos los eventos del sistema
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+              <div className="dashboard-panel overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
+                  <TableHeader className="uni-table-head">
+                    <TableRow className="uni-table-row">
                       <TableHead>Título</TableHead>
                       <TableHead>Organizador</TableHead>
                       <TableHead>Categoría</TableHead>
@@ -350,7 +350,7 @@ export function AdminPanelPage() {
                   </TableHeader>
                   <TableBody>
                     {allEvents.map((event) => (
-                      <TableRow key={event.id}>
+                      <TableRow key={event.id} className="uni-table-row">
                         <TableCell>
                           <Link
                             to={`/event/${event.id}`}
@@ -390,15 +390,15 @@ export function AdminPanelPage() {
           {activeTab === 'users' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Usuarios</h1>
-                <p className="text-muted-foreground">
+                <h1 className="font-h1 mb-1">Usuarios</h1>
+                <p className="font-caption">
                   Gestionar usuarios del sistema
                 </p>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+              <div className="dashboard-panel overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
+                  <TableHeader className="uni-table-head">
+                    <TableRow className="uni-table-row">
                       <TableHead>Nombre</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Rol</TableHead>
@@ -408,19 +408,19 @@ export function AdminPanelPage() {
                   </TableHeader>
                   <TableBody>
                     {usuarios.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell style={{ fontWeight: 500 }}>{user.nombre_completo}</TableCell>
+                      <TableRow key={user.id} className="uni-table-row">
+                        <TableCell style={{ fontWeight: 600 }}>{user.nombre_completo}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${user.rol === 'admin' ? 'bg-purple-100 text-purple-700' :
-                            user.rol === 'organizador' ? 'bg-blue-100 text-blue-700' :
-                              'bg-gray-100 text-gray-700'
+                          <span className={`dashboard-badge ${user.rol === 'admin' ? 'dashboard-badge--accent' :
+                            user.rol === 'organizador' ? 'dashboard-badge--accent' :
+                              'dashboard-badge--neutral'
                             }`}>
                             {user.rol === 'admin' ? 'Administrador' : user.rol === 'organizador' ? 'Organizador' : 'Asistente'}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${user.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          <span className={`dashboard-badge ${user.activo ? 'dashboard-badge--success' : 'dashboard-badge--danger'}`}>
                             {user.activo ? 'Activo' : 'Inactivo'}
                           </span>
                         </TableCell>
@@ -449,8 +449,8 @@ export function AdminPanelPage() {
             <>
               <div className="mb-6 flex justify-between items-center">
                 <div>
-                  <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Categorías</h1>
-                  <p className="text-muted-foreground">
+                  <h1 className="font-h1 mb-1">Categorías</h1>
+                  <p className="font-caption">
                     Gestionar categorías de eventos
                   </p>
                 </div>
@@ -465,10 +465,10 @@ export function AdminPanelPage() {
                   Nueva Categoría
                 </Button>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+              <div className="dashboard-panel overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
+                  <TableHeader className="uni-table-head">
+                    <TableRow className="uni-table-row">
                       <TableHead>Nombre</TableHead>
                       <TableHead>Estado</TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
@@ -476,12 +476,12 @@ export function AdminPanelPage() {
                   </TableHeader>
                   <TableBody>
                     {categorias.map((category) => (
-                      <TableRow key={category.id}>
+                      <TableRow key={category.id} className="uni-table-row">
                         <TableCell>
                           <CategoryBadge category={category.nombre as any} />
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${category.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          <span className={`dashboard-badge ${category.activa ? 'dashboard-badge--success' : 'dashboard-badge--danger'}`}>
                             {category.activa ? 'Activo' : 'Inactivo'}
                           </span>
                         </TableCell>

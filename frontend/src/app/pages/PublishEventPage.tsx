@@ -283,7 +283,7 @@ export function PublishEventPage() {
     : "Fecha por definir";
 
   return (
-    <div className="min-h-screen dashboard-shell">
+    <div className="min-h-screen dashboard-shell" style={{ background: "var(--bg-base)" }}>
       <Navbar showSearch={false} />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -313,7 +313,7 @@ export function PublishEventPage() {
         </div>
 
         <div className="grid lg:grid-cols-[1fr_340px] gap-8 items-start">
-        <div className="uni-surface p-4 sm:p-6 md:p-8">
+        <div className="dashboard-panel p-4 sm:p-6 md:p-8">
           {step === 1 && (
             <div className="space-y-6">
               <SectionDivider label="Información básica" />
