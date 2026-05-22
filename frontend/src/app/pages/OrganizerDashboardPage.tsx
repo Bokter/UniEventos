@@ -184,7 +184,7 @@ export function OrganizerDashboardPage() {
   const approvedCount = organizerEvents.filter(e => e.estado === 'Approved' || e.estado === 'aprobado').length;
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
+    <div className="min-h-screen dashboard-shell">
       <Navbar showSearch={false} />
 
       <div className="flex flex-col md:flex-row">
@@ -192,7 +192,7 @@ export function OrganizerDashboardPage() {
         <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Contenido principal */}
-        <div className="flex-1 p-4 sm:p-6 md:p-8">
+        <div className="dashboard-main">
           {activeTab === 'events' && (
             <>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">

@@ -1,3 +1,4 @@
+/* @logic — do not touch */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { LayoutGrid, Map as MapIcon, Calendar as IconoCalendario } from "lucide-react";
@@ -5,6 +6,8 @@ import { Navbar } from "../components/Navbar";
 import { EventCard } from "../components/EventCard";
 import { LiveActivityFeed } from "../components/visual/LiveActivityFeed";
 import { CampusHeatStrip } from "../components/visual/CampusHeatStrip";
+import { SkeletonCard } from "../components/visual/SkeletonCard";
+import { EmptyState } from "../components/visual/EmptyState";
 import { Button } from "../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { eventosApi, categoriasApi } from "../services/api.service";
@@ -91,18 +94,18 @@ export function HomePage() {
   const irAlMapa = () => navegar("/map");
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg,#F4F9FF)]">
+    <div className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <Navbar showSearch={true} onSearchChange={setBusqueda} searchValue={busqueda} />
 
-      <section className="hero-grid-pattern text-white py-12 md:py-16 lg:py-20">
+      <section className="hero-dark-grid py-12 md:py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div className="text-center lg:text-left">
-            <h1 className="font-display text-[var(--color-cyan)] mb-6">
+            <h1 className="font-display mb-6" style={{ color: "var(--text-primary)" }}>
               Todos los eventos universitarios en un solo lugar
             </h1>
             <p
               className="font-body text-base md:text-lg mb-8 max-w-xl mx-auto lg:mx-0"
-              style={{ color: "rgba(224, 251, 252, 0.85)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               Descubre, asiste y organiza eventos en tu campus. Mantente conectado con tu comunidad universitaria.
             </p>
@@ -110,8 +113,8 @@ export function HomePage() {
               size="lg"
               className="text-lg px-8 h-14 flex items-center justify-center mx-auto lg:mx-0 transition-all hover:bg-[#d45d3f] active:scale-95"
               style={{
-                background: "#EE6C4D",
-                color: "#FFFFFF",
+                background: "var(--accent-primary)",
+                color: "var(--text-primary)",
                 fontWeight: 600,
                 border: "none",
                 borderRadius: "var(--radius-sm)",
@@ -130,8 +133,8 @@ export function HomePage() {
       </section>
 
       <div
-        className="border-b sticky top-16 z-40 bg-[var(--color-white)]"
-        style={{ borderColor: "rgba(152, 193, 217, 0.35)", boxShadow: "var(--shadow-mid)" }}
+        className="border-b sticky top-16 z-40 uni-surface rounded-none border-x-0"
+        style={{ borderColor: "var(--border-subtle)", boxShadow: "var(--shadow-mid)" }}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
           <CampusHeatStrip eventos={eventos} className="mb-6" />
@@ -167,7 +170,7 @@ export function HomePage() {
 
       <main id="seccion-eventos" className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-          <h2 className="font-h2 text-[var(--color-dark)]">
+          <h2 className="font-h2">
             {isLoading ? "Cargando eventos..." : `Próximos Eventos (${eventosFiltrados.length})`}
           </h2>
           <div
@@ -190,29 +193,17 @@ export function HomePage() {
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3].map(i => (
-              <div
-                key={i}
-                className="h-80 animate-pulse rounded-[var(--radius-md)]"
-                style={{ background: "rgba(152, 193, 217, 0.25)" }}
-              />
-            ))}
+            {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
           </div>
         ) : eventosFiltrados.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {eventosFiltrados.map(evento => <EventCard key={evento.id} event={evento} />)}
           </div>
         ) : (
-          <div
-            className="text-center py-20 rounded-[var(--radius-md)] border-2 border-dashed"
-            style={{
-              background: "var(--color-white)",
-              borderColor: "rgba(152, 193, 217, 0.4)",
-              boxShadow: "var(--shadow-card)",
-            }}
-          >
-            <p className="font-h2 text-[var(--color-gray)]">No se encontraron eventos que coincidan con tu búsqueda.</p>
-          </div>
+          <EmptyState
+            title="Sin resultados"
+            description="No se encontraron eventos que coincidan con tu búsqueda."
+          />
         )}
       </main>
 
@@ -222,25 +213,24 @@ export function HomePage() {
           className="fixed inset-0 bg-black/60 z-[8000] flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setArModalOpen(false); }}
         >
-          <div className="bg-[#293241] border border-[#EE6C4D] rounded-xl p-8 max-w-[360px] w-full text-center shadow-2xl">
+          <div className="glass-panel rounded-xl p-8 max-w-[360px] w-full text-center shadow-2xl">
             <div className="text-4xl mb-4">📱</div>
-            <h3 className="text-[#EE6C4D] font-bold text-xl mb-2 tracking-wide">
+            <h3 className="font-h3 mb-2" style={{ color: "var(--accent-primary)" }}>
               Experiencia Móvil
             </h3>
-            <p className="text-[#E0FBFC] font-light leading-relaxed mb-6">
+            <p className="font-caption leading-relaxed mb-6">
               El visor AR está optimizado para dispositivos móviles.<br />
               Para la mejor experiencia, ábrelo desde tu celular.
             </p>
             <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => setArModalOpen(false)}
-                className="px-5 py-2 border border-[#98C1D9] bg-transparent text-[#98C1D9] rounded-lg hover:bg-[#98C1D9]/10 transition-colors cursor-pointer"
-              >
+              <button type="button" onClick={() => setArModalOpen(false)} className="uni-btn-ghost">
                 Cancelar
               </button>
               <button
-                onClick={() => window.location.href = '/ar-viewer.html'}
-                className="px-5 py-2 border-none bg-[#EE6C4D] text-white rounded-lg font-bold hover:bg-[#EE6C4D]/90 transition-colors cursor-pointer"
+                type="button"
+                onClick={() => { window.location.href = '/ar-viewer.html'; }}
+                className="uni-btn-primary"
+                style={{ width: "auto", paddingLeft: 20, paddingRight: 20 }}
               >
                 Continuar
               </button>

@@ -39,8 +39,8 @@ export function EventHeroCard({
       variants={motionVariants(staggerContainer)}
       initial="hidden"
       animate="visible"
-      className={`relative overflow-hidden rounded-[var(--radius-md)] hero-parallax-wrap ${className}`}
-      style={{ minHeight: "280px", boxShadow: "var(--shadow-card)" }}
+      className={`relative overflow-hidden uni-card-dark hero-parallax-wrap ${className}`}
+      style={{ minHeight: "280px" }}
     >
       <div className="hero-parallax-inner absolute inset-0">
         <img
@@ -54,8 +54,7 @@ export function EventHeroCard({
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background:
-            "linear-gradient(to top, rgba(41, 50, 65, 0.9) 0%, rgba(41, 50, 65, 0.35) 45%, transparent 100%)",
+          background: "linear-gradient(to top, var(--bg-base) 0%, transparent 55%)",
         }}
       />
 
@@ -70,6 +69,7 @@ export function EventHeroCard({
             height: p.size,
             animationDelay: p.delay,
             animationDuration: p.duration,
+            background: "var(--accent-glow)",
           }}
         />
       ))}
@@ -84,14 +84,15 @@ export function EventHeroCard({
         </div>
         <motion.h1
           variants={motionVariants(fadeUp)}
-          className="font-h1 text-[var(--color-cyan)] mb-2"
+          className="font-hero mb-2"
           style={{
-            textShadow: "0 2px 16px rgba(238, 108, 77, 0.35)",
+            color: "var(--text-primary)",
+            textShadow: "0 2px 20px var(--accent-glow)",
           }}
         >
           {titulo}
         </motion.h1>
-        <p className="font-data text-[var(--color-gray)]">{fechaInicio}</p>
+        <p className="font-data" style={{ color: "var(--text-secondary)" }}>{fechaInicio}</p>
       </motion.div>
     </motion.section>
   );

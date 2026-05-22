@@ -1,6 +1,6 @@
 /* @visual-only */
-import { useEffect, useRef } from "react";
-import { motion } from "motion/react";
+import { useEffect, useMemo } from "react";
+import { motion, useSpring, useTransform } from "motion/react";
 import { fadeIn, motionVariants } from "../../../lib/animations";
 
 const DIST_MAXIMA = 500;
@@ -11,20 +11,22 @@ interface DistanceMeterProps {
 }
 
 export function DistanceMeter({ distanciaMetros, className = "" }: DistanceMeterProps) {
-  const prevRef = useRef<number | null>(null);
-  const flipKey =
-    distanciaMetros !== prevRef.current ? distanciaMetros : prevRef.current;
+  const target = distanciaMetros ?? DIST_MAXIMA;
+  const spring = useSpring(target, { stiffness: 120, damping: 18 });
 
   useEffect(() => {
-    prevRef.current = distanciaMetros;
-  }, [distanciaMetros]);
+    spring.set(target);
+  }, [target, spring]);
 
-  const metros = distanciaMetros ?? DIST_MAXIMA;
-  const pct = Math.max(0, Math.min(100, ((DIST_MAXIMA - metros) / DIST_MAXIMA) * 100));
-  const display =
-    distanciaMetros == null ? "—" : distanciaMetros >= 1000
-      ? `${(distanciaMetros / 1000).toFixed(1)}km`
-      : `${Math.round(distanciaMetros)}m`;
+  const widthPct = useTransform(spring, (v) =>
+    `${Math.max(0, Math.min(100, ((DIST_MAXIMA - v) / DIST_MAXIMA) * 100))}%`
+  );
+
+  const displayLabel = useMemo(() => {
+    if (distanciaMetros == null) return "—";
+    if (distanciaMetros >= 1000) return `${(distanciaMetros / 1000).toFixed(1)}km`;
+    return `${Math.round(distanciaMetros)}m`;
+  }, [distanciaMetros]);
 
   return (
     <motion.div
@@ -35,24 +37,36 @@ export function DistanceMeter({ distanciaMetros, className = "" }: DistanceMeter
       title="Distancia al evento"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-caption text-[0.65rem] text-[var(--color-gray)] uppercase tracking-wide">
+        <span
+          className="uppercase tracking-wide"
+          style={{
+            fontFamily: "'Manrope', sans-serif",
+            fontSize: "0.65rem",
+            color: "var(--text-muted)",
+          }}
+        >
           Distancia
         </span>
-        <span key={String(flipKey)} className="font-data text-[var(--color-dark)] distance-flip">
-          {display}
-        </span>
+        <motion.span
+          key={displayLabel}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 22 }}
+          className="font-data"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {displayLabel}
+        </motion.span>
       </div>
       <div
         className="h-1.5 rounded-full overflow-hidden"
-        style={{ background: "rgba(152, 193, 217, 0.35)" }}
+        style={{ background: "var(--bg-base)" }}
       >
         <motion.div
           className="h-full rounded-full"
-          initial={false}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
           style={{
-            background: "linear-gradient(90deg, #3D5A80 0%, #EE6C4D 100%)",
+            width: widthPct,
+            background: "linear-gradient(90deg, var(--bg-surface) 0%, var(--accent-primary) 100%)",
           }}
         />
       </div>

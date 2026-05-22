@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { fadeIn, motionVariants } from "../../../lib/animations";
 
-export type EstadoPill = "en_curso" | "por_iniciar" | "terminado" | "proximo";
+export type EstadoPill = "en_curso" | "por_iniciar" | "terminado" | "proximo" | "futuro";
 
 interface StatusPillProps {
   estado: EstadoPill | string;
@@ -18,30 +18,41 @@ const config: Record<
 > = {
   en_curso: {
     label: "En curso",
-    dot: "#22c55e",
-    bg: "rgba(34, 197, 94, 0.15)",
-    text: "#15803d",
+    dot: "var(--status-green)",
+    bg: "rgba(26, 122, 74, 0.2)",
+    text: "var(--text-accent)",
     pulse: true,
   },
   por_iniciar: {
     label: "Por iniciar",
-    dot: "#eab308",
-    bg: "rgba(234, 179, 8, 0.15)",
-    text: "#a16207",
+    dot: "var(--status-yellow)",
+    bg: "rgba(138, 104, 0, 0.2)",
+    text: "var(--text-secondary)",
   },
   terminado: {
     label: "Terminado",
-    dot: "#ef4444",
-    bg: "rgba(239, 68, 68, 0.12)",
-    text: "#b91c1c",
+    dot: "var(--status-red)",
+    bg: "rgba(139, 32, 32, 0.2)",
+    text: "var(--text-secondary)",
   },
   proximo: {
     label: "Próximo",
-    dot: "#98C1D9",
-    bg: "rgba(152, 193, 217, 0.2)",
-    text: "#3D5A80",
+    dot: "var(--text-muted)",
+    bg: "rgba(45, 55, 72, 0.4)",
+    text: "var(--text-secondary)",
+  },
+  futuro: {
+    label: "Próximo",
+    dot: "var(--text-muted)",
+    bg: "rgba(45, 55, 72, 0.4)",
+    text: "var(--text-secondary)",
   },
 };
+
+function normalizeEstado(estado: string): EstadoPill {
+  if (estado in config) return estado as EstadoPill;
+  return "futuro";
+}
 
 function formatCountdown(ms: number): string {
   if (ms <= 0) return "00:00:00";
@@ -53,14 +64,14 @@ function formatCountdown(ms: number): string {
 }
 
 function resolveCountdownTarget(
-  estado: string,
+  estado: EstadoPill,
   horaInicio?: string,
   horaFin?: string
 ): number | null {
   const now = Date.now();
   const today = new Date().toISOString().slice(0, 10);
 
-  const toMs = (time?: string, end = false) => {
+  const toMs = (time?: string) => {
     if (!time) return null;
     const t = time.length <= 5 ? `${time}:00` : time;
     const d = new Date(`${today}T${t}`);
@@ -68,10 +79,10 @@ function resolveCountdownTarget(
   };
 
   if (estado === "en_curso" && horaFin) {
-    const end = toMs(horaFin, true);
+    const end = toMs(horaFin);
     return end && end > now ? end - now : null;
   }
-  if ((estado === "por_iniciar" || estado === "proximo") && horaInicio) {
+  if ((estado === "por_iniciar" || estado === "proximo" || estado === "futuro") && horaInicio) {
     const start = toMs(horaInicio);
     return start && start > now ? start - now : null;
   }
@@ -79,7 +90,7 @@ function resolveCountdownTarget(
 }
 
 export function StatusPill({ estado, horaInicio, horaFin, className = "" }: StatusPillProps) {
-  const key = (estado in config ? estado : "proximo") as EstadoPill;
+  const key = normalizeEstado(String(estado));
   const c = config[key];
   const [countdown, setCountdown] = useState<string | null>(null);
 
@@ -98,16 +109,25 @@ export function StatusPill({ estado, horaInicio, horaFin, className = "" }: Stat
       variants={motionVariants(fadeIn)}
       initial="hidden"
       animate="visible"
-      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full font-caption ${className}`}
-      style={{ background: c.bg, color: c.text, borderRadius: "var(--radius-pill)" }}
+      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full ${className}`}
+      style={{
+        background: c.bg,
+        color: c.text,
+        borderRadius: "var(--radius-pill)",
+        fontFamily: "'Manrope', sans-serif",
+        fontWeight: 500,
+        fontSize: "0.75rem",
+      }}
     >
       <span
         className={c.pulse ? "status-dot-pulse w-2 h-2 rounded-full shrink-0" : "w-2 h-2 rounded-full shrink-0"}
-        style={{ background: c.dot, color: c.dot }}
+        style={{ background: c.dot }}
       />
-      <span className="font-medium text-[0.75rem]">{c.label}</span>
+      <span>{c.label}</span>
       {countdown && (
-        <span className="font-data text-[0.7rem] opacity-80 tabular-nums">{countdown}</span>
+        <span className="font-data opacity-80 tabular-nums" style={{ fontSize: "0.7rem" }}>
+          {countdown}
+        </span>
       )}
     </motion.div>
   );

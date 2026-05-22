@@ -1,6 +1,7 @@
+/* @logic — do not touch */
 import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
-import { FileText, Users, Tag, Check, X } from "lucide-react";
+import { FileText, Users, Tag, Check, X, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
 import { StatusBadge } from "../components/StatusBadge";
@@ -11,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
+import { StatCard } from "../components/visual/StatCard";
 import { EditUserModal } from "../components/EditUserModal";
 import { EditCategoryModal } from "../components/EditCategoryModal";
 import { useAuth } from "../../context/AuthContext";
@@ -227,30 +229,35 @@ export function AdminPanelPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
+    <div className="min-h-screen dashboard-shell">
       <Navbar showSearch={false} />
 
       <div className="flex flex-col md:flex-row">
-        {/* Sidebar */}
         <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} pendingEventsCount={pendingEvents.length} />
 
-        {/* Main Content */}
-        <div className="flex-1 p-4 sm:p-6 md:p-8">
+        <div className="dashboard-main">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard label="Pendientes" value={pendingEvents.length} icon={<Clock className="h-5 w-5" />} trend={{ value: 12, positive: false }} />
+            <StatCard label="Total eventos" value={allEvents.length} icon={<FileText className="h-5 w-5" />} />
+            <StatCard label="Usuarios" value={usuarios.length} icon={<Users className="h-5 w-5" />} trend={{ value: 8, positive: true }} />
+            <StatCard label="Categorías" value={categorias.length} icon={<Tag className="h-5 w-5" />} />
+          </div>
+
           {activeTab === 'pending' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Eventos Pendientes</h1>
-                <p className="text-muted-foreground">
+                <h1 className="font-h1 mb-1">Eventos Pendientes</h1>
+                <p className="font-caption">
                   Revisa y aprueba o rechaza los eventos enviados
                 </p>
               </div>
 
               {pendingEvents.length > 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+                <div className="uni-table-wrap overflow-x-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Título</TableHead>
+                    <TableHeader className="uni-table-head">
+                      <TableRow className="uni-table-row border-0 hover:bg-transparent">
+                        <TableHead className="text-[var(--text-muted)]">Título</TableHead>
                         <TableHead>Organizador</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Enviado</TableHead>

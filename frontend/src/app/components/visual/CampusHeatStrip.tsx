@@ -28,6 +28,13 @@ const FRANJAS = [
   { key: "noche", label: "Noche", range: [18, 24] },
 ] as const;
 
+const CHART_FILLS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+];
+
 function horaToSlot(hora?: string): string {
   if (!hora) return "manana";
   const h = parseInt(hora.split(":")[0], 10);
@@ -65,15 +72,10 @@ export function CampusHeatStrip({ eventos, className = "" }: CampusHeatStripProp
       const slot = horaToSlot(ev.hora_inicio);
       counts[slot] = (counts[slot] || 0) + 1;
     });
-    return FRANJAS.map((f) => ({
+    return FRANJAS.map((f, i) => ({
       name: f.label,
       count: counts[f.key] || 0,
-      fill:
-        counts[f.key] > 3
-          ? "#EE6C4D"
-          : counts[f.key] > 1
-            ? "#3D5A80"
-            : "rgba(152, 193, 217, 0.6)",
+      fill: CHART_FILLS[i % CHART_FILLS.length],
     }));
   }, [eventos]);
 
@@ -84,21 +86,17 @@ export function CampusHeatStrip({ eventos, className = "" }: CampusHeatStripProp
       variants={motionVariants(fadeUp)}
       initial="hidden"
       animate="visible"
-      className={`rounded-[var(--radius-md)] p-4 uni-card ${className}`}
+      className={`uni-surface p-4 ${className}`}
     >
-      <h3 className="font-h3 text-[var(--color-dark)] dark:text-[var(--color-cyan)] mb-1">
-        Densidad del día
-      </h3>
-      <p className="font-caption text-[var(--color-gray)] mb-4">
-        Eventos por franja horaria en campus
-      </p>
+      <h3 className="font-h3 mb-1">Densidad del día</h3>
+      <p className="font-caption mb-4">Eventos por franja horaria en campus</p>
       <div className="h-[140px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 10, fill: "#98C1D9" }}
-              axisLine={false}
+              tick={{ fontSize: 10, fill: "var(--text-muted)" }}
+              axisLine={{ stroke: "var(--border-subtle)" }}
               tickLine={false}
             />
             <YAxis hide domain={[0, max]} />

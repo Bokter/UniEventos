@@ -38,7 +38,7 @@ export function UserDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
+    <div className="min-h-screen dashboard-shell">
       <Navbar showSearch={false} />
 
       <div className="flex">
@@ -46,7 +46,7 @@ export function UserDashboardPage() {
         <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Contenido principal */}
-        <div className="flex-1 p-8">
+        <div className="dashboard-main">
           {activeTab === 'favorites' && (
             <>
               <div className="mb-6">

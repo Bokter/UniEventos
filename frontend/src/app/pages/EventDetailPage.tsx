@@ -223,7 +223,7 @@ export function EventDetailPage() {
   const fechaInicioLabel = format(fechaInicio, "EEEE, d 'de' MMMM yyyy · HH:mm", { locale: es });
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg,#F4F9FF)]">
+    <div className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <Navbar showSearch={false} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
