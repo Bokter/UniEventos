@@ -4,7 +4,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, MapPin, Share2, ArrowLeft, User, Star, Video, VideoOff, Glasses } from "lucide-react";
 import { Navbar } from "../components/Navbar";
-import { CategoryBadge } from "../components/CategoryBadge";
+import { EventHeroCard } from "../components/visual/EventHeroCard";
+import type { EstadoPill } from "../components/visual/StatusPill";
 import { Button } from "../components/ui/button";
 import { EventMap } from "../components/EventMap";
 import { LiveStreamPlayer } from "../components/LiveStreamPlayer";
@@ -211,19 +212,36 @@ export function EventDetailPage() {
     }
   };
 
+  const estadoStr = String(event.estado || "").toLowerCase();
+  let estadoHero: EstadoPill = "proximo";
+  const now = new Date();
+  if (estadoStr === "terminado" || estadoStr === "cancelado") estadoHero = "terminado";
+  else if (now >= fechaInicio && now <= fechaFin) estadoHero = "en_curso";
+  else if (now < fechaInicio) estadoHero = "por_iniciar";
+  else if (now > fechaFin) estadoHero = "terminado";
+
+  const fechaInicioLabel = format(fechaInicio, "EEEE, d 'de' MMMM yyyy · HH:mm", { locale: es });
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--page-bg,#F4F9FF)]">
       <Navbar showSearch={false} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
+        <Button variant="ghost" onClick={() => navigate("/")} className="mb-4 text-[var(--color-mid)]">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver a Eventos
         </Button>
 
-        <div className="aspect-[16/9] md:aspect-[21/9] rounded-lg overflow-hidden mb-6 bg-gray-100">
-          <img src={imagenPortada} alt={titulo} className="w-full h-full object-cover" />
-        </div>
+        <EventHeroCard
+          imagenPortada={imagenPortada}
+          titulo={titulo}
+          categoria={categoria}
+          fechaInicio={fechaInicioLabel}
+          estado={estadoHero}
+          horaInicio={horaInicioStr}
+          horaFin={horaFinStr}
+          className="mb-8"
+        />
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
@@ -261,11 +279,6 @@ export function EventDetailPage() {
             )}
 
 
-
-            <div className="mb-4">
-              <CategoryBadge category={categoria} className="mb-3" />
-              <h1 className="text-3xl md:text-4xl mb-4" style={{ fontWeight: 700 }}>{titulo}</h1>
-            </div>
 
             <div className="space-y-3 mb-6 pb-6 border-b border-gray-200">
               <div className="flex items-start gap-3">
