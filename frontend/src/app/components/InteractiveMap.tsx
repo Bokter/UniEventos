@@ -45,9 +45,9 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
       });
 
       // Add tile layer
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
       }).addTo(map);
 
       // Add markers for each event
@@ -66,12 +66,12 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
           const d = new Date(fechaStr);
           
           const popupContent = `
-            <div class="p-2">
-              <h3 class="mb-1 font-semibold">${titulo}</h3>
-              <p class="text-sm text-muted-foreground mb-2">
+            <div style="padding:8px;font-family:Manrope,sans-serif;color:#EDF2F7;">
+              <h3 style="margin:0 0 4px;font-weight:700;font-size:14px;">${titulo}</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:#8FA3BF;">
                 ${isNaN(d.getTime()) ? "" : format(d, "MMM d, yyyy")}
               </p>
-              <a href="/event/${event.id}" class="text-sm text-accent hover:underline" style="color: #1D9E75; font-weight: 600;">
+              <a href="/event/${event.id}" style="font-size:12px;color:#E8523A;font-weight:600;text-decoration:none;">
                 Ver detalles →
               </a>
             </div>
@@ -104,5 +104,5 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
     };
   }, [events, center]);
 
-  return <div ref={mapRef} className="h-full w-full" />;
+  return <div ref={mapRef} className="h-full w-full map-dark-frame" />;
 }

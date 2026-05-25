@@ -261,8 +261,7 @@ export function OrganizerDashboardPage() {
                                 onClick={() => handleEdit(event.id)}
                                 disabled={event.estado !== 'Draft' && event.estado !== 'borrador' && event.estado !== 'Rejected' && event.estado !== 'rechazado'}
                                 title={event.estado === 'Draft' || event.estado === 'borrador' || event.estado === 'Rejected' || event.estado === 'rechazado' ? 'Editar evento' : 'Solo puedes editar eventos en borrador o rechazados'}
-                                className="hover:bg-[#98C1D9]/10 active:scale-90 transition-all"
-                                style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                                className="dashboard-btn-outline dashboard-btn-edit active:scale-90 transition-all"
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -272,8 +271,7 @@ export function OrganizerDashboardPage() {
                                 variant="outline"
                                 onClick={() => handleOpenStreamDialog(event)}
                                 disabled={event.estado !== 'Approved' && event.estado !== 'aprobado'}
-                                className="hover:bg-[#A4D4B4]/10 active:scale-90 transition-all"
-                                style={{ borderColor: '#A4D4B4', color: '#293241' }}
+                                className="dashboard-btn-outline dashboard-btn-toggle active:scale-90 transition-all"
                                 title={event.estado === 'Approved' || event.estado === 'aprobado' ? 'Añadir enlace de transmisión' : 'Solo eventos aprobados pueden tener transmisión'}
                               >
                                 <Video className="h-4 w-4" />
@@ -284,7 +282,7 @@ export function OrganizerDashboardPage() {
                                 variant="outline"
                                 onClick={() => handleCancel(event.id)}
                                 disabled={event.estado !== 'Approved' && event.estado !== 'aprobado'}
-                                className="border-destructive text-destructive hover:bg-red-50 active:scale-90 transition-all"
+                                className="dashboard-btn-outline dashboard-btn-danger-outline active:scale-90 transition-all"
                                 title={event.estado === 'Approved' || event.estado === 'aprobado' ? 'Cancelar evento' : 'Solo puedes cancelar eventos aprobados'}
                               >
                                 <X className="h-4 w-4" />
@@ -295,7 +293,7 @@ export function OrganizerDashboardPage() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleEliminar(event.id)}
-                                  className="border-destructive text-destructive hover:bg-red-50 active:scale-90 transition-all"
+                                  className="dashboard-btn-outline dashboard-btn-danger-outline active:scale-90 transition-all"
                                   title="Eliminar evento permanentemente"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -416,9 +414,10 @@ export function OrganizerDashboardPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="stream-link">Enlace o ID de Transmisión</Label>
+              <Label htmlFor="stream-link" className="uni-label">Enlace o ID de Transmisión</Label>
               <Input
                 id="stream-link"
+                className="uni-input mt-0"
                 placeholder="Ej. m3u8, Playback ID de Mux..."
                 value={streamLink}
                 onChange={(e) => setStreamLink(e.target.value)}
@@ -426,8 +425,8 @@ export function OrganizerDashboardPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStreamDialogOpen(false)} className="hover:bg-[#A4D4B4]/10 active:scale-95 transition-all" style={{ borderColor: '#A4D4B4', color: '#293241' }}>Cancelar</Button>
-            <Button onClick={handleSaveStreamLink} className="text-white font-bold hover:opacity-90 active:scale-95 transition-all" style={{ background: 'linear-gradient(135deg, #EE6C4D 0%, #e05a3c 100%)', border: 'none' }}>Guardar</Button>
+            <Button variant="outline" onClick={() => setStreamDialogOpen(false)} className="dashboard-btn-outline dashboard-btn-edit">Cancelar</Button>
+            <Button onClick={handleSaveStreamLink} className="dashboard-btn-primary-filled font-bold">Guardar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

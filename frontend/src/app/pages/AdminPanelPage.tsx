@@ -292,8 +292,7 @@ export function AdminPanelPage() {
                                 <Button
                                   size="sm"
                                   onClick={() => handleApprove(event.id)}
-                                  className="hover:opacity-90 active:scale-95 transition-all"
-                                  style={{ background: '#A4D4B4', color: '#293241', fontWeight: 700, border: 'none' }}
+                                  className="dashboard-btn-outline dashboard-btn-success active:scale-95 transition-all"
                                 >
                                   <Check className="h-4 w-4 mr-1" />
                                   Aprobar
@@ -302,7 +301,7 @@ export function AdminPanelPage() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleRejectClick(event)}
-                                  className="border-destructive text-destructive hover:bg-destructive/10 active:scale-95 transition-all"
+                                  className="dashboard-btn-outline dashboard-btn-danger-outline active:scale-95 transition-all"
                                 >
                                   <X className="h-4 w-4 mr-1" />
                                   Rechazar
@@ -430,8 +429,7 @@ export function AdminPanelPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleEditUserClick(user)}
-                              className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
-                              style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                              className="dashboard-btn-outline dashboard-btn-edit active:scale-95 transition-all"
                             >
                               Editar
                             </Button>
@@ -455,8 +453,7 @@ export function AdminPanelPage() {
                   </p>
                 </div>
                 <Button
-                  className="text-white font-bold hover:opacity-90 active:scale-95 transition-all"
-                  style={{ background: 'linear-gradient(135deg, #EE6C4D 0%, #e05a3c 100%)', border: 'none' }}
+                  className="dashboard-btn-primary-filled font-bold hover:opacity-90 active:scale-95 transition-all"
                   onClick={() => {
                     setSelectedCategoryToEdit(null);
                     setEditCategoryDialogOpen(true);
@@ -491,8 +488,7 @@ export function AdminPanelPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleToggleCategoryStatus(category.id, category.activa)}
-                              className="hover:bg-[#A4D4B4]/10 active:scale-95 transition-all"
-                              style={{ borderColor: '#A4D4B4', color: '#293241', fontWeight: 600 }}
+                              className="dashboard-btn-outline dashboard-btn-toggle active:scale-95 transition-all"
                             >
                               {category.activa ? 'Desactivar' : 'Activar'}
                             </Button>
@@ -500,8 +496,7 @@ export function AdminPanelPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleEditCategoryClick(category)}
-                              className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
-                              style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                              className="dashboard-btn-outline dashboard-btn-edit active:scale-95 transition-all"
                             >
                               Editar
                             </Button>
@@ -529,9 +524,9 @@ export function AdminPanelPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {selectedEvent && (
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm" style={{ fontWeight: 600 }}>{selectedEvent.titulo}</p>
-                <p className="text-xs text-muted-foreground">
+              <div className="dialog-info-box">
+                <p className="text-sm font-body" style={{ fontWeight: 600 }}>{selectedEvent.titulo}</p>
+                <p className="text-xs font-caption">
                   por {selectedEvent.organizador?.nombre_completo ?? '—'}
                   {selectedEvent.coorganizadores && selectedEvent.coorganizadores.length > 0 && 
                     `, ${selectedEvent.coorganizadores.map(c => c.nombre_completo).join(', ')}`}
@@ -553,7 +548,7 @@ export function AdminPanelPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              className="hover:bg-gray-100 active:scale-95 transition-all"
+              className="dashboard-btn-outline dashboard-btn-edit active:scale-95 transition-all"
               onClick={() => {
                 setRejectDialogOpen(false);
                 setRejectionReason("");

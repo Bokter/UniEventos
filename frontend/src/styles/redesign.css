@@ -429,6 +429,182 @@ html, body {
   color: var(--text-primary);
 }
 
+/* Botones outline en dashboards — texto claro y borde grueso */
+.dashboard-btn-outline,
+.dashboard-main [data-slot="button"].dashboard-btn-outline {
+  border-width: 2px !important;
+  border-style: solid !important;
+  font-family: 'Manrope', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  box-shadow: none !important;
+}
+
+.dashboard-btn-edit {
+  border-color: var(--border-strong) !important;
+}
+
+.dashboard-btn-edit:hover:not(:disabled) {
+  background: var(--bg-overlay) !important;
+  border-color: var(--text-accent) !important;
+  color: var(--text-primary) !important;
+}
+
+.dashboard-btn-toggle {
+  border-color: var(--accent-primary) !important;
+}
+
+.dashboard-btn-toggle:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-primary) 18%, var(--bg-elevated)) !important;
+  color: var(--text-primary) !important;
+}
+
+.dashboard-btn-success {
+  border-color: var(--status-green) !important;
+  background: color-mix(in srgb, var(--status-green) 22%, var(--bg-elevated)) !important;
+  color: var(--text-primary) !important;
+}
+
+.dashboard-btn-success:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--status-green) 35%, var(--bg-elevated)) !important;
+}
+
+.dashboard-btn-danger-outline {
+  border-color: var(--status-red) !important;
+  color: var(--text-primary) !important;
+}
+
+.dashboard-btn-danger-outline:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--status-red) 22%, var(--bg-elevated)) !important;
+}
+
+.dashboard-btn-primary-filled {
+  border: none !important;
+  background: var(--accent-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Mapa modo oscuro */
+.map-page-shell {
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.map-sidebar {
+  background: var(--bg-surface);
+  border-color: var(--border-subtle);
+}
+
+.map-event-card {
+  display: block;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.map-event-card:hover {
+  background: var(--bg-overlay);
+  border-color: var(--border-default);
+}
+
+.map-event-card h4 {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.map-canvas-area {
+  background: var(--bg-base);
+}
+
+.map-loading-state {
+  background: var(--bg-base);
+  color: var(--text-secondary);
+}
+
+.map-dark-frame {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-base);
+}
+
+.map-dark-frame .leaflet-container {
+  background: var(--bg-base) !important;
+}
+
+.map-dark-frame .leaflet-control-attribution {
+  background: var(--glass-bg) !important;
+  color: var(--text-muted) !important;
+  backdrop-filter: var(--glass-blur);
+}
+
+.map-dark-frame .leaflet-control-attribution a {
+  color: var(--text-secondary) !important;
+}
+
+.map-dark-frame .leaflet-popup-content-wrapper {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+.map-dark-frame .leaflet-popup-tip {
+  background: var(--bg-surface);
+}
+
+/* Detalle de evento */
+.event-detail-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.event-detail-sidebar-btn {
+  border-width: 2px !important;
+  font-weight: 600 !important;
+}
+
+/* Diálogos en dashboards / detalle */
+[data-slot="dialog-content"] {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-slot="dialog-content"] [data-slot="dialog-title"] {
+  color: var(--text-primary) !important;
+}
+
+[data-slot="dialog-content"] [data-slot="dialog-description"],
+[data-slot="dialog-content"] .text-muted-foreground {
+  color: var(--text-secondary) !important;
+}
+
+.dialog-info-box {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+[data-slot="select-content"],
+[data-slot="popover-content"] {
+  background: var(--bg-overlay) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-slot="select-item"]:focus,
+[data-slot="select-item"][data-highlighted] {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+}
+
 .dashboard-sidebar {
   width: 260px;
   background: var(--bg-surface);
