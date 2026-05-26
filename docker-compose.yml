@@ -16,8 +16,6 @@ services:
     build: ./backend
     expose:
       - "3000"
-    volumes:
-      - ./backend/src:/app/src
     environment:
       - DB_HOST=${DB_HOST}
       - DB_NAME=${DB_NAME}
