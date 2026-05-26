@@ -34,7 +34,7 @@ import { TransmisionOrmEntity } from './transmision/infrastructure/entities/tran
         FavoritoOrmEntity,
         TransmisionOrmEntity,
       ],
-      synchronize: true,
+      synchronize: false,
     }),
     AuthModule,
     EventosModule,
