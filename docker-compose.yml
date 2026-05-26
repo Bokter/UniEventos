@@ -8,9 +8,6 @@ services:
         - VITE_EMAILJS_PUBLIC_KEY=${VITE_EMAILJS_PUBLIC_KEY}
     expose:
       - "5173"
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
 
   backend:
     build: ./backend
