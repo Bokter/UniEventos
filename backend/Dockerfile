@@ -5,4 +5,4 @@ RUN npm install
 COPY . .
 RUN npm run build
 EXPOSE 3000
-CMD ["sleep", "3600"]
+CMD ["npm", "run", "start:prod"]
