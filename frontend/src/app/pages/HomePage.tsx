@@ -1,7 +1,7 @@
 /* @logic — do not touch */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { LayoutGrid, Map as MapIcon, Calendar as IconoCalendario } from "lucide-react";
+import { LayoutGrid, Map as MapIcon, Calendar as IconoCalendario, Smartphone, X } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { EventCard } from "../components/EventCard";
 import { LiveActivityFeed } from "../components/visual/LiveActivityFeed";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 export function HomePage() {
   const navegar = useNavigate();
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   const [vista, setVista] = useState<'cuadricula' | 'mapa'>('cuadricula');
   const [busqueda, setBusqueda] = useState("");
@@ -120,7 +121,13 @@ export function HomePage() {
                 borderRadius: "var(--radius-sm)",
                 boxShadow: "var(--shadow-glow)",
               }}
-              onClick={() => setArModalOpen(true)}
+              onClick={() => {
+                if (isMobile) {
+                  window.location.href = '/ar-viewer.html';
+                } else {
+                  setArModalOpen(true);
+                }
+              }}
             >
               Explorar eventos
             </Button>
@@ -210,27 +217,91 @@ export function HomePage() {
       {/* Modal de advertencia AR */}
       {arModalOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-[8000] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/70 z-[8000] flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300"
           onClick={(e) => { if (e.target === e.currentTarget) setArModalOpen(false); }}
         >
-          <div className="glass-panel rounded-xl p-8 max-w-[360px] w-full text-center shadow-2xl">
-            <div className="text-4xl mb-4">📱</div>
-            <h3 className="font-h3 mb-2" style={{ color: "var(--accent-primary)" }}>
+          <div className="glass-panel relative rounded-2xl p-8 max-w-[400px] w-full text-center shadow-2xl border border-white/10 flex flex-col items-center">
+            {/* Botón Cerrar (X) */}
+            <button
+              type="button"
+              onClick={() => setArModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Cerrar modal"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Icono flotante */}
+            <div className="flex justify-center mb-6">
+              <div 
+                className="p-4 rounded-full float-orb"
+                style={{
+                  background: "var(--accent-glow)",
+                  border: "1px solid rgba(232, 82, 58, 0.3)",
+                  color: "var(--accent-primary)",
+                  boxShadow: "var(--shadow-glow)"
+                }}
+              >
+                <Smartphone className="h-8 w-8 text-[var(--accent-primary)] animate-pulse" />
+              </div>
+            </div>
+
+            {/* Títulos */}
+            <h3 className="font-h2 mb-2 text-xl font-bold" style={{ color: "var(--accent-primary)" }}>
               Experiencia Móvil
             </h3>
-            <p className="font-caption leading-relaxed mb-6">
-              El visor AR está optimizado para dispositivos móviles.<br />
-              Para la mejor experiencia, ábrelo desde tu celular.
+            <p className="font-caption leading-relaxed mb-6 text-sm text-[var(--text-secondary)]">
+              Para una mejor experiencia de Realidad Aumentada, escanea este código QR con tu dispositivo móvil.
             </p>
-            <div className="flex gap-3 justify-center">
-              <button type="button" onClick={() => setArModalOpen(false)} className="uni-btn-ghost">
+
+            {/* Contenedor del QR */}
+            <div className="bg-white p-3 rounded-2xl inline-block mb-6 shadow-lg border border-gray-200 hover:scale-105 transition-transform duration-300">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                  `${window.location.origin}/ar-viewer.html`
+                )}&color=0d1117&bgcolor=ffffff&qzone=2`}
+                alt="QR Code" 
+                className="w-48 h-48 block rounded-lg"
+              />
+            </div>
+
+            {/* URL con click para copiar */}
+            <div className="w-full mb-6 text-center">
+              <p className="font-caption text-xs mb-2 text-[var(--text-muted)]">
+                O visita esta URL en tu dispositivo móvil:
+              </p>
+              <div 
+                className="font-data text-xs p-3 rounded-lg border text-center break-all select-all cursor-pointer active:scale-98 hover:bg-white/5 transition-all duration-200"
+                style={{
+                  background: "var(--bg-elevated)",
+                  borderColor: "var(--border-subtle)",
+                  color: "var(--text-accent)"
+                }}
+                onClick={() => {
+                  const url = `${window.location.origin}/ar-viewer.html`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("¡Enlace copiado al portapapeles!");
+                }}
+                title="Click para copiar enlace"
+              >
+                {`${window.location.origin}/ar-viewer.html`}
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex gap-3 w-full justify-center">
+              <button 
+                type="button" 
+                onClick={() => setArModalOpen(false)} 
+                className="uni-btn-ghost flex-1 py-3 text-sm font-semibold"
+              >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => { window.location.href = '/ar-viewer.html'; }}
-                className="uni-btn-primary"
-                style={{ width: "auto", paddingLeft: 20, paddingRight: 20 }}
+                className="uni-btn-primary flex-1 py-3 text-sm font-semibold"
+                style={{ width: "auto" }}
               >
                 Continuar
               </button>
