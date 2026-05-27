@@ -39,32 +39,33 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+
+  const getIsLight = () => document.documentElement.classList.contains('light');
+
+  const getDarkTile = () => L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; <a href="https://carto.com/">CARTO</a>', maxZoom: 19 }
+  );
+
+  const getLightTile = () => L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }
+  );
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
     try {
-      // Coordenadas de la Universidad del Norte: 11.019, -74.851
       const map = L.map(mapContainerRef.current).setView([11.019, -74.851], 16);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(map);
+      // Use appropriate tile layer based on current theme
+      const tileLayer = getIsLight() ? getLightTile() : getDarkTile();
+      tileLayer.addTo(map);
+      tileLayerRef.current = tileLayer;
+
       map.on('click', (e: L.LeafletMouseEvent) => {
         const { lat, lng } = e.latlng;
-
-        // Límites aproximados del campus de Uninorte
-        // (Ajustar si es necesario, estos valores cubren el campus principal)
-        /*
-        const isInsideCampus = 
-          lat >= 11.0140 && lat <= 11.0240 &&
-          lng >= -74.8550 && lng <= -74.8460;
-
-        if (!isInsideCampus) {
-          toast.error("La ubicación del evento debe estar dentro del campus de la Universidad del Norte.");
-          return;
-        } */
-
         setLocationCoords([lat, lng]);
       });
 
@@ -77,9 +78,25 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
+        tileLayerRef.current = null;
       }
     };
   }, [setLocationCoords]);
+
+  // Swap tile layers when theme changes
+  useEffect(() => {
+    const handleThemeChange = () => {
+      if (!mapRef.current) return;
+      if (tileLayerRef.current) {
+        mapRef.current.removeLayer(tileLayerRef.current);
+      }
+      const newTile = getIsLight() ? getLightTile() : getDarkTile();
+      newTile.addTo(mapRef.current);
+      tileLayerRef.current = newTile;
+    };
+    window.addEventListener('theme-changed', handleThemeChange);
+    return () => window.removeEventListener('theme-changed', handleThemeChange);
+  }, []);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -451,8 +468,18 @@ export function PublishEventPage() {
                 <div><p className="text-sm text-muted-foreground">Fecha y hora</p><p style={{ fontWeight: 600 }}>{dateStart} • {timeStart}</p></div>
                 <div><p className="text-sm text-muted-foreground">Ubicación</p><p style={{ fontWeight: 600 }}>{locationName}</p></div>
               </div>
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm"><span style={{ fontWeight: 600 }}>Nota:</span> Tu evento será enviado para revisión.</p>
+              <div
+                className="p-4 rounded-lg flex items-start gap-3"
+                style={{
+                  background: "color-mix(in srgb, var(--accent-primary) 10%, var(--bg-elevated))",
+                  border: "1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent)",
+                }}
+              >
+                <span style={{ fontSize: "1.1rem", lineHeight: 1.3 }}>📋</span>
+                <p className="text-sm" style={{ color: "var(--text-primary)" }}>
+                  <span style={{ fontWeight: 700, color: "var(--accent-primary)" }}>Nota: </span>
+                  Tu evento será enviado para revisión antes de ser publicado.
+                </p>
               </div>
             </div>
           )}

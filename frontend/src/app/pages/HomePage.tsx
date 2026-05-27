@@ -182,17 +182,41 @@ export function HomePage() {
           </h2>
           <div
             className="flex p-1 rounded-lg"
-            style={{ background: "rgba(152, 193, 217, 0.2)", borderRadius: "var(--radius-sm)" }}
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-sm)",
+            }}
           >
             <Button
-              variant={vista === 'cuadricula' ? 'secondary' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setVista('cuadricula')}
-              className={vista === 'cuadricula' ? 'bg-white shadow-sm' : 'text-gray-500'}
+              style={
+                vista === 'cuadricula'
+                  ? {
+                      background: "var(--bg-surface)",
+                      color: "var(--text-primary)",
+                      boxShadow: "var(--shadow-card)",
+                      border: "1px solid var(--border-default)",
+                    }
+                  : {
+                      background: "transparent",
+                      color: "var(--text-secondary)",
+                    }
+              }
             >
               <LayoutGrid className="h-4 w-4 mr-2" />Cuadrícula
             </Button>
-            <Button variant="ghost" size="sm" onClick={irAlMapa} className="text-gray-500">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={irAlMapa}
+              style={{
+                background: "transparent",
+                color: "var(--text-secondary)",
+              }}
+            >
               <MapIcon className="h-4 w-4 mr-2" />Mapa
             </Button>
           </div>
