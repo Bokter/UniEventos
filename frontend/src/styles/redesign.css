@@ -60,6 +60,47 @@
   --chart-2: #3D5A80;
   --chart-3: #C9E8F0;
   --chart-4: #8FA3BF;
+
+  --grid-line-color: rgba(30, 45, 66, 0.4);
+}
+
+:root.light {
+  --bg-base: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F1F5F9;
+  --bg-overlay: #E2E8F0;
+
+  --accent-primary: #E8523A;
+  --accent-secondary: #C94428;
+  --accent-glow: #E8523A1F;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-accent: #1E3A8A;
+
+  --border-subtle: #E2E8F0;
+  --border-default: #CBD5E1;
+  --border-strong: #94A3B8;
+
+  --status-green: #22C55E;
+  --status-yellow: #EAB308;
+  --status-red: #EF4444;
+  --status-gray: #E2E8F0;
+
+  --shadow-card: 0 4px 24px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 24px var(--accent-glow);
+  --shadow-mid: 0 8px 32px rgba(15, 23, 42, 0.06);
+
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-border: 1px solid rgba(226, 232, 240, 0.8);
+  --grid-line-color: rgba(203, 213, 225, 0.4);
+
+  --chart-1: #E8523A;
+  --chart-2: #2563EB;
+  --chart-3: #1E3A8A;
+  --chart-4: #475569;
 }
 
 /* Tipografía */
@@ -704,8 +745,8 @@ html, body {
 .hero-dark-grid {
   background: var(--bg-base);
   background-image:
-    linear-gradient(rgba(30, 45, 66, 0.5) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(30, 45, 66, 0.5) 1px, transparent 1px);
+    linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 

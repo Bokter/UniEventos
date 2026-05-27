@@ -1,4 +1,5 @@
 /* @visual-only — nav callbacks passed from parent logic */
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   FileText,
@@ -9,6 +10,8 @@ import {
   Users,
   Tag,
   Heart,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -70,6 +73,34 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
+
+  // Theme support
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return document.documentElement.classList.contains("light") ? "light" : "dark";
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setTheme(document.documentElement.classList.contains("light") ? "light" : "dark");
+    };
+    window.addEventListener("theme-changed", handleThemeChange);
+    return () => window.removeEventListener("theme-changed", handleThemeChange);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    if (newTheme === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.remove("light");
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+    setTheme(newTheme);
+    window.dispatchEvent(new Event("theme-changed"));
+  };
 
   const handleLogout = () => {
     document.body.style.transition = 'opacity 0.4s ease';
@@ -151,6 +182,25 @@ export function DashboardSidebar({
         <button type="button" onClick={handleLogout} className="dashboard-nav-item w-full" style={{ color: "var(--status-red)" }}>
           <LogOut className="h-5 w-5" />
           <span>Cerrar sesión</span>
+        </button>
+
+        <button 
+          type="button" 
+          onClick={toggleTheme} 
+          className="dashboard-nav-item w-full mt-2" 
+          style={{ color: "var(--text-secondary)" }}
+        >
+          {theme === "dark" ? (
+            <>
+              <Sun className="h-5 w-5 text-amber-500 animate-pulse" />
+              <span>Modo claro</span>
+            </>
+          ) : (
+            <>
+              <Moon className="h-5 w-5 text-indigo-500" />
+              <span>Modo oscuro</span>
+            </>
+          )}
         </button>
       </div>
     </aside>
