@@ -52,7 +52,9 @@ export class EventoMapper {
     if (orm.transmisiones) {
       evento.transmisiones = orm.transmisiones.map(t => ({
         id: t.id,
-        stream_url: t.stream_url,
+        meeting_id: t.meeting_id,
+        estado: t.estado,
+        hls_url: t.hls_url,
         organizador: t.organizador ? {
           id: t.organizador.id,
           nombre_completo: t.organizador.nombre_completo

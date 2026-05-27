@@ -19,6 +19,8 @@ services:
       - DB_PASSWORD=password
       - DB_NAME=unieventos
       - JWT_SECRET=${JWT_SECRET}
+      - VIDEOSDK_API_KEY=${VIDEOSDK_API_KEY}
+      - VIDEOSDK_SECRET_KEY=${VIDEOSDK_SECRET_KEY}
     depends_on:
       db:
         condition: service_healthy

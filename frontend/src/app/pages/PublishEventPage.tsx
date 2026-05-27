@@ -110,7 +110,6 @@ export function PublishEventPage() {
   const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
   const [selectedCoOrganizers, setSelectedCoOrganizers] = useState<any[]>([]);
-  const [streamUrl, setStreamUrl] = useState("");
 
   
   const [categories, setCategories] = useState<any[]>([]);
@@ -157,7 +156,6 @@ export function PublishEventPage() {
           }
         }
         setCoverImage(event.imagen_portada || "");
-        setStreamUrl(event.stream_url || "");
 
         
         if (event.organizadores) {
@@ -228,20 +226,7 @@ export function PublishEventPage() {
 
       const eventId = editId || eventResponse?.id;
 
-      // Registrar o actualizar el stream si se proporcionó
-      if (streamUrl && eventId) {
-        try {
-          await eventosApi.registrarStream(eventId, streamUrl);
-        } catch (e) {
-          console.error("Error registrando stream:", e);
-        }
-      } else if (editId && !streamUrl) {
-        try {
-          await eventosApi.eliminarStream(eventId);
-        } catch (e) {
-          // Ignorar error si no tenía stream previamente
-        }
-      }
+
 
       // 3. Send to review if requested
       if (targetStatus === 'In review') {
@@ -368,19 +353,7 @@ export function PublishEventPage() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="stream-url">Enlace de transmisión (Opcional)</Label>
-                <Input 
-                  id="stream-url" 
-                  value={streamUrl} 
-                  onChange={(e) => setStreamUrl(e.target.value)} 
-                  placeholder="e.g. https://www.youtube.com/watch?v=... o https://twitch.tv/..." 
-                  className="mt-2" 
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Soporta enlaces de YouTube y Twitch.
-                </p>
-              </div>
+
 
 
               <SectionDivider label="Fecha y hora" />
