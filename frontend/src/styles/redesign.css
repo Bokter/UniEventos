@@ -26,6 +26,11 @@
   --status-red: #8B2020;
   --status-gray: #2D3748;
 
+  --status-green-bright: #4ADE80;
+  --status-yellow-bright: #FACC15;
+  --status-red-bright: #F87171;
+  --status-gray-bright: #A0AEC0;
+
   --text-display: clamp(3rem, 6vw, 5rem);
   --text-hero: clamp(2rem, 4vw, 3.2rem);
   --text-h1: clamp(1.6rem, 3vw, 2.4rem);
@@ -87,6 +92,11 @@
   --status-yellow: #EAB308;
   --status-red: #EF4444;
   --status-gray: #E2E8F0;
+
+  --status-green-bright: #16A34A;
+  --status-yellow-bright: #D97706;
+  --status-red-bright: #DC2626;
+  --status-gray-bright: #4A5568;
 
   --shadow-card: 0 4px 24px rgba(15, 23, 42, 0.08);
   --shadow-glow: 0 0 24px var(--accent-glow);

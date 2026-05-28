@@ -18,34 +18,34 @@ const config: Record<
 > = {
   en_curso: {
     label: "En curso",
-    dot: "var(--status-green)",
-    bg: "rgba(26, 122, 74, 0.2)",
-    text: "var(--text-accent)",
+    dot: "var(--status-green-bright)",
+    bg: "color-mix(in srgb, var(--status-green-bright) 18%, var(--bg-surface))",
+    text: "var(--status-green-bright)",
     pulse: true,
   },
   por_iniciar: {
     label: "Por iniciar",
-    dot: "var(--status-yellow)",
-    bg: "rgba(138, 104, 0, 0.2)",
-    text: "var(--text-secondary)",
+    dot: "var(--status-yellow-bright)",
+    bg: "color-mix(in srgb, var(--status-yellow-bright) 18%, var(--bg-surface))",
+    text: "var(--status-yellow-bright)",
   },
   terminado: {
     label: "Terminado",
-    dot: "var(--status-red)",
-    bg: "rgba(139, 32, 32, 0.2)",
-    text: "var(--text-secondary)",
+    dot: "var(--status-red-bright)",
+    bg: "color-mix(in srgb, var(--status-red-bright) 18%, var(--bg-surface))",
+    text: "var(--status-red-bright)",
   },
   proximo: {
     label: "Próximo",
-    dot: "var(--text-muted)",
-    bg: "rgba(45, 55, 72, 0.4)",
-    text: "var(--text-secondary)",
+    dot: "var(--status-gray-bright)",
+    bg: "color-mix(in srgb, var(--status-gray-bright) 20%, var(--bg-surface))",
+    text: "var(--status-gray-bright)",
   },
   futuro: {
     label: "Próximo",
-    dot: "var(--text-muted)",
-    bg: "rgba(45, 55, 72, 0.4)",
-    text: "var(--text-secondary)",
+    dot: "var(--status-gray-bright)",
+    bg: "color-mix(in srgb, var(--status-gray-bright) 20%, var(--bg-surface))",
+    text: "var(--status-gray-bright)",
   },
 };
 
@@ -115,8 +115,12 @@ export function StatusPill({ estado, horaInicio, horaFin, className = "" }: Stat
         color: c.text,
         borderRadius: "var(--radius-pill)",
         fontFamily: "'Manrope', sans-serif",
-        fontWeight: 500,
+        fontWeight: 600,
         fontSize: "0.75rem",
+        border: `1px solid color-mix(in srgb, ${c.dot} 35%, transparent)`,
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        boxShadow: "0 2px 10px rgba(0, 0, 0, 0.15)",
       }}
     >
       <span
@@ -125,7 +129,7 @@ export function StatusPill({ estado, horaInicio, horaFin, className = "" }: Stat
       />
       <span>{c.label}</span>
       {countdown && (
-        <span className="font-data opacity-80 tabular-nums" style={{ fontSize: "0.7rem" }}>
+        <span className="font-data opacity-90 tabular-nums" style={{ fontSize: "0.7rem" }}>
           {countdown}
         </span>
       )}
