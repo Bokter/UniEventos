@@ -1,4 +1,4 @@
-import { Controller, Post, Delete, Param, Body, ParseIntPipe, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Param, Body, ParseIntPipe, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TransmisionService } from '../application/services/transmision.service';
 import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
@@ -11,13 +11,41 @@ export class TransmisionController {
   @Post(':id/stream')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Registrar enlace de transmisión' })
-  registrar(
+  @ApiOperation({ summary: 'Iniciar transmisión con VideoSDK' })
+  iniciar(
     @Param('id', ParseIntPipe) eventoId: number,
-    @Body('url') url: string,
     @Req() req: any
   ) {
-    return this.transmisionService.registrar(eventoId, req.user.id, url);
+    return this.transmisionService.iniciarTransmision(eventoId, req.user.id);
+  }
+
+  @Get(':id/stream/token')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener token de VideoSDK para la sala de transmisión' })
+  obtenerToken(
+    @Param('id', ParseIntPipe) eventoId: number,
+    @Req() req: any
+  ) {
+    return this.transmisionService.obtenerToken(eventoId, req.user.id);
+  }
+
+  @Put(':id/stream/estado')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar estado de la transmisión' })
+  actualizarEstado(
+    @Param('id', ParseIntPipe) eventoId: number,
+    @Req() req: any,
+    @Body('estado') estado: 'idle' | 'live' | 'ended',
+    @Body('hlsUrl') hlsUrl?: string | null,
+  ) {
+    return this.transmisionService.actualizarEstado(
+      eventoId,
+      req.user.id,
+      estado,
+      hlsUrl,
+    );
   }
 
   @Delete(':id/stream')

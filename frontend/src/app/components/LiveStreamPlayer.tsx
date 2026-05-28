@@ -1,16 +1,25 @@
+import { VideoSDKViewer } from "./VideoSDKViewer";
 import ReactPlayer from "react-player";
 
 interface LiveStreamPlayerProps {
-  url: string;
+  meetingId?: string | null;
+  estado?: "idle" | "live" | "ended";
+  hlsUrl?: string | null;
+  url?: string;
 }
 
-export function LiveStreamPlayer({ url }: LiveStreamPlayerProps) {
+export function LiveStreamPlayer({ meetingId, estado = "idle", hlsUrl, url }: LiveStreamPlayerProps) {
+  // Si tenemos un meetingId, renderizamos el visor nativo de VideoSDK con HLS
+  if (meetingId) {
+    return <VideoSDKViewer meetingId={meetingId} estado={estado} hlsUrl={hlsUrl} />;
+  }
+
   if (!url) {
     return (
       <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center text-white">
         <div className="text-center">
           <p className="text-lg font-semibold">Sin transmisión</p>
-          <p className="text-sm text-gray-400 mt-2">No se ha proporcionado un enlace de transmisión para este evento</p>
+          <p className="text-sm text-gray-400 mt-2">No se ha iniciado una transmisión en vivo para este evento</p>
         </div>
       </div>
     );
