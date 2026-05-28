@@ -1,3 +1,5 @@
+/* @visual-only — nav callbacks passed from parent logic */
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   FileText,
@@ -8,26 +10,60 @@ import {
   Users,
   Tag,
   Heart,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export type SidebarTab =
-  // Organizer tabs
   | "events"
   | "notifications"
   | "profile"
-  // Admin tabs
   | "pending"
   | "all"
   | "users"
   | "categories"
-  // Attendee/User tabs
   | "favorites";
 
 interface DashboardSidebarProps {
   activeTab: SidebarTab;
   setActiveTab: (tab: SidebarTab) => void;
   pendingEventsCount?: number;
+}
+
+function NavItem({
+  active,
+  onClick,
+  icon,
+  label,
+  badge,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  badge?: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`dashboard-nav-item ${active ? "dashboard-nav-item--active" : ""}`}
+    >
+      <span style={{ width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {icon}
+      </span>
+      <span className="flex-1">{label}</span>
+      {badge != null && badge > 0 && (
+        <span
+          className="text-xs px-2 py-0.5 rounded-full font-data"
+          style={{ background: "var(--accent-glow)", color: "var(--accent-primary)" }}
+        >
+          {badge}
+        </span>
+      )}
+    </button>
+  );
 }
 
 export function DashboardSidebar({
@@ -37,6 +73,34 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
+
+  // Theme support
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return document.documentElement.classList.contains("light") ? "light" : "dark";
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setTheme(document.documentElement.classList.contains("light") ? "light" : "dark");
+    };
+    window.addEventListener("theme-changed", handleThemeChange);
+    return () => window.removeEventListener("theme-changed", handleThemeChange);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    if (newTheme === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.remove("light");
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+    setTheme(newTheme);
+    window.dispatchEvent(new Event("theme-changed"));
+  };
 
   const handleLogout = () => {
     document.body.style.transition = 'opacity 0.4s ease';
@@ -49,191 +113,50 @@ export function DashboardSidebar({
   };
 
   const renderOrganizerLinks = () => (
-    <>
-      <h2 className="hidden md:block text-sm mb-4 font-semibold uppercase text-white/50 tracking-[0.08em]">
-        Panel del Organizador
-      </h2>
-      <nav className="space-y-1">
-        <button
-          onClick={() => setActiveTab("events")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "events"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "events"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <FileText className="h-4 w-4" />
-          <span>Mis eventos</span>
-        </button>
-        <button
-          onClick={() => navigate("/organizer/publish")}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-white/5 transition-colors"
-          style={{ color: 'rgba(229,229,229,0.7)' }}
-        >
-          <Plus className="h-4 w-4" />
-          <span>Publicar evento</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("notifications")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "notifications"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "notifications"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <Bell className="h-4 w-4" />
-          <span>Notificaciones</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("favorites")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "favorites"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "favorites"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <Heart className="h-4 w-4" />
-          <span>Favoritos</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "profile"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "profile"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <User className="h-4 w-4" />
-          <span>Mi perfil</span>
-        </button>
-      </nav>
-    </>
+    <nav className="space-y-1">
+      <p className="font-caption uppercase tracking-widest mb-4 hidden md:block" style={{ fontSize: "0.7rem" }}>
+        Organizador
+      </p>
+      <NavItem active={activeTab === "events"} onClick={() => setActiveTab("events")} icon={<FileText className="h-5 w-5" />} label="Mis eventos" />
+      <NavItem active={false} onClick={() => navigate("/organizer/publish")} icon={<Plus className="h-5 w-5" />} label="Publicar evento" />
+      <NavItem active={activeTab === "notifications"} onClick={() => setActiveTab("notifications")} icon={<Bell className="h-5 w-5" />} label="Notificaciones" />
+      <NavItem active={activeTab === "favorites"} onClick={() => setActiveTab("favorites")} icon={<Heart className="h-5 w-5" />} label="Favoritos" />
+      <NavItem active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={<User className="h-5 w-5" />} label="Mi perfil" />
+    </nav>
   );
 
   const renderAdminLinks = () => (
-    <>
-      <h2 className="hidden md:block text-sm mb-4 font-semibold uppercase text-white/50 tracking-[0.08em]">
-        Panel de Administrador
-      </h2>
-      <nav className="space-y-1">
-        <button
-          onClick={() => setActiveTab("pending")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "pending"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "pending"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <FileText className="h-4 w-4" />
-          <span>Pendientes</span>
-          {pendingEventsCount > 0 && (
-            <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(238,108,77,0.2)', color: '#EE6C4D' }}>
-              {pendingEventsCount}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("all")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "all"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "all"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <FileText className="h-4 w-4" />
-          <span>Todos los eventos</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("users")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "users"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "users"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <Users className="h-4 w-4" />
-          <span>Usuarios</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("categories")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "categories"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "categories"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <Tag className="h-4 w-4" />
-          <span>Categorías</span>
-        </button>
-      </nav>
-    </>
+    <nav className="space-y-1">
+      <p className="font-caption uppercase tracking-widest mb-4 hidden md:block" style={{ fontSize: "0.7rem" }}>
+        Administración
+      </p>
+      <NavItem active={activeTab === "pending"} onClick={() => setActiveTab("pending")} icon={<FileText className="h-5 w-5" />} label="Pendientes" badge={pendingEventsCount} />
+      <NavItem active={activeTab === "all"} onClick={() => setActiveTab("all")} icon={<FileText className="h-5 w-5" />} label="Todos los eventos" />
+      <NavItem active={activeTab === "users"} onClick={() => setActiveTab("users")} icon={<Users className="h-5 w-5" />} label="Usuarios" />
+      <NavItem active={activeTab === "categories"} onClick={() => setActiveTab("categories")} icon={<Tag className="h-5 w-5" />} label="Categorías" />
+    </nav>
   );
 
   const renderAttendeeLinks = () => (
-    <>
-      <h2 className="hidden md:block text-sm mb-4 font-semibold uppercase text-white/50 tracking-[0.08em]">
-        Mi Cuenta
-      </h2>
-      <nav className="space-y-1">
-        <button
-          onClick={() => setActiveTab("favorites")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "favorites"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "favorites"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <Heart className="h-4 w-4" />
-          <span>Favoritos</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === "profile"
-              ? "border-l-4"
-              : "hover:bg-white/5"
-            }`}
-          style={activeTab === "profile"
-            ? { borderLeftColor: '#EE6C4D', color: '#EE6C4D', background: 'rgba(238,108,77,0.1)' }
-            : { color: 'rgba(229,229,229,0.7)' }
-          }
-        >
-          <User className="h-4 w-4" />
-          <span>Mi perfil</span>
-        </button>
-      </nav>
-    </>
+    <nav className="space-y-1">
+      <p className="font-caption uppercase tracking-widest mb-4 hidden md:block" style={{ fontSize: "0.7rem" }}>
+        Mi cuenta
+      </p>
+      <NavItem active={activeTab === "favorites"} onClick={() => setActiveTab("favorites")} icon={<Heart className="h-5 w-5" />} label="Favoritos" />
+      <NavItem active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={<User className="h-5 w-5" />} label="Mi perfil" />
+    </nav>
   );
 
   return (
-    <div className="w-full md:w-64 md:min-h-[calc(100vh-4rem)] flex flex-col bg-[#293241] border-b md:border-b-0 md:border-r border-white/10">
-      <div className="p-4 md:p-6 flex-1 overflow-x-auto md:overflow-x-visible">
+    <aside className="dashboard-sidebar w-full md:w-[260px] flex flex-col border-b md:border-b-0">
+      <div className="p-6 border-b hidden md:block" style={{ borderColor: "var(--border-subtle)" }}>
+        <div className="flex items-center gap-2">
+          <span className="logo-pulse-dot w-2.5 h-2.5 rounded-full" style={{ background: "var(--accent-primary)" }} />
+          <span className="font-h2" style={{ fontSize: "1.25rem", fontWeight: 700 }}>UniEventos</span>
+        </div>
+      </div>
+
+      <div className="p-4 md:p-6 flex-1 overflow-x-auto md:overflow-visible">
         <div className="flex md:block gap-2 min-w-max md:min-w-0">
           {usuario?.rol === "admin" && renderAdminLinks()}
           {usuario?.rol === "organizador" && renderOrganizerLinks()}
@@ -241,15 +164,45 @@ export function DashboardSidebar({
         </div>
       </div>
 
-      <div className="p-4 md:p-6 border-t border-white/10 hidden md:block">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-red-500/10 transition-colors text-red-400"
-        >
-          <LogOut className="h-4 w-4" />
+      <div className="p-4 md:p-6 border-t hidden md:block" style={{ borderColor: "var(--border-subtle)" }}>
+        {usuario && (
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
+              style={{ background: "var(--accent-primary)", color: "var(--text-primary)" }}
+            >
+              {usuario.nombre_completo.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="font-body text-sm truncate" style={{ fontWeight: 600 }}>{usuario.nombre_completo}</p>
+              <p className="font-caption capitalize">{usuario.rol}</p>
+            </div>
+          </div>
+        )}
+        <button type="button" onClick={handleLogout} className="dashboard-nav-item w-full" style={{ color: "var(--status-red)" }}>
+          <LogOut className="h-5 w-5" />
           <span>Cerrar sesión</span>
         </button>
+
+        <button 
+          type="button" 
+          onClick={toggleTheme} 
+          className="dashboard-nav-item w-full mt-2" 
+          style={{ color: "var(--text-secondary)" }}
+        >
+          {theme === "dark" ? (
+            <>
+              <Sun className="h-5 w-5 text-amber-500 animate-pulse" />
+              <span>Modo claro</span>
+            </>
+          ) : (
+            <>
+              <Moon className="h-5 w-5 text-indigo-500" />
+              <span>Modo oscuro</span>
+            </>
+          )}
+        </button>
       </div>
-    </div>
+    </aside>
   );
 }

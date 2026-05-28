@@ -32,9 +32,9 @@ export function EventMap({ lat, lng, locationName }: EventMapProps) {
       });
 
       // Add tile layer - Puede fallar si OpenStreetMap no responde
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
       }).addTo(map);
 
       // Add marker con popup opcional
@@ -65,7 +65,7 @@ export function EventMap({ lat, lng, locationName }: EventMapProps) {
   return (
     <div
       ref={mapRef}
-      className="h-64 rounded-lg overflow-hidden border border-gray-200 z-0 relative"
+      className="h-64 map-dark-frame z-0 relative"
     />
   );
 }
