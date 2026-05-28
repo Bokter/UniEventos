@@ -28,7 +28,7 @@ export class TransmisionTypeormRepository implements ITransmisionRepository {
     });
   }
 
-  async upsert(eventoId: number, organizadorId: number, meetingId: string) {
+  async upsert(eventoId: number, organizadorId: number, meetingId: string | null, streamUrl: string | null) {
     let transmision = await this.repo.findOne({
       where: {
         evento: { id: eventoId },
@@ -44,7 +44,8 @@ export class TransmisionTypeormRepository implements ITransmisionRepository {
     }
 
     transmision.meeting_id = meetingId;
-    transmision.estado = 'idle';
+    transmision.stream_url = streamUrl;
+    transmision.estado = streamUrl ? 'live' : 'idle';
     transmision.hls_url = null;
     return this.repo.save(transmision);
   }

@@ -11,12 +11,13 @@ export class TransmisionController {
   @Post(':id/stream')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Iniciar transmisión con VideoSDK' })
+  @ApiOperation({ summary: 'Iniciar transmisión con VideoSDK o enlace externo' })
   iniciar(
     @Param('id', ParseIntPipe) eventoId: number,
-    @Req() req: any
+    @Req() req: any,
+    @Body('url') url?: string
   ) {
-    return this.transmisionService.iniciarTransmision(eventoId, req.user.id);
+    return this.transmisionService.iniciarTransmision(eventoId, req.user.id, url);
   }
 
   @Get(':id/stream/token')

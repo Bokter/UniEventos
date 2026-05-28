@@ -17,9 +17,13 @@ export class TransmisionOrmEntity {
   @JoinColumn({ name: 'usuario_id' })
   organizador: UsuarioOrmEntity;
 
-  /** Room ID de VideoSDK (antes era stream_url con URL externa) */
+  /** Room ID de VideoSDK */
   @Column({ type: 'varchar', length: 255, nullable: true })
   meeting_id: string | null;
+
+  /** URL externa para la transmisión (YouTube, Twitch, etc.) */
+  @Column({ type: 'text', nullable: true })
+  stream_url: string | null;
 
   /** URL HLS para los espectadores (la genera VideoSDK cuando el host inicia HLS) */
   @Column({ type: 'text', nullable: true })

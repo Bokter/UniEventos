@@ -27,8 +27,8 @@ export function EventDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoadingStream, setIsLoadingStream] = useState(false);
-  const [showStreamDialog, setShowStreamDialog] = useState(false);
-  const [streamLink, setStreamLink] = useState("");
+  const [showStreamOptionsDialog, setShowStreamOptionsDialog] = useState(false);
+  const [externalStreamUrl, setExternalStreamUrl] = useState("");
   const [activeStreamId, setActiveStreamId] = useState<number | null>(null);
   const [broadcasterData, setBroadcasterData] = useState<{ meetingId: string; token: string } | null>(null);
   const [broadcasterSessionKey, setBroadcasterSessionKey] = useState("");
@@ -44,12 +44,9 @@ export function EventDetailPage() {
         const data = await eventosApi.getById(id) as any;
         setEvent(data);
 
-        // Check if current user is an organizer to set initial stream link
+        // Removed streamLink check, not used anymore
         if (usuario && data.streams) {
-          const userStream = data.streams.find((s: any) => String(s.organizerId) === String(usuario.id));
-          if (userStream) {
-            setStreamLink(userStream.streamLink);
-          }
+          // Backward compatibility check, maybe not needed
         }
 
         // Set first active stream if available
@@ -150,21 +147,44 @@ export function EventDetailPage() {
   const isOrganizer = !!usuario && allOrganizers.some((o: any) => String(o.id) === String(usuario.id));
   const myStream = event.transmisiones?.find((t: any) => String(t.organizador?.id) === String(usuario?.id));
 
-  const handleStartStream = async () => {
+  const handleStartStreamClick = () => {
     if (!usuario || !isOrganizer) {
       toast.error("Solo los organizadores pueden iniciar una transmisión");
       return;
     }
+    // Si ya existe la transmisión, determinar si es externa o VideoSDK
+    if (myStream) {
+      if (myStream.stream_url) {
+         toast.success("La transmisión externa ya está en curso.");
+         return;
+      }
+      if (myStream.meeting_id) {
+         return startStreamFlow();
+      }
+    }
+    // Si no, preguntar
+    setShowStreamOptionsDialog(true);
+  };
+
+  const startStreamFlow = async (url?: string) => {
     setIsLoadingStream(true);
+    setShowStreamOptionsDialog(false);
     try {
-      // Siempre abre/refresca sesión: reutiliza sala en idle/live o crea una nueva si terminó (ended)
-      const res = await eventosApi.iniciarStream(id!);
-      setBroadcasterData({ meetingId: res.meetingId, token: res.token });
-      setBroadcasterSessionKey(`${res.meetingId}-${Date.now()}`);
-      setIsBroadcasterOpen(true);
+      const res = await eventosApi.iniciarStream(id!, url);
+      
+      // Si es VideoSDK, res.meetingId existirá y url será falso
+      if (res.meetingId && !url) {
+        setBroadcasterData({ meetingId: res.meetingId, token: res.token });
+        setBroadcasterSessionKey(`${res.meetingId}-${Date.now()}`);
+        setIsBroadcasterOpen(true);
+      } else {
+        // Es URL externa
+        toast.success("Transmisión externa iniciada");
+      }
+
       const data = await eventosApi.getById(id!);
       setEvent(data);
-      if (!myStream) {
+      if (!myStream && !url) {
         toast.success("Sala de transmisión lista");
       }
     } catch (error: any) {
@@ -321,6 +341,7 @@ export function EventDetailPage() {
                   meetingId={activeTx?.meeting_id}
                   estado={activeTx?.estado}
                   hlsUrl={activeTx?.hls_url}
+                  url={activeTx?.stream_url}
                 />
               </div>
               );
@@ -421,17 +442,19 @@ export function EventDetailPage() {
                   <h3 className="font-h3 text-sm mb-2">Tu transmisión</h3>
                   {myStream ? (
                     <>
-                      <Button variant="outline" className="w-full dashboard-btn-outline dashboard-btn-edit event-detail-sidebar-btn" onClick={handleStartStream}>
-                        <Video className="h-4 w-4 mr-2" />
-                        Abrir Transmisor
-                      </Button>
+                      {!myStream.stream_url && (
+                        <Button variant="outline" className="w-full dashboard-btn-outline dashboard-btn-edit event-detail-sidebar-btn" onClick={handleStartStreamClick}>
+                          <Video className="h-4 w-4 mr-2" />
+                          Abrir Transmisor
+                        </Button>
+                      )}
                       <Button variant="destructive" className="w-full dashboard-btn-outline dashboard-btn-danger-outline event-detail-sidebar-btn" onClick={handleEndStream} disabled={isLoadingStream}>
                         <VideoOff className={`h-4 w-4 mr-2 ${isLoadingStream ? "animate-spin" : ""}`} />
                         Finalizar Mi Stream
                       </Button>
                     </>
                   ) : (
-                    <Button variant="outline" className="w-full dashboard-btn-outline dashboard-btn-toggle event-detail-sidebar-btn" onClick={handleStartStream}>
+                    <Button variant="outline" className="w-full dashboard-btn-outline dashboard-btn-toggle event-detail-sidebar-btn" onClick={handleStartStreamClick}>
                       <Video className="h-4 w-4 mr-2" />
                       Iniciar Mi Transmisión
                     </Button>
@@ -478,6 +501,58 @@ export function EventDetailPage() {
               }}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showStreamOptionsDialog} onOpenChange={setShowStreamOptionsDialog}>
+        <DialogContent className="sm:max-w-md bg-[var(--bg-elevated)] border-[var(--border-default)]">
+          <DialogHeader>
+            <DialogTitle>¿Cómo deseas transmitir?</DialogTitle>
+            <DialogDescription>
+              Elige entre usar la cámara de tu dispositivo o un enlace externo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <Button onClick={() => startStreamFlow()} className="dashboard-btn-primary-filled h-12">
+              <Video className="h-5 w-5 mr-2" />
+              Usar cámara (VideoSDK)
+            </Button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-[var(--border-default)]" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[var(--bg-elevated)] px-2 text-[var(--text-muted)]">O usar enlace externo</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="externalUrl">Enlace de YouTube, Twitch, etc.</Label>
+              <Input
+                id="externalUrl"
+                placeholder="https://youtube.com/watch?v=..."
+                value={externalStreamUrl}
+                onChange={(e) => setExternalStreamUrl(e.target.value)}
+                className="bg-[var(--bg-base)] border-[var(--border-default)]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowStreamOptionsDialog(false)}>Cancelar</Button>
+            <Button 
+              onClick={() => {
+                if (!externalStreamUrl) {
+                  toast.error("Ingresa una URL válida");
+                  return;
+                }
+                startStreamFlow(externalStreamUrl);
+              }} 
+              disabled={!externalStreamUrl}
+            >
+              Iniciar con enlace
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

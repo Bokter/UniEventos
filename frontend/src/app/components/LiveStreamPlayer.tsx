@@ -8,7 +8,7 @@ interface LiveStreamPlayerProps {
   url?: string;
 }
 
-export function LiveStreamPlayer({ meetingId, estado = "idle", hlsUrl, url }: LiveStreamPlayerProps) {
+export function LiveStreamPlayer({ meetingId, estado = "idle", hlsUrl = null, url }: LiveStreamPlayerProps) {
   // Si tenemos un meetingId, renderizamos el visor nativo de VideoSDK con HLS
   if (meetingId) {
     return <VideoSDKViewer meetingId={meetingId} estado={estado} hlsUrl={hlsUrl} />;

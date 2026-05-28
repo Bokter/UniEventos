@@ -79,10 +79,11 @@ export const eventosApi = {
       headers: buildHeaders(),
     }).then(handleResponse),
 
-  iniciarStream: (id: number | string) =>
+  iniciarStream: (id: number | string, url?: string) =>
     fetchWithRetry(`${BASE_URL}/eventos/${id}/stream`, {
       method: 'POST',
       headers: buildHeaders(),
+      body: url ? JSON.stringify({ url }) : undefined,
     }).then(handleResponse),
 
   obtenerTokenStream: (id: number | string) =>
