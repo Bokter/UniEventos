@@ -23,4 +23,28 @@ services:
       - NODE_ENV=${NODE_ENV}
       - TZ=${TZ}
       - JWT_SECRET=${JWT_SECRET}
-    command: sh -c "npm run build && npx typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts && node dist/main.js"
+      - VIDEOSDK_API_KEY=${VIDEOSDK_API_KEY}
+      - VIDEOSDK_SECRET_KEY=${VIDEOSDK_SECRET_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "npm run build && npm run migration:run && node dist/main.js"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: unieventos
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d unieventos" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

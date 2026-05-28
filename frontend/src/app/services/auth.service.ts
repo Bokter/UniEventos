@@ -2,7 +2,7 @@
 // auth.service.ts — Servicio de autenticación para UniEventos
 // ============================================================
 
-const BASE_URL = 'https://unieventos-s25a.onrender.com';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://unieventos-s25a.onrender.com';
 
 // ── Tipos ────────────────────────────────────────────────────
 export type Rol = 'miembro' | 'organizador' | 'admin';
