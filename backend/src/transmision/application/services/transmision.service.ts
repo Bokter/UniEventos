@@ -41,12 +41,7 @@ export class TransmisionService {
         organizadorId,
       );
 
-      // Solo reutilizamos la sala si hay un vivo REALMENTE en curso (reanudar).
-      // En cualquier otro caso (idle/ended) creamos una sala nueva: reutilizar una
-      // sala vieja resucitaba participantes fantasma de sesiones previas que no
-      // hicieron leave() limpio, y como todos entran como "Organizador" parecía una
-      // reunión con varios integrantes.
-      if (existing?.meeting_id && existing.estado === 'live') {
+      if (existing?.meeting_id && existing.estado !== 'ended') {
         const token = this.videosdkService.generateToken(existing.meeting_id, 'host');
         return {
           meetingId: existing.meeting_id,
