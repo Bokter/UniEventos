@@ -1,5 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { MeetingProvider, useMeeting, useParticipant } from "@videosdk.live/react-sdk";
+import {
+  MeetingProvider,
+  useMeeting,
+  useParticipant,
+  createCameraVideoTrack,
+  createMicrophoneAudioTrack,
+} from "@videosdk.live/react-sdk";
 import { Video, VideoOff, Mic, MicOff, Tv, Power, Radio } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
@@ -611,15 +617,55 @@ export function VideoSDKBroadcaster({
 }: VideoSDKBroadcasterProps) {
   const [phase, setPhase] = useState<"setup" | "connecting" | "live">("setup");
   const [devices, setDevices] = useState<{ camId: string; micId: string } | null>(null);
+  // Tracks propios creados con la cámara/mic elegidos: así entramos a la sala YA
+  // con la cámara correcta (p. ej. trasera) en vez de entrar con la frontal por
+  // defecto y cambiarla luego (lo que tardaba y a veces dejaba la frontal).
+  const [camTrack, setCamTrack] = useState<MediaStream | null>(null);
+  const [micTrack, setMicTrack] = useState<MediaStream | null>(null);
 
-  // Tras salir del lobby esperamos un instante a que el navegador libere
-  // la cámara/micrófono del preview antes de que el SDK los vuelva a tomar.
-  // Sin esta pausa, el SDK recibe NotReadableError y la webcam nunca enciende.
+  // Tras salir del lobby esperamos un instante a que el navegador libere la
+  // cámara/micrófono del preview, luego creamos los tracks con los dispositivos
+  // elegidos y recién ahí entramos a la sala.
   useEffect(() => {
     if (phase !== "connecting") return;
-    const t = setTimeout(() => setPhase("live"), 500);
-    return () => clearTimeout(t);
-  }, [phase]);
+    let cancelled = false;
+
+    const t = setTimeout(async () => {
+      let cam: MediaStream | null = null;
+      let mic: MediaStream | null = null;
+      try {
+        if (devices?.camId) {
+          cam = await createCameraVideoTrack({
+            cameraId: devices.camId,
+            optimizationMode: "motion",
+            encoderConfig: "h720p_w1280p",
+          });
+        }
+      } catch (err) {
+        console.error("No se pudo crear el track de cámara elegido:", err);
+      }
+      try {
+        if (devices?.micId) {
+          mic = await createMicrophoneAudioTrack({ microphoneId: devices.micId });
+        }
+      } catch (err) {
+        console.error("No se pudo crear el track de micrófono elegido:", err);
+      }
+      if (cancelled) {
+        cam?.getTracks().forEach((t) => t.stop());
+        mic?.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      setCamTrack(cam);
+      setMicTrack(mic);
+      setPhase("live");
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [phase, devices]);
 
   if (!token || token === "mock-token" || meetingId === "mock-room-id") {
     return (
@@ -678,6 +724,9 @@ export function VideoSDKBroadcaster({
             webcamEnabled: true,
             name: "Organizador",
             mode: "SEND_AND_RECV",
+            // Entrar directamente con la cámara/mic elegidos.
+            customCameraVideoTrack: camTrack ?? undefined,
+            customMicrophoneAudioTrack: micTrack ?? undefined,
           }}
           token={token}
           joinWithoutUserInteraction
@@ -685,8 +734,10 @@ export function VideoSDKBroadcaster({
           <MeetingControls
             eventoId={eventoId}
             onClose={onClose}
-            selectedCamId={devices?.camId}
-            selectedMicId={devices?.micId}
+            // Si ya entramos con el track correcto, NO volvemos a cambiar la cámara
+            // dentro de la sala (eso causaba demora y volver a la frontal).
+            selectedCamId={camTrack ? undefined : devices?.camId}
+            selectedMicId={micTrack ? undefined : devices?.micId}
           />
         </MeetingProvider>
       )}
