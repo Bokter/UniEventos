@@ -64,9 +64,13 @@ function isHlsLiveState(state: string | null | undefined): boolean {
 function MeetingControls({
   eventoId,
   onClose,
+  selectedCamId,
+  selectedMicId,
 }: {
   eventoId: number;
   onClose: () => void;
+  selectedCamId?: string;
+  selectedMicId?: string;
 }) {
   const {
     join,
@@ -78,7 +82,26 @@ function MeetingControls({
     hlsUrls,
     toggleWebcam,
     toggleMic,
+    changeWebcam,
+    changeMic,
   } = useMeeting();
+
+  // Aplica la cámara/micrófono elegidos en el lobby una vez unidos a la sala.
+  const devicesAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!localParticipant || devicesAppliedRef.current) return;
+    devicesAppliedRef.current = true;
+    try {
+      if (selectedCamId) changeWebcam(selectedCamId);
+    } catch (err) {
+      console.error("No se pudo aplicar la cámara seleccionada:", err);
+    }
+    try {
+      if (selectedMicId) changeMic(selectedMicId);
+    } catch (err) {
+      console.error("No se pudo aplicar el micrófono seleccionado:", err);
+    }
+  }, [localParticipant, selectedCamId, selectedMicId, changeWebcam, changeMic]);
 
   const [isCamOn, setIsCamOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
