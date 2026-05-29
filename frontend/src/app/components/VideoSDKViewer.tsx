@@ -47,14 +47,23 @@ function HlsPlayer({ url }: { url: string }) {
       }
       // Soporte usando hls.js (Chrome, Firefox, Edge, etc.)
       else if (Hls.isSupported()) {
+        // IMPORTANTE: el broadcaster hace startHls SIN baja latencia, por lo que
+        // el viewer NO debe usar lowLatencyMode. Si lo hace, hls.js pide segmentos
+        // parciales / blocking-playlist que VideoSDK no sirve en vivo -> errores
+        // continuos y pantalla gris hasta que el stream se finaliza (VOD).
         hls = new Hls({
-          maxMaxBufferLength: 10,
           enableWorker: true,
-          lowLatencyMode: true,
+          lowLatencyMode: false,
+          liveSyncDurationCount: 3,
+          backBufferLength: 30,
         });
         hls.loadSource(url);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          // Saltar al borde en vivo en lugar de empezar desde el inicio del playlist.
+          if (hls && hls.liveSyncPosition != null) {
+            video.currentTime = hls.liveSyncPosition;
+          }
           video.play().catch((err) => console.log("Autoplay bloqueado:", err));
         });
 
