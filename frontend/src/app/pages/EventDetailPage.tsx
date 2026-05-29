@@ -105,6 +105,10 @@ export function EventDetailPage() {
   // Actualizar estado de transmisión para espectadores (p. ej. ventana incógnito)
   useEffect(() => {
     if (!id || !event?.transmisiones?.length) return;
+    // No refrescar mientras el panel de transmisor está abierto: el setEvent
+    // re-renderiza el <VideoSDKBroadcaster> (webcam + MeetingProvider) y provoca
+    // tirones/trabas en la máquina que transmite.
+    if (isBroadcasterOpen) return;
 
     const interval = setInterval(async () => {
       try {
@@ -116,7 +120,7 @@ export function EventDetailPage() {
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [id, event?.transmisiones?.length]);
+  }, [id, event?.transmisiones?.length, isBroadcasterOpen]);
 
   if (isLoading) {
     return (

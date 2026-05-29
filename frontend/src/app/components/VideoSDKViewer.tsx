@@ -55,7 +55,14 @@ function HlsPlayer({ url }: { url: string }) {
           enableWorker: true,
           lowLatencyMode: false,
           liveSyncDurationCount: 3,
-          backBufferLength: 30,
+          // Acotar buffers para no saturar memoria/CPU y evitar trabas.
+          backBufferLength: 10,
+          maxBufferLength: 10,
+          maxMaxBufferLength: 20,
+          // Empezar en la calidad más baja y limitar al tamaño real del <video>:
+          // evita decodificar 720p en pantallas/equipos pequeños (causa de trabas).
+          startLevel: 0,
+          capLevelToPlayerSize: true,
         });
         hls.loadSource(url);
         hls.attachMedia(video);
