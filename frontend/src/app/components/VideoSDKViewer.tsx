@@ -64,15 +64,10 @@ function HlsPlayer({ url }: { url: string }) {
       video.playsInline = true;
       setIsMuted(true);
 
-      // Soporte nativo para HLS (Safari/iOS)
-      if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = url;
-        video.addEventListener("loadedmetadata", () => {
-          tryPlay();
-        });
-      }
-      // Soporte usando hls.js (Chrome, Firefox, Edge, etc.)
-      else if (Hls.isSupported()) {
+      // Preferimos hls.js cuando está soportado (Android, PC e iOS 17.1+ con
+      // ManagedMediaSource). El HLS nativo de iOS falla con el playlist de
+      // VideoSDK (servido como application/octet-stream) y deja la pantalla gris.
+      if (Hls.isSupported()) {
         // IMPORTANTE: el broadcaster hace startHls SIN baja latencia, por lo que
         // el viewer NO debe usar lowLatencyMode. Si lo hace, hls.js pide segmentos
         // parciales / blocking-playlist que VideoSDK no sirve en vivo -> errores
@@ -125,6 +120,13 @@ function HlsPlayer({ url }: { url: string }) {
               setHasError(true);
               break;
           }
+        });
+      }
+      // Respaldo: HLS nativo (iOS < 17.1 o Safari sin MediaSource).
+      else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = url;
+        video.addEventListener("loadedmetadata", () => {
+          tryPlay();
         });
       } else {
         setHasError(true);
