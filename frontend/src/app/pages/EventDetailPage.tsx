@@ -9,6 +9,7 @@ import type { EstadoPill } from "../components/visual/StatusPill";
 import { Button } from "../components/ui/button";
 import { EventMap } from "../components/EventMap";
 import { LiveStreamPlayer } from "../components/LiveStreamPlayer";
+import { VideoSDKBroadcaster } from "../components/VideoSDKBroadcaster";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -52,9 +53,12 @@ export function EventDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoadingStream, setIsLoadingStream] = useState(false);
-  const [showStreamDialog, setShowStreamDialog] = useState(false);
-  const [streamLink, setStreamLink] = useState("");
+  const [showStreamOptionsDialog, setShowStreamOptionsDialog] = useState(false);
+  const [externalStreamUrl, setExternalStreamUrl] = useState("");
   const [activeStreamId, setActiveStreamId] = useState<number | null>(null);
+  const [broadcasterData, setBroadcasterData] = useState<{ meetingId: string; token: string } | null>(null);
+  const [broadcasterSessionKey, setBroadcasterSessionKey] = useState("");
+  const [isBroadcasterOpen, setIsBroadcasterOpen] = useState(false);
 
 
   useEffect(() => {
@@ -66,12 +70,9 @@ export function EventDetailPage() {
         const data = await eventosApi.getById(id) as any;
         setEvent(data);
 
-        // Check if current user is an organizer to set initial stream link
+        // Removed streamLink check, not used anymore
         if (usuario && data.streams) {
-          const userStream = data.streams.find((s: any) => String(s.organizerId) === String(usuario.id));
-          if (userStream) {
-            setStreamLink(userStream.streamLink);
-          }
+          // Backward compatibility check, maybe not needed
         }
 
         // Set first active stream if available
@@ -100,6 +101,22 @@ export function EventDetailPage() {
 
     fetchEvent();
   }, [id, usuario?.id]);
+
+  // Actualizar estado de transmisión para espectadores (p. ej. ventana incógnito)
+  useEffect(() => {
+    if (!id || !event?.transmisiones?.length) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const data = await eventosApi.getById(id) as any;
+        setEvent(data);
+      } catch {
+        /* ignorar errores de red puntuales */
+      }
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [id, event?.transmisiones?.length]);
 
   if (isLoading) {
     return (
@@ -156,44 +173,71 @@ export function EventDetailPage() {
   const isOrganizer = !!usuario && allOrganizers.some((o: any) => String(o.id) === String(usuario.id));
   const myStream = event.transmisiones?.find((t: any) => String(t.organizador?.id) === String(usuario?.id));
 
-  const handleStartStream = () => {
+  const handleStartStreamClick = () => {
     if (!usuario || !isOrganizer) {
       toast.error("Solo los organizadores pueden iniciar una transmisión");
       return;
     }
-    setStreamLink(myStream?.stream_url || "");
-    setShowStreamDialog(true);
+    // Si ya existe la transmisión, determinar si es externa o VideoSDK
+    if (myStream) {
+      if (myStream.stream_url) {
+         toast.success("La transmisión externa ya está en curso.");
+         return;
+      }
+      if (myStream.meeting_id) {
+         return startStreamFlow();
+      }
+    }
+    // Si no, preguntar
+    setShowStreamOptionsDialog(true);
   };
 
-  const handleSaveStreamLink = async () => {
-    if (!id || !streamLink) return;
+  const startStreamFlow = async (url?: string) => {
     setIsLoadingStream(true);
+    setShowStreamOptionsDialog(false);
     try {
-      await eventosApi.registrarStream(id, streamLink);
-      toast.success("Transmisión iniciada/actualizada");
-      setShowStreamDialog(false);
-      // Reload event data
-      const data = await eventosApi.getById(id);
+      const res = await eventosApi.iniciarStream(id!, url);
+      
+      // Si es VideoSDK, res.meetingId existirá y url será falso
+      if (res.meetingId && !url) {
+        setBroadcasterData({ meetingId: res.meetingId, token: res.token });
+        setBroadcasterSessionKey(`${res.meetingId}-${Date.now()}`);
+        setIsBroadcasterOpen(true);
+      } else {
+        // Es URL externa
+        toast.success("Transmisión externa iniciada");
+      }
+
+      const data = await eventosApi.getById(id!);
       setEvent(data);
-    } catch (error) {
-      toast.error("Error al registrar transmisión");
+      if (!myStream && !url) {
+        toast.success("Sala de transmisión lista");
+      }
+    } catch (error: any) {
+      console.error("Error al iniciar/recuperar la transmisión:", error);
+      const msg =
+        error?.message ||
+        (typeof error === "string" ? error : "No se pudo iniciar la transmisión en vivo");
+      toast.error(msg);
     } finally {
       setIsLoadingStream(false);
     }
   };
 
   const handleEndStream = async () => {
-    if (!id || !confirm("¿Estás seguro de que quieres finalizar tu transmisión?")) return;
+    if (!id || !confirm("¿Estás seguro de que deseas finalizar tu transmisión permanentemente?")) return;
     setIsLoadingStream(true);
     try {
       await eventosApi.eliminarStream(id);
       toast.success("Transmisión finalizada");
-      // Reload event data
+      setIsBroadcasterOpen(false);
+      setBroadcasterData(null);
+      // Recargar datos
       const data = await eventosApi.getById(id);
       setEvent(data);
       if (activeStreamId === myStream?.id) setActiveStreamId(null);
     } catch (error) {
-      toast.error("Error al finalizar transmisión");
+      toast.error("Error al finalizar la transmisión");
     } finally {
       setIsLoadingStream(false);
     }
@@ -271,20 +315,35 @@ export function EventDetailPage() {
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
-            {event.transmisiones && event.transmisiones.length > 0 && (
+            {event.transmisiones && event.transmisiones.length > 0 && (() => {
+              const activeTx =
+                event.transmisiones.find((t: any) => t.id === (activeStreamId || event.transmisiones[0].id)) ||
+                event.transmisiones[0];
+              const isLiveNow = activeTx?.estado === "live";
+              return (
               <div className="mb-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
                   <h2 className="font-h3 text-xl">Transmisiones en vivo</h2>
-                  <span
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold w-fit"
-                    style={{
-                      background: "color-mix(in srgb, var(--status-red) 30%, var(--bg-elevated))",
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <span className="w-2 h-2 rounded-full animate-pulse status-dot-pulse" style={{ background: "var(--accent-primary)" }}></span>
-                    EN VIVO
-                  </span>
+                  {isLiveNow ? (
+                    <span
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold w-fit"
+                      style={{
+                        background: "color-mix(in srgb, var(--status-red) 30%, var(--bg-elevated))",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full animate-pulse status-dot-pulse" style={{ background: "var(--accent-primary)" }}></span>
+                      EN VIVO
+                    </span>
+                  ) : activeTx?.estado === "idle" ? (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-medium w-fit border border-[var(--border-default)] text-[var(--text-secondary)]">
+                      Esperando al organizador
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-medium w-fit text-[var(--text-muted)]">
+                      Transmisión finalizada
+                    </span>
+                  )}
                 </div>
 
                 {event.transmisiones.length > 1 && (
@@ -305,10 +364,14 @@ export function EventDetailPage() {
                 )}
 
                 <LiveStreamPlayer
-                  url={event.transmisiones.find((t: any) => t.id === (activeStreamId || event.transmisiones[0].id))?.stream_url || ""}
+                  meetingId={activeTx?.meeting_id}
+                  estado={activeTx?.estado}
+                  hlsUrl={activeTx?.hls_url}
+                  url={activeTx?.stream_url}
                 />
               </div>
-            )}
+              );
+            })()}
 
 
 
@@ -405,17 +468,19 @@ export function EventDetailPage() {
                   <h3 className="font-h3 text-sm mb-2">Tu transmisión</h3>
                   {myStream ? (
                     <>
-                      <Button variant="outline" className="w-full dashboard-btn-outline dashboard-btn-edit event-detail-sidebar-btn" onClick={handleStartStream}>
-                        <Video className="h-4 w-4 mr-2" />
-                        Cambiar Enlace
-                      </Button>
+                      {!myStream.stream_url && (
+                        <Button variant="outline" className="w-full dashboard-btn-outline dashboard-btn-edit event-detail-sidebar-btn" onClick={handleStartStreamClick}>
+                          <Video className="h-4 w-4 mr-2" />
+                          Abrir Transmisor
+                        </Button>
+                      )}
                       <Button variant="destructive" className="w-full dashboard-btn-outline dashboard-btn-danger-outline event-detail-sidebar-btn" onClick={handleEndStream} disabled={isLoadingStream}>
                         <VideoOff className={`h-4 w-4 mr-2 ${isLoadingStream ? "animate-spin" : ""}`} />
                         Finalizar Mi Stream
                       </Button>
                     </>
                   ) : (
-                    <Button variant="outline" className="w-full dashboard-btn-outline dashboard-btn-toggle event-detail-sidebar-btn" onClick={handleStartStream}>
+                    <Button variant="outline" className="w-full dashboard-btn-outline dashboard-btn-toggle event-detail-sidebar-btn" onClick={handleStartStreamClick}>
                       <Video className="h-4 w-4 mr-2" />
                       Iniciar Mi Transmisión
                     </Button>
@@ -427,30 +492,91 @@ export function EventDetailPage() {
         </div>
       </div>
 
-      <Dialog open={showStreamDialog} onOpenChange={setShowStreamDialog}>
-        <DialogContent className="sm:max-w-[425px] border-[var(--border-default)]">
-          <DialogHeader>
-            <DialogTitle>Iniciar Transmisión</DialogTitle>
-            <DialogDescription>
-              Pega el enlace de YouTube o Twitch para tu transmisión del evento "{titulo}".
+      <Dialog
+        open={isBroadcasterOpen}
+        onOpenChange={async (open) => {
+          setIsBroadcasterOpen(open);
+          if (!open) {
+            setBroadcasterData(null);
+            if (id) {
+              const data = await eventosApi.getById(id);
+              setEvent(data);
+            }
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[700px] border-zinc-800 bg-zinc-950 p-0 overflow-hidden" aria-describedby="broadcaster-dialog-desc">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Panel de transmisión en vivo</DialogTitle>
+            <DialogDescription id="broadcaster-dialog-desc">
+              Controla cámara, micrófono y la publicación HLS para los asistentes del evento.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="stream-url" className="uni-label">URL del Stream</Label>
+          {broadcasterData && (
+            <VideoSDKBroadcaster
+              key={broadcasterSessionKey}
+              sessionKey={broadcasterSessionKey}
+              meetingId={broadcasterData.meetingId}
+              token={broadcasterData.token}
+              eventoId={Number(id)}
+              onClose={async () => {
+                setIsBroadcasterOpen(false);
+                setBroadcasterData(null);
+                const data = await eventosApi.getById(id!);
+                setEvent(data);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showStreamOptionsDialog} onOpenChange={setShowStreamOptionsDialog}>
+        <DialogContent className="sm:max-w-md bg-[var(--bg-elevated)] border-[var(--border-default)]">
+          <DialogHeader>
+            <DialogTitle>¿Cómo deseas transmitir?</DialogTitle>
+            <DialogDescription>
+              Elige entre usar la cámara de tu dispositivo o un enlace externo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <Button onClick={() => startStreamFlow()} className="dashboard-btn-primary-filled h-12">
+              <Video className="h-5 w-5 mr-2" />
+              Usar cámara (VideoSDK)
+            </Button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-[var(--border-default)]" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[var(--bg-elevated)] px-2 text-[var(--text-muted)]">O usar enlace externo</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="externalUrl">Enlace de YouTube, Twitch, etc.</Label>
               <Input
-                id="stream-url"
-                className="uni-input mt-0"
-                placeholder="https://www.youtube.com/watch?v=..."
-                value={streamLink}
-                onChange={(e) => setStreamLink(e.target.value)}
+                id="externalUrl"
+                placeholder="https://youtube.com/watch?v=..."
+                value={externalStreamUrl}
+                onChange={(e) => setExternalStreamUrl(e.target.value)}
+                className="bg-[var(--bg-base)] border-[var(--border-default)]"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowStreamDialog(false)} className="dashboard-btn-outline dashboard-btn-edit">Cancelar</Button>
-            <Button onClick={handleSaveStreamLink} disabled={isLoadingStream} className="dashboard-btn-primary-filled">
-              {isLoadingStream ? "Guardando..." : "Guardar Enlace"}
+            <Button variant="outline" onClick={() => setShowStreamOptionsDialog(false)}>Cancelar</Button>
+            <Button 
+              onClick={() => {
+                if (!externalStreamUrl) {
+                  toast.error("Ingresa una URL válida");
+                  return;
+                }
+                startStreamFlow(externalStreamUrl);
+              }} 
+              disabled={!externalStreamUrl}
+            >
+              Iniciar con enlace
             </Button>
           </DialogFooter>
         </DialogContent>

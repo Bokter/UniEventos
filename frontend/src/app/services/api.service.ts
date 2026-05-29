@@ -79,11 +79,24 @@ export const eventosApi = {
       headers: buildHeaders(),
     }).then(handleResponse),
 
-  registrarStream: (id: number | string, url: string) =>
+  iniciarStream: (id: number | string, url?: string) =>
     fetchWithRetry(`${BASE_URL}/eventos/${id}/stream`, {
       method: 'POST',
       headers: buildHeaders(),
-      body: JSON.stringify({ url }),
+      body: url ? JSON.stringify({ url }) : undefined,
+    }).then(handleResponse),
+
+  obtenerTokenStream: (id: number | string) =>
+    fetchWithRetry(`${BASE_URL}/eventos/${id}/stream/token`, {
+      method: 'GET',
+      headers: buildHeaders(),
+    }).then(handleResponse),
+
+  actualizarEstadoStream: (id: number | string, estado: 'idle' | 'live' | 'ended', hlsUrl?: string | null) =>
+    fetchWithRetry(`${BASE_URL}/eventos/${id}/stream/estado`, {
+      method: 'PUT',
+      headers: buildHeaders(),
+      body: JSON.stringify({ estado, hlsUrl }),
     }).then(handleResponse),
 
   eliminarStream: (id: number | string) =>
