@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { MeetingProvider, useMeeting, useParticipant } from "@videosdk.live/react-sdk";
-import { Video, VideoOff, Mic, MicOff, Tv, Power, Radio } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, Tv, Power, Radio, SwitchCamera } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { eventosApi } from "../services/api.service";
@@ -126,6 +126,35 @@ function MeetingControls({
 
   const [isCamOn, setIsCamOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
+
+  // Lista de cámaras disponibles para alternar frontal/trasera en móvil.
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [camIndex, setCamIndex] = useState(0);
+  const [isSwitchingCam, setIsSwitchingCam] = useState(false);
+
+  useEffect(() => {
+    if (!localParticipant?.webcamOn) return;
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then((ds) => setCameras(ds.filter((d) => d.kind === "videoinput")))
+      .catch(() => {});
+  }, [localParticipant?.webcamOn]);
+
+  const handleSwitchCamera = async () => {
+    if (cameras.length < 2 || isSwitchingCam) return;
+    const next = (camIndex + 1) % cameras.length;
+    setIsSwitchingCam(true);
+    try {
+      changeWebcam(cameras[next].deviceId);
+      setCamIndex(next);
+    } catch (err) {
+      console.error("No se pudo alternar la cámara:", err);
+    } finally {
+      // Pequeño bloqueo para evitar toques repetidos mientras VideoSDK cambia.
+      setTimeout(() => setIsSwitchingCam(false), 800);
+    }
+  };
+
   const isUpdatingBackendRef = useRef(false);
   const prevHlsStateRef = useRef<string | null>(null);
   const userEndedHlsRef = useRef(false);
@@ -356,6 +385,19 @@ function MeetingControls({
           >
             {isMicOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
           </Button>
+
+          {cameras.length > 1 && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleSwitchCamera}
+              disabled={isSwitchingCam || !isCamOn}
+              title="Cambiar entre cámara frontal y trasera"
+              className="rounded-full h-12 w-12 border-zinc-800 bg-zinc-800 text-white disabled:opacity-50"
+            >
+              <SwitchCamera className="h-5 w-5" />
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
