@@ -471,8 +471,8 @@ export function PublishEventPage() {
               <div
                 className="p-4 rounded-lg flex items-start gap-3"
                 style={{
-                  background: "color-mix(in srgb, var(--accent-primary) 10%, var(--bg-elevated))",
-                  border: "1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent)",
+                  background: "var(--accent-glow)",
+                  border: "1px solid rgba(232, 82, 58, 0.3)",
                 }}
               >
                 <span style={{ fontSize: "1.1rem", lineHeight: 1.3 }}>📋</span>

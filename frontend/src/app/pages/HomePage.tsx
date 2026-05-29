@@ -1,7 +1,8 @@
 /* @logic — do not touch */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { LayoutGrid, Map as MapIcon, Calendar as IconoCalendario, Smartphone, X } from "lucide-react";
+import { LayoutGrid, Map as MapIcon, Calendar as IconoCalendario, Smartphone, X, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { Navbar } from "../components/Navbar";
 import { EventCard } from "../components/EventCard";
 import { LiveActivityFeed } from "../components/visual/LiveActivityFeed";
@@ -25,6 +26,7 @@ export function HomePage() {
   const [categorias, setCategorias] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [arModalOpen, setArModalOpen] = useState(false);
+  const [mostrarResumen, setMostrarResumen] = useState(false);
 
   useEffect(() => {
     // Cargar categorías del backend para tener los IDs reales
@@ -144,33 +146,69 @@ export function HomePage() {
         style={{ borderColor: "var(--border-subtle)", boxShadow: "var(--shadow-mid)" }}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-5">
-          <CampusHeatStrip eventos={eventos} className="mb-6" />
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <Select value={categoriaSeleccionada} onValueChange={setCategoriaSeleccionada}>
-              <SelectTrigger className="w-full md:w-[200px] h-12 border-[var(--color-gray)]/30 bg-[var(--color-light)]">
-                <SelectValue placeholder="Categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas las categorías</SelectItem>
-                {/* Categorías dinámicas del backend — con su ID real */}
-                {categorias.map(cat => (
-                  <SelectItem key={cat.id} value={String(cat.id)}>{cat.nombre}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <AnimatePresence initial={false}>
+            {mostrarResumen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0, scaleY: 0.95 }}
+                animate={{ height: "auto", opacity: 1, scaleY: 1 }}
+                exit={{ height: 0, opacity: 0, scaleY: 0.95 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                style={{ transformOrigin: "top" }}
+                className="mb-6 overflow-hidden"
+              >
+                <CampusHeatStrip eventos={eventos} />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-            <Select value={filtroFecha} onValueChange={setFiltroFecha}>
-              <SelectTrigger className="w-full md:w-[200px] h-12 border-[var(--color-gray)]/30 bg-[var(--color-light)]">
-                <IconoCalendario className="h-4 w-4 mr-2 text-gray-500" />
-                <SelectValue placeholder="Fecha" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Cualquier fecha</SelectItem>
-                <SelectItem value="hoy">Hoy</SelectItem>
-                <SelectItem value="semana">Esta semana</SelectItem>
-                <SelectItem value="mes">Este mes</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
+              <Select value={categoriaSeleccionada} onValueChange={setCategoriaSeleccionada}>
+                <SelectTrigger className="w-full md:w-[200px] h-12 border-[var(--color-gray)]/30 bg-[var(--color-light)]">
+                  <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas las categorías</SelectItem>
+                  {/* Categorías dinámicas del backend — con su ID real */}
+                  {categorias.map(cat => (
+                    <SelectItem key={cat.id} value={String(cat.id)}>{cat.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filtroFecha} onValueChange={setFiltroFecha}>
+                <SelectTrigger className="w-full md:w-[200px] h-12 border-[var(--color-gray)]/30 bg-[var(--color-light)]">
+                  <IconoCalendario className="h-4 w-4 mr-2 text-gray-500" />
+                  <SelectValue placeholder="Fecha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Cualquier fecha</SelectItem>
+                  <SelectItem value="hoy">Hoy</SelectItem>
+                  <SelectItem value="semana">Esta semana</SelectItem>
+                  <SelectItem value="mes">Este mes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={() => setMostrarResumen(!mostrarResumen)}
+              className="w-full md:w-auto h-12 flex items-center justify-center gap-2 px-5 transition-all duration-200"
+              style={{
+                background: mostrarResumen ? "var(--bg-elevated)" : "var(--accent-glow)",
+                border: mostrarResumen ? "1px solid var(--border-strong)" : "1px solid var(--accent-primary)",
+                color: "var(--text-primary)",
+                borderRadius: "10px",
+                fontWeight: 600,
+              }}
+            >
+              <BarChart3 className="h-4 w-4 shrink-0" />
+              <span>Resumen Próximos Eventos</span>
+              {mostrarResumen ? (
+                <ChevronUp className="h-4 w-4 shrink-0 ml-1" />
+              ) : (
+                <ChevronDown className="h-4 w-4 shrink-0 ml-1" />
+              )}
+            </Button>
           </div>
         </div>
       </div>

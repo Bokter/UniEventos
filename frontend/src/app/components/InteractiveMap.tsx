@@ -13,6 +13,24 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+
+  const getIsLight = () => document.documentElement.classList.contains('light');
+
+  const getDarkTile = () => L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      maxZoom: 19
+    }
+  );
+
+  const getLightTile = () => L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }
+  );
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -45,10 +63,9 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
       });
 
       // Add tile layer
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-      }).addTo(map);
+      const tileLayer = getIsLight() ? getLightTile() : getDarkTile();
+      tileLayer.addTo(map);
+      tileLayerRef.current = tileLayer;
 
       // Add markers for each event
       events.forEach((event: any) => {
@@ -66,12 +83,12 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
           const d = new Date(fechaStr);
           
           const popupContent = `
-            <div style="padding:8px;font-family:Manrope,sans-serif;color:#EDF2F7;">
-              <h3 style="margin:0 0 4px;font-weight:700;font-size:14px;">${titulo}</h3>
-              <p style="margin:0 0 8px;font-size:12px;color:#8FA3BF;">
+            <div style="padding:8px;font-family:Manrope,sans-serif;color:var(--text-primary);">
+              <h3 style="margin:0 0 4px;font-weight:700;font-size:14px;color:var(--text-primary);">${titulo}</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:var(--text-secondary);">
                 ${isNaN(d.getTime()) ? "" : format(d, "MMM d, yyyy")}
               </p>
-              <a href="/event/${event.id}" style="font-size:12px;color:#E8523A;font-weight:600;text-decoration:none;">
+              <a href="/event/${event.id}" style="font-size:12px;color:var(--accent-primary);font-weight:600;text-decoration:none;">
                 Ver detalles →
               </a>
             </div>
@@ -96,6 +113,7 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
         if (mapInstanceRef.current) {
           mapInstanceRef.current.remove();
           mapInstanceRef.current = null;
+          tileLayerRef.current = null;
         }
         markersRef.current = [];
       } catch (error) {
@@ -103,6 +121,21 @@ export function InteractiveMap({ events, center }: InteractiveMapProps) {
       }
     };
   }, [events, center]);
+
+  // Swap tile layers when theme changes
+  useEffect(() => {
+    const handleThemeChange = () => {
+      if (!mapInstanceRef.current) return;
+      if (tileLayerRef.current) {
+        mapInstanceRef.current.removeLayer(tileLayerRef.current);
+      }
+      const newTile = getIsLight() ? getLightTile() : getDarkTile();
+      newTile.addTo(mapInstanceRef.current);
+      tileLayerRef.current = newTile;
+    };
+    window.addEventListener('theme-changed', handleThemeChange);
+    return () => window.removeEventListener('theme-changed', handleThemeChange);
+  }, []);
 
   return <div ref={mapRef} className="h-full w-full map-dark-frame" />;
 }
