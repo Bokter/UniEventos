@@ -1,23 +1,27 @@
 services:
   frontend:
-    build: ./frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
+    build:
+      context: ./frontend
+      args:
+        - VITE_EMAILJS_SERVICE_ID=${VITE_EMAILJS_SERVICE_ID}
+        - VITE_EMAILJS_TEMPLATE_ID=${VITE_EMAILJS_TEMPLATE_ID}
+        - VITE_EMAILJS_PUBLIC_KEY=${VITE_EMAILJS_PUBLIC_KEY}
+    expose:
+      - "5173"
 
   backend:
     build: ./backend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./backend/src:/app/src
+    expose:
+      - "3000"
     environment:
-      - DB_HOST=db
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-      - DB_NAME=unieventos
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - DB_SSL=${DB_SSL}
+      - DB_USER=${DB_USER}
+      - NODE_ENV=${NODE_ENV}
+      - TZ=${TZ}
       - JWT_SECRET=${JWT_SECRET}
       - VIDEOSDK_API_KEY=${VIDEOSDK_API_KEY}
       - VIDEOSDK_SECRET_KEY=${VIDEOSDK_SECRET_KEY}
@@ -25,22 +29,6 @@ services:
       db:
         condition: service_healthy
     command: sh -c "npm run build && npm run migration:run && node dist/main.js"
-
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: unieventos
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d unieventos" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
 
 volumes:
   pgdata:

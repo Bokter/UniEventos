@@ -10,7 +10,7 @@ interface CategoryChipProps {
 
 const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode }> = {
   Academico: {
-    bg: "color-mix(in srgb, var(--chart-2) 25%, transparent)",
+    bg: "color-mix(in srgb, var(--chart-2) 25%, var(--bg-surface))",
     text: "var(--chart-3)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -19,7 +19,7 @@ const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode
     ),
   },
   "Académico": {
-    bg: "color-mix(in srgb, var(--chart-2) 25%, transparent)",
+    bg: "color-mix(in srgb, var(--chart-2) 25%, var(--bg-surface))",
     text: "var(--chart-3)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -28,7 +28,7 @@ const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode
     ),
   },
   Cultural: {
-    bg: "color-mix(in srgb, var(--chart-3) 20%, transparent)",
+    bg: "color-mix(in srgb, var(--chart-3) 25%, var(--bg-surface))",
     text: "var(--text-accent)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -37,7 +37,7 @@ const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode
     ),
   },
   Deportivo: {
-    bg: "var(--accent-glow)",
+    bg: "color-mix(in srgb, var(--accent-primary) 20%, var(--bg-surface))",
     text: "var(--accent-primary)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -46,8 +46,8 @@ const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode
     ),
   },
   Tecnologia: {
-    bg: "color-mix(in srgb, var(--bg-overlay) 80%, transparent)",
-    text: "var(--text-secondary)",
+    bg: "color-mix(in srgb, var(--bg-overlay) 85%, var(--bg-surface))",
+    text: "var(--text-primary)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
         <rect x="3" y="4" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
@@ -55,8 +55,8 @@ const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode
     ),
   },
   "Tecnología": {
-    bg: "color-mix(in srgb, var(--bg-overlay) 80%, transparent)",
-    text: "var(--text-secondary)",
+    bg: "color-mix(in srgb, var(--bg-overlay) 85%, var(--bg-surface))",
+    text: "var(--text-primary)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
         <rect x="3" y="4" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
@@ -64,7 +64,7 @@ const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode
     ),
   },
   "Arte y Musica": {
-    bg: "color-mix(in srgb, var(--chart-1) 18%, transparent)",
+    bg: "color-mix(in srgb, var(--chart-1) 18%, var(--bg-surface))",
     text: "var(--accent-primary)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -73,7 +73,7 @@ const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode
     ),
   },
   "Arte y Música": {
-    bg: "color-mix(in srgb, var(--chart-1) 18%, transparent)",
+    bg: "color-mix(in srgb, var(--chart-1) 18%, var(--bg-surface))",
     text: "var(--accent-primary)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -82,7 +82,7 @@ const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode
     ),
   },
   Bienestar: {
-    bg: "color-mix(in srgb, var(--status-green) 30%, transparent)",
+    bg: "color-mix(in srgb, var(--status-green) 30%, var(--bg-surface))",
     text: "var(--text-accent)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -91,8 +91,8 @@ const categoryStyles: Record<string, { bg: string; text: string; icon: ReactNode
     ),
   },
   Emprendimiento: {
-    bg: "color-mix(in srgb, var(--status-yellow) 35%, transparent)",
-    text: "var(--text-secondary)",
+    bg: "color-mix(in srgb, var(--status-yellow) 35%, var(--bg-surface))",
+    text: "var(--text-primary)",
     icon: (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
         <path d="M3 17h18M6 17V9l6-4 6 4v8" stroke="currentColor" strokeWidth="2" />
@@ -109,8 +109,8 @@ const categoryLabels: Record<string, string> = {
 };
 
 const defaultStyle = {
-  bg: "color-mix(in srgb, var(--chart-4) 25%, transparent)",
-  text: "var(--text-secondary)",
+  bg: "color-mix(in srgb, var(--chart-4) 25%, var(--bg-surface))",
+  text: "var(--text-primary)",
   icon: (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
       <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
@@ -129,15 +129,19 @@ export function CategoryChip({ category, className = "" }: CategoryChipProps) {
       variants={motionVariants(fadeUp)}
       initial="hidden"
       animate="visible"
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 ${className}`}
       style={{
         background: style.bg,
         color: style.text,
         borderRadius: "var(--radius-pill)",
         fontFamily: "'Manrope', sans-serif",
+        border: `1px solid color-mix(in srgb, ${style.text} 35%, transparent)`,
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        boxShadow: "0 2px 10px rgba(0, 0, 0, 0.15)",
       }}
     >
-      <span className="opacity-90">{style.icon}</span>
+      <span className="opacity-100">{style.icon}</span>
       {label}
     </motion.span>
   );

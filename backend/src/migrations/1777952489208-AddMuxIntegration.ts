@@ -4,7 +4,7 @@ export class AddMuxIntegration1777952489208 implements MigrationInterface {
     name = 'AddMuxIntegration1777952489208'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "transmisiones" DROP COLUMN "url_enlace"`);
+        await queryRunner.query(`ALTER TABLE "transmisiones" DROP COLUMN IF EXISTS "url_enlace"`);
         await queryRunner.query(`ALTER TABLE "transmisiones" ADD "stream_id" character varying`);
         await queryRunner.query(`ALTER TABLE "transmisiones" ADD "stream_key" character varying`);
         await queryRunner.query(`ALTER TABLE "transmisiones" ADD "playback_id" character varying`);

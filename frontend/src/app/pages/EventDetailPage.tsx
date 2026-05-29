@@ -17,6 +17,32 @@ import { obtenerUsuario } from "../services/auth.service";
 import { eventosApi, favoritosApi } from "../services/api.service";
 import { toast } from "sonner";
 
+function formatearEnlaces(texto: string) {
+  if (!texto) return "";
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return texto.split(urlRegex).map((part, index) => {
+    if (part.startsWith("http://") || part.startsWith("https://")) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: "var(--text-accent)",
+            textDecoration: "underline",
+            fontWeight: 600,
+            wordBreak: "break-all",
+          }}
+          className="hover:opacity-80 transition-opacity"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+}
 
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -381,7 +407,7 @@ export function EventDetailPage() {
 
             <div className="mb-6">
               <h2 className="font-h3 text-xl mb-3">Sobre este evento</h2>
-              <div className="font-body leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>{descripcion}</div>
+              <div className="font-body leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>{formatearEnlaces(descripcion)}</div>
             </div>
 
             <div className="mb-6">

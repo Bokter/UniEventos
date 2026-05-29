@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Search, LogIn, Plus, LogOut } from "lucide-react";
+import { Search, LogIn, Plus, LogOut, Sun, Moon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "../../context/AuthContext";
 
@@ -21,6 +21,34 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Theme support
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return document.documentElement.classList.contains("light") ? "light" : "dark";
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setTheme(document.documentElement.classList.contains("light") ? "light" : "dark");
+    };
+    window.addEventListener("theme-changed", handleThemeChange);
+    return () => window.removeEventListener("theme-changed", handleThemeChange);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    if (newTheme === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.remove("light");
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+    setTheme(newTheme);
+    window.dispatchEvent(new Event("theme-changed"));
+  };
 
   return (
     <nav
@@ -138,6 +166,20 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                 </Button>
               </>
             )}
+
+            <Button
+              onClick={toggleTheme}
+              variant="ghost"
+              size="icon"
+              title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors ml-1"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5 text-amber-500 animate-pulse" />
+              ) : (
+                <Moon className="h-5 w-5 text-indigo-500" />
+              )}
+            </Button>
           </div>
         </div>
       </div>
