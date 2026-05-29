@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Search, LogIn, Plus, LogOut } from "lucide-react";
+import { Search, LogIn, Plus, LogOut, Sun, Moon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "../../context/AuthContext";
 
@@ -12,38 +13,79 @@ interface NavbarProps {
 export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: NavbarProps) {
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Theme support
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return document.documentElement.classList.contains("light") ? "light" : "dark";
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setTheme(document.documentElement.classList.contains("light") ? "light" : "dark");
+    };
+    window.addEventListener("theme-changed", handleThemeChange);
+    return () => window.removeEventListener("theme-changed", handleThemeChange);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    if (newTheme === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.remove("light");
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+    setTheme(newTheme);
+    window.dispatchEvent(new Event("theme-changed"));
+  };
 
   return (
-    <nav className="border-b sticky top-0 z-50 min-w-full" style={{ background: '#293241', borderColor: 'rgba(255,255,255,0.08)' }}>
+    <nav
+      className={`navbar-premium border-b sticky top-0 z-50 min-w-full transition-all duration-300 ${
+        scrolled ? "navbar-premium--scrolled" : ""
+      }`}
+      style={{ borderColor: "var(--border-subtle)" }}
+    >
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2" style={{ textDecoration: 'none' }}>
-            <div className="w-8 h-8 rounded flex items-center justify-center" style={{ background: '#EE6C4D' }}>
-              <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: '0.8rem' }}>UN</span>
+          <Link to="/" className="flex items-center gap-2.5" style={{ textDecoration: "none" }}>
+            <div className="relative">
+              <div
+                className="w-8 h-8 rounded flex items-center justify-center"
+                style={{ background: "var(--accent-primary)" }}
+              >
+                <span className="font-data text-xs font-bold" style={{ color: "var(--text-primary)" }}>UN</span>
+              </div>
+              <span
+                className="logo-pulse-dot absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+                style={{ background: "var(--accent-primary)", border: "2px solid var(--bg-surface)" }}
+              />
             </div>
-            <span className="text-xl" style={{ color: '#E0FBFC', fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span className="font-h2 hidden sm:inline" style={{ fontSize: "1.15rem", fontWeight: 700 }}>
               UniEventos
             </span>
           </Link>
 
-          {/* Barra de búsqueda */}
           {showSearch && (
             <div className="flex-1 max-w-md hidden md:block">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'rgba(229,229,229,0.5)' }} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--text-muted)" }} />
                 <input
                   type="search"
                   placeholder="Buscar eventos..."
-                  className="pl-9 w-full h-9 rounded-md text-sm"
-                  style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    color: '#E5E5E5',
-                    fontFamily: "'Outfit', sans-serif",
-                    outline: 'none',
-                    padding: '0 0.75rem 0 2.25rem',
-                  }}
+                  className="uni-input pl-9 h-10 text-sm"
+                  style={{ paddingTop: "8px", paddingBottom: "8px" }}
                   value={searchValue}
                   onChange={(e) => onSearchChange?.(e.target.value)}
                 />
@@ -51,55 +93,44 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {usuario ? (
               <>
                 {usuario.rol === 'organizador' && (
                   <Button
                     onClick={() => navigate("/organizer/publish")}
-                    className="text-white hover:bg-[#d45d3f] active:scale-95 transition-all"
-                    style={{ background: '#EE6C4D', color: '#FFFFFF', fontWeight: 700 }}
+                    className="text-[var(--text-primary)] hover:opacity-90"
+                    style={{ background: "var(--accent-primary)", fontWeight: 600 }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Publicar evento
+                    <span className="hidden sm:inline">Publicar</span>
                   </Button>
                 )}
                 {usuario.rol === 'admin' && (
-                  <Button
-                    onClick={() => navigate("/admin")}
-                    variant="outline"
-                    className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
-                    style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
-                  >
-                    Panel Admin
+                  <Button onClick={() => navigate("/admin")} variant="outline" className="uni-btn-ghost border-[var(--border-default)]">
+                    Admin
                   </Button>
                 )}
                 {usuario.rol === 'organizador' && (
-                  <Button
-                    onClick={() => navigate("/organizer/dashboard")}
-                    variant="outline"
-                    className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
-                    style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
-                  >
+                  <Button onClick={() => navigate("/organizer/dashboard")} variant="outline" className="uni-btn-ghost hidden sm:flex">
                     Dashboard
                   </Button>
                 )}
                 {(!usuario.rol || usuario.rol === 'miembro') && (
-                  <Button
-                    onClick={() => navigate("/user/dashboard")}
-                    variant="outline"
-                    className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
-                    style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
-                  >
+                  <Button onClick={() => navigate("/user/dashboard")} variant="outline" className="uni-btn-ghost hidden sm:flex">
                     Mi Panel
                   </Button>
                 )}
-                <div className="flex items-center gap-2 ml-2">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#EE6C4D', color: '#FFFFFF', fontWeight: 700 }}>
+                <div className="flex items-center gap-2 ml-1">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{ background: "var(--accent-primary)", color: "var(--text-primary)" }}
+                  >
                     {usuario.nombre_completo.charAt(0).toUpperCase()}
                   </div>
-                  <span className="hidden lg:block" style={{ color: '#E0FBFC' }}>{usuario.nombre_completo}</span>
+                  <span className="hidden lg:block font-body text-sm" style={{ color: "var(--text-secondary)" }}>
+                    {usuario.nombre_completo}
+                  </span>
                 </div>
                 <Button
                   onClick={() => {
@@ -112,35 +143,43 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                     }, 420);
                   }}
                   variant="ghost"
-                  className="hover:text-foreground"
-                  style={{ color: 'rgba(224,251,252,0.6)' }}
                   size="icon"
                   title="Cerrar sesión"
+                  style={{ color: "var(--text-muted)" }}
                 >
                   <LogOut className="h-5 w-5" />
                 </Button>
               </>
             ) : (
               <>
-                <Button
-                  onClick={() => navigate("/login")}
-                  variant="outline"
-                  className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
-                  style={{ borderColor: '#98C1D9', color: '#98C1D9', background: 'transparent' }}
-                >
+                <Button onClick={() => navigate("/login")} variant="outline" className="uni-btn-ghost">
                   <LogIn className="h-4 w-4 mr-2" />
                   Iniciar sesión
                 </Button>
                 <Button
                   onClick={() => navigate("/login")}
-                  className="hidden sm:flex hover:bg-[#d45d3f] active:scale-95 transition-all"
-                  style={{ background: '#EE6C4D', color: '#FFFFFF', fontWeight: 700 }}
+                  className="hidden sm:flex"
+                  style={{ background: "var(--accent-primary)", color: "var(--text-primary)" }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Publicar evento
+                  Publicar
                 </Button>
               </>
             )}
+
+            <Button
+              onClick={toggleTheme}
+              variant="ghost"
+              size="icon"
+              title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors ml-1"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5 text-amber-500 animate-pulse" />
+              ) : (
+                <Moon className="h-5 w-5 text-indigo-500" />
+              )}
+            </Button>
           </div>
         </div>
       </div>

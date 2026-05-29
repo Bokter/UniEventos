@@ -1,3 +1,4 @@
+/* @logic — do not touch */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Navigate, useSearchParams } from "react-router";
 import { ArrowLeft, ArrowRight, Upload, Check, X as CloseIcon } from "lucide-react";
@@ -10,6 +11,8 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { CategoryBadge } from "../components/CategoryBadge";
+import { EventHeroCard } from "../components/visual/EventHeroCard";
+import { SectionDivider } from "../components/visual/SectionDivider";
 import { useAuth } from "../../context/AuthContext";
 import { eventosApi, categoriasApi, lugaresApi, usuariosApi } from "../services/api.service";
 import { toast } from "sonner";
@@ -36,32 +39,33 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+
+  const getIsLight = () => document.documentElement.classList.contains('light');
+
+  const getDarkTile = () => L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; <a href="https://carto.com/">CARTO</a>', maxZoom: 19 }
+  );
+
+  const getLightTile = () => L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }
+  );
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
     try {
-      // Coordenadas de la Universidad del Norte: 11.019, -74.851
       const map = L.map(mapContainerRef.current).setView([11.019, -74.851], 16);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(map);
+      // Use appropriate tile layer based on current theme
+      const tileLayer = getIsLight() ? getLightTile() : getDarkTile();
+      tileLayer.addTo(map);
+      tileLayerRef.current = tileLayer;
+
       map.on('click', (e: L.LeafletMouseEvent) => {
         const { lat, lng } = e.latlng;
-
-        // Límites aproximados del campus de Uninorte
-        // (Ajustar si es necesario, estos valores cubren el campus principal)
-        /*
-        const isInsideCampus = 
-          lat >= 11.0140 && lat <= 11.0240 &&
-          lng >= -74.8550 && lng <= -74.8460;
-
-        if (!isInsideCampus) {
-          toast.error("La ubicación del evento debe estar dentro del campus de la Universidad del Norte.");
-          return;
-        } */
-
         setLocationCoords([lat, lng]);
       });
 
@@ -74,9 +78,25 @@ function LocationMap({ locationCoords, setLocationCoords }: LocationMapProps) {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
+        tileLayerRef.current = null;
       }
     };
   }, [setLocationCoords]);
+
+  // Swap tile layers when theme changes
+  useEffect(() => {
+    const handleThemeChange = () => {
+      if (!mapRef.current) return;
+      if (tileLayerRef.current) {
+        mapRef.current.removeLayer(tileLayerRef.current);
+      }
+      const newTile = getIsLight() ? getLightTile() : getDarkTile();
+      newTile.addTo(mapRef.current);
+      tileLayerRef.current = newTile;
+    };
+    window.addEventListener('theme-changed', handleThemeChange);
+    return () => window.removeEventListener('theme-changed', handleThemeChange);
+  }, []);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -273,18 +293,24 @@ export function PublishEventPage() {
     }
   };
 
+  const previewCategoria = categories.find(c => String(c.id) === categoryId)?.nombre || "General";
+  const previewEstado = "por_iniciar" as const;
+  const previewFecha = dateStart
+    ? `${dateStart}${timeStart ? ` · ${timeStart}` : ""}${timeEnd ? ` – ${timeEnd}` : ""}`
+    : "Fecha por definir";
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen dashboard-shell" style={{ background: "var(--bg-base)" }}>
       <Navbar showSearch={false} />
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <Button variant="ghost" onClick={() => navigate("/organizer/dashboard")} className="mb-4">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <Button variant="ghost" onClick={() => navigate("/organizer/dashboard")} className="mb-4 uni-btn-ghost">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Dashboard
         </Button>
 
-        <h1 className="text-3xl mb-2" style={{ fontWeight: 700 }}>{editId ? "Editar Evento" : "Publicar Nuevo Evento"}</h1>
-        <p className="text-muted-foreground mb-8">
+        <h1 className="font-h1 mb-2">{editId ? "Editar Evento" : "Publicar Nuevo Evento"}</h1>
+        <p className="font-caption mb-8">
           {editId ? "Actualiza los datos de tu evento" : "Crea y envía un evento para revisión"}
         </p>
 
@@ -303,12 +329,14 @@ export function PublishEventPage() {
           ))}
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 md:p-8">
+        <div className="grid lg:grid-cols-[1fr_340px] gap-8 items-start">
+        <div className="dashboard-panel p-4 sm:p-6 md:p-8">
           {step === 1 && (
             <div className="space-y-6">
+              <SectionDivider label="Información básica" />
               <div>
-                <Label htmlFor="title">Titulo del evento *</Label>
-                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Feria anual de ciencias" className="mt-2" required />
+                <Label htmlFor="title" className="uni-label">Titulo del evento *</Label>
+                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Feria anual de ciencias" className="uni-input uni-input-title mt-0" required />
               </div>
 
               <div>
@@ -349,9 +377,9 @@ export function PublishEventPage() {
                 </Select>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {selectedCoOrganizers.map(coOrg => (
-                    <div key={coOrg.id} className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-200">
+                    <div key={coOrg.id} className="uni-organizer-chip">
                       {coOrg.nombre_completo}
-                      <button onClick={() => setSelectedCoOrganizers(selectedCoOrganizers.filter(u => u.id !== coOrg.id))} className="ml-1 hover:text-blue-900"><CloseIcon className="h-3 w-3" /></button>
+                      <button type="button" onClick={() => setSelectedCoOrganizers(selectedCoOrganizers.filter(u => u.id !== coOrg.id))} className="opacity-70 hover:opacity-100"><CloseIcon className="h-3 w-3" /></button>
                     </div>
                   ))}
                 </div>
@@ -372,15 +400,22 @@ export function PublishEventPage() {
               </div>
 
 
+              <SectionDivider label="Fecha y hora" />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div><Label htmlFor="date-start">Fecha *</Label><Input id="date-start" type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-2" required /></div>
-                <div><Label htmlFor="time-start">Hora de inicio *</Label><Input id="time-start" type="time" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className="mt-2" required /></div>
-                <div><Label htmlFor="time-end">Hora de finalización *</Label><Input id="time-end" type="time" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className="mt-2" required /></div>
+                <div><Label htmlFor="date-start" className="uni-label">Fecha *</Label><Input id="date-start" type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="uni-input mt-0" required /></div>
+                <div><Label htmlFor="time-start" className="uni-label">Hora inicio *</Label><Input id="time-start" type="time" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className="uni-input mt-0" required /></div>
+                <div><Label htmlFor="time-end" className="uni-label">Hora fin *</Label><Input id="time-end" type="time" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className="uni-input mt-0" required /></div>
               </div>
+              {dateStart && (
+                <p className="font-data text-sm" style={{ color: "var(--text-secondary)" }}>
+                  Rango: {dateStart} {timeStart && `· ${timeStart}`} {timeEnd && `– ${timeEnd}`}
+                </p>
+              )}
 
+              <SectionDivider label="Imagen de portada" />
               <div>
-                <Label htmlFor="cover-image">Imagen de portada</Label>
-                <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors">
+                <Label htmlFor="cover-image" className="uni-label">Portada</Label>
+                <div className="mt-2 uni-dropzone p-8 text-center">
                   {coverImage ? (
                     <div className="relative">
                       <img src={coverImage} alt="Cover" className="max-h-48 mx-auto rounded" />
@@ -400,16 +435,22 @@ export function PublishEventPage() {
 
           {step === 2 && (
             <div className="space-y-6">
+              <SectionDivider label="Ubicación" />
               <div>
-                <Label>Ubicación del evento *</Label>
-                <div className="h-96 rounded-lg overflow-hidden border border-gray-300 mt-4 relative z-0">
+                <Label className="uni-label">Ubicación del evento *</Label>
+                <div className="h-96 rounded-lg overflow-hidden mt-4 relative z-0" style={{ border: "1px solid var(--border-default)" }}>
                   <LocationMap locationCoords={locationCoords} setLocationCoords={setLocationCoords} />
                 </div>
               </div>
               <div>
-                <Label htmlFor="location-name">Nombre de la ubicación *</Label>
-                <Input id="location-name" value={locationName} onChange={(e) => setLocationName(e.target.value)} placeholder="e.g. Bloque B, Sala 205" className="mt-2" required />
+                <Label htmlFor="location-name" className="uni-label">Nombre de la ubicación *</Label>
+                <Input id="location-name" value={locationName} onChange={(e) => setLocationName(e.target.value)} placeholder="Bloque B, Sala 205" className="uni-input mt-0" required />
               </div>
+              {locationCoords && (
+                <p className="font-data text-sm" style={{ color: "var(--text-muted)" }}>
+                  GPS: {locationCoords[0].toFixed(5)}, {locationCoords[1].toFixed(5)}
+                </p>
+              )}
             </div>
           )}
 
@@ -427,34 +468,58 @@ export function PublishEventPage() {
                 <div><p className="text-sm text-muted-foreground">Fecha y hora</p><p style={{ fontWeight: 600 }}>{dateStart} • {timeStart}</p></div>
                 <div><p className="text-sm text-muted-foreground">Ubicación</p><p style={{ fontWeight: 600 }}>{locationName}</p></div>
               </div>
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm"><span style={{ fontWeight: 600 }}>Nota:</span> Tu evento será enviado para revisión.</p>
+              <div
+                className="p-4 rounded-lg flex items-start gap-3"
+                style={{
+                  background: "color-mix(in srgb, var(--accent-primary) 10%, var(--bg-elevated))",
+                  border: "1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent)",
+                }}
+              >
+                <span style={{ fontSize: "1.1rem", lineHeight: 1.3 }}>📋</span>
+                <p className="text-sm" style={{ color: "var(--text-primary)" }}>
+                  <span style={{ fontWeight: 700, color: "var(--accent-primary)" }}>Nota: </span>
+                  Tu evento será enviado para revisión antes de ser publicado.
+                </p>
               </div>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row items-center justify-between mt-8 pt-6 border-t border-gray-200 gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between mt-8 pt-6 gap-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
             {step > 1 ? (
-              <Button variant="outline" onClick={handleBack} disabled={isSubmitting} className="w-full sm:w-auto">
+              <Button variant="outline" onClick={handleBack} disabled={isSubmitting} className="uni-btn-ghost w-full sm:w-auto">
                 <ArrowLeft className="h-4 w-4 mr-2" />Atrás
               </Button>
             ) : <div className="hidden sm:block" />}
             
             {step < 3 ? (
-              <Button onClick={handleNext} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
+              <Button onClick={handleNext} className="w-full sm:w-auto" style={{ background: "var(--accent-primary)", color: "var(--text-primary)" }}>
                 Siguiente<ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
               <div className="flex flex-col-reverse sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
-                <Button onClick={() => handleSubmit('Draft')} variant="outline" disabled={isSubmitting} className="w-full sm:w-32">
-                  {isSubmitting ? "Guardando..." : "Borrador"}
+                <Button onClick={() => handleSubmit('Draft')} variant="outline" disabled={isSubmitting} className="uni-btn-outline w-full sm:w-32">
+                  {isSubmitting ? "Guardando..." : "Guardar borrador"}
                 </Button>
-                <Button onClick={() => handleSubmit('In review')} className="bg-[#1D9E75] hover:bg-[#188c66] w-full sm:w-auto px-6" disabled={isSubmitting}>
-                  {isSubmitting ? "Enviando..." : "Enviar a revisión"}
+                <Button onClick={() => handleSubmit('In review')} className="uni-btn-primary w-full sm:w-auto sm:max-w-none" style={{ width: "auto", paddingLeft: 24, paddingRight: 24 }} disabled={isSubmitting}>
+                  {isSubmitting ? "Enviando..." : "Publicar evento ✓"}
                 </Button>
               </div>
             )}
           </div>
+        </div>
+
+        <aside className="hidden lg:block sticky top-24">
+          <p className="uni-label mb-3">Vista previa</p>
+          <EventHeroCard
+            imagenPortada={coverImage || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000"}
+            titulo={title || "Título del evento"}
+            categoria={previewCategoria}
+            fechaInicio={previewFecha}
+            estado={previewEstado}
+            horaInicio={timeStart}
+            horaFin={timeEnd}
+          />
+        </aside>
         </div>
       </div>
     </div>
