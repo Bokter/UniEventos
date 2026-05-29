@@ -722,7 +722,6 @@ export function VideoSDKBroadcaster({
             mode: "SEND_AND_RECV",
           }}
           token={token}
-          joinWithoutUserInteraction
         >
           <MeetingControls
             eventoId={eventoId}
