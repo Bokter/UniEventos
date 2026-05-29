@@ -184,7 +184,7 @@ export function OrganizerDashboardPage() {
   const approvedCount = organizerEvents.filter(e => e.estado === 'Approved' || e.estado === 'aprobado').length;
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
+    <div className="min-h-screen dashboard-shell">
       <Navbar showSearch={false} />
 
       <div className="flex flex-col md:flex-row">
@@ -192,27 +192,27 @@ export function OrganizerDashboardPage() {
         <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Contenido principal */}
-        <div className="flex-1 p-4 sm:p-6 md:p-8">
+        <div className="dashboard-main">
           {activeTab === 'events' && (
             <>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                 <div>
-                  <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Mis Eventos</h1>
-                  <p className="text-muted-foreground">
+                  <h1 className="font-h1 mb-1">Mis Eventos</h1>
+                  <p className="font-caption">
                     Gestiona y realiza seguimiento de tus eventos
                   </p>
                 </div>
               </div>
 
               {isLoadingEvents ? (
-                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center text-muted-foreground">
+                <div className="dashboard-panel p-12 text-center font-caption">
                   Cargando eventos...
                 </div>
               ) : organizerEvents.length > 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+                <div className="dashboard-panel overflow-x-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
+                    <TableHeader className="uni-table-head">
+                      <TableRow className="uni-table-row">
                         <TableHead>Título</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Fecha</TableHead>
@@ -222,7 +222,7 @@ export function OrganizerDashboardPage() {
                     </TableHeader>
                     <TableBody>
                       {organizerEvents.map((event) => (
-                        <TableRow key={event.id}>
+                        <TableRow key={event.id} className="uni-table-row">
                           <TableCell>
                             <Link
                               to={`/event/${event.id}`}
@@ -246,7 +246,7 @@ export function OrganizerDashboardPage() {
                             <StatusBadge status={event.estado as any} />
                             {/* Mostrar observación del admin si fue rechazado */}
                             {(event.estado === 'Rejected' || event.estado === 'rechazado') && event.observacion_admin && (
-                              <div className="mt-1 text-xs text-destructive bg-red-50 border border-red-200 rounded p-2 max-w-md break-words whitespace-normal">
+                              <div className="mt-1 text-xs dashboard-alert-reject p-2 max-w-md break-words whitespace-normal">
                                 <span style={{ fontWeight: 600 }}>Observación del admin: </span>
                                 {event.observacion_admin}
                               </div>
@@ -261,8 +261,7 @@ export function OrganizerDashboardPage() {
                                 onClick={() => handleEdit(event.id)}
                                 disabled={event.estado !== 'Draft' && event.estado !== 'borrador' && event.estado !== 'Rejected' && event.estado !== 'rechazado'}
                                 title={event.estado === 'Draft' || event.estado === 'borrador' || event.estado === 'Rejected' || event.estado === 'rechazado' ? 'Editar evento' : 'Solo puedes editar eventos en borrador o rechazados'}
-                                className="hover:bg-[#98C1D9]/10 active:scale-90 transition-all"
-                                style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                                className="dashboard-btn-outline dashboard-btn-edit active:scale-90 transition-all"
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -272,8 +271,7 @@ export function OrganizerDashboardPage() {
                                 variant="outline"
                                 onClick={() => handleOpenStreamDialog(event)}
                                 disabled={event.estado !== 'Approved' && event.estado !== 'aprobado'}
-                                className="hover:bg-[#A4D4B4]/10 active:scale-90 transition-all"
-                                style={{ borderColor: '#A4D4B4', color: '#293241' }}
+                                className="dashboard-btn-outline dashboard-btn-toggle active:scale-90 transition-all"
                                 title={event.estado === 'Approved' || event.estado === 'aprobado' ? 'Añadir enlace de transmisión' : 'Solo eventos aprobados pueden tener transmisión'}
                               >
                                 <Video className="h-4 w-4" />
@@ -284,7 +282,7 @@ export function OrganizerDashboardPage() {
                                 variant="outline"
                                 onClick={() => handleCancel(event.id)}
                                 disabled={event.estado !== 'Approved' && event.estado !== 'aprobado'}
-                                className="border-destructive text-destructive hover:bg-red-50 active:scale-90 transition-all"
+                                className="dashboard-btn-outline dashboard-btn-danger-outline active:scale-90 transition-all"
                                 title={event.estado === 'Approved' || event.estado === 'aprobado' ? 'Cancelar evento' : 'Solo puedes cancelar eventos aprobados'}
                               >
                                 <X className="h-4 w-4" />
@@ -295,7 +293,7 @@ export function OrganizerDashboardPage() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleEliminar(event.id)}
-                                  className="border-destructive text-destructive hover:bg-red-50 active:scale-90 transition-all"
+                                  className="dashboard-btn-outline dashboard-btn-danger-outline active:scale-90 transition-all"
                                   title="Eliminar evento permanentemente"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -309,12 +307,12 @@ export function OrganizerDashboardPage() {
                   </Table>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg mb-2" style={{ fontWeight: 600 }}>
+                <div className="dashboard-panel p-12 text-center">
+                  <Calendar className="h-12 w-12 dashboard-empty-icon mx-auto mb-4" />
+                  <h3 className="font-h3 text-lg mb-2">
                     Aún no tienes eventos
                   </h3>
-                  <p className="text-muted-foreground mb-6">
+                  <p className="font-caption mb-6">
                     ¡Publica tu primer evento para empezar!
                   </p>
                 </div>
@@ -325,8 +323,8 @@ export function OrganizerDashboardPage() {
           {activeTab === 'favorites' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Mis Eventos Favoritos</h1>
-                <p className="text-muted-foreground">
+                <h1 className="font-h1 mb-1">Mis Eventos Favoritos</h1>
+                <p className="font-caption">
                   Aquí encontrarás los eventos que has guardado
                 </p>
               </div>
@@ -334,7 +332,7 @@ export function OrganizerDashboardPage() {
               {isLoadingFavorites ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-xl" />
+                    <div key={i} className="h-64 uni-shimmer rounded-xl" />
                   ))}
                 </div>
               ) : favorites.length > 0 ? (
@@ -344,12 +342,12 @@ export function OrganizerDashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                  <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg mb-2" style={{ fontWeight: 600 }}>
+                <div className="dashboard-panel p-12 text-center">
+                  <Heart className="h-12 w-12 dashboard-empty-icon mx-auto mb-4" />
+                  <h3 className="font-h3 text-lg mb-2">
                     Aún no tienes favoritos
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="font-caption">
                     Explora eventos y guárdalos para verlos aquí
                   </p>
                 </div>
@@ -359,13 +357,13 @@ export function OrganizerDashboardPage() {
 
           {activeTab === 'notifications' && (
             <div>
-              <h1 className="text-2xl mb-6" style={{ fontWeight: 600 }}>Notificaciones</h1>
-              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg mb-2" style={{ fontWeight: 600 }}>
+              <h1 className="font-h1 mb-6">Notificaciones</h1>
+              <div className="dashboard-panel p-12 text-center">
+                <Bell className="h-12 w-12 dashboard-empty-icon mx-auto mb-4" />
+                <h3 className="font-h3 text-lg mb-2">
                   Sin notificaciones
                 </h3>
-                <p className="text-muted-foreground">
+                <p className="font-caption">
                   ¡Estás al día!
                 </p>
               </div>
@@ -374,25 +372,28 @@ export function OrganizerDashboardPage() {
 
           {activeTab === 'profile' && (
             <div>
-              <h1 className="text-2xl mb-6" style={{ fontWeight: 600 }}>Mi Perfil</h1>
-              <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-2xl">
+              <h1 className="font-h1 mb-6">Mi Perfil</h1>
+              <div className="dashboard-panel p-6 max-w-2xl">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-6 text-center sm:text-left">
-                  <div className="w-20 h-20 rounded-full bg-[#3D5A80] text-white flex items-center justify-center text-2xl shrink-0">
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center text-2xl shrink-0 font-bold"
+                    style={{ background: "var(--accent-primary)", color: "var(--text-primary)" }}
+                  >
                     {usuario.nombre_completo.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold">{usuario.nombre_completo}</h2>
-                    <p className="text-muted-foreground">{usuario.email}</p>
-                    <p className="text-sm text-[#EE6C4D] capitalize font-medium">{usuario.rol}</p>
+                    <h2 className="font-h3 text-xl">{usuario.nombre_completo}</h2>
+                    <p className="font-caption">{usuario.email}</p>
+                    <p className="font-body text-sm capitalize" style={{ color: "var(--accent-primary)" }}>{usuario.rol}</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm text-muted-foreground">Total de eventos publicados</label>
+                    <label className="uni-label">Total de eventos publicados</label>
                     <p className="text-2xl" style={{ fontWeight: 600 }}>{organizerEvents.length}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground">Eventos aprobados</label>
+                    <label className="uni-label">Eventos aprobados</label>
                     <p className="text-2xl" style={{ fontWeight: 600 }}>{approvedCount}</p>
                   </div>
                 </div>
@@ -413,9 +414,10 @@ export function OrganizerDashboardPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="stream-link">Enlace o ID de Transmisión</Label>
+              <Label htmlFor="stream-link" className="uni-label">Enlace o ID de Transmisión</Label>
               <Input
                 id="stream-link"
+                className="uni-input mt-0"
                 placeholder="Ej. m3u8, Playback ID de Mux..."
                 value={streamLink}
                 onChange={(e) => setStreamLink(e.target.value)}
@@ -423,8 +425,8 @@ export function OrganizerDashboardPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStreamDialogOpen(false)} className="hover:bg-[#A4D4B4]/10 active:scale-95 transition-all" style={{ borderColor: '#A4D4B4', color: '#293241' }}>Cancelar</Button>
-            <Button onClick={handleSaveStreamLink} className="text-white font-bold hover:opacity-90 active:scale-95 transition-all" style={{ background: 'linear-gradient(135deg, #EE6C4D 0%, #e05a3c 100%)', border: 'none' }}>Guardar</Button>
+            <Button variant="outline" onClick={() => setStreamDialogOpen(false)} className="dashboard-btn-outline dashboard-btn-edit">Cancelar</Button>
+            <Button onClick={handleSaveStreamLink} className="dashboard-btn-primary-filled font-bold">Guardar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
