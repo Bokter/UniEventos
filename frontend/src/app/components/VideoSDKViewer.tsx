@@ -15,6 +15,32 @@ function HlsPlayer({ url }: { url: string }) {
   // Arrancamos muteado para garantizar la reproducción del vivo y ofrecemos
   // un botón para activar el sonido.
   const [isMuted, setIsMuted] = useState(true);
+  // En móvil el navegador suele bloquear el autoplay (incluso muteado) hasta que
+  // hay un toque del usuario. En PC el autoplay funciona y este overlay NO aparece,
+  // por lo que NO altera el comportamiento que ya funciona en computador.
+  const [needsTap, setNeedsTap] = useState(false);
+
+  // Intenta reproducir; si el navegador lo bloquea, mostramos "Toca para reproducir".
+  const tryPlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video
+      .play()
+      .then(() => setNeedsTap(false))
+      .catch((err) => {
+        console.log("Autoplay bloqueado, requiere toque:", err);
+        setNeedsTap(true);
+      });
+  };
+
+  const handleTapToPlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = true; // arrancamos muteado para asegurar la reproducción
+    setIsMuted(true);
+    setNeedsTap(false);
+    tryPlay();
+  };
 
   const toggleMute = () => {
     const video = videoRef.current;
@@ -42,7 +68,7 @@ function HlsPlayer({ url }: { url: string }) {
       if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = url;
         video.addEventListener("loadedmetadata", () => {
-          video.play().catch((err) => console.log("Autoplay bloqueado:", err));
+          tryPlay();
         });
       }
       // Soporte usando hls.js (Chrome, Firefox, Edge, etc.)
@@ -70,7 +96,7 @@ function HlsPlayer({ url }: { url: string }) {
           // NO forzamos currentTime: hls.js ya arranca en el borde en vivo.
           // Forzarlo a liveSyncPosition cuando el buffer aún está vacío deja el
           // vídeo congelado en 0:00.
-          video.play().catch((err) => console.log("Autoplay bloqueado:", err));
+          tryPlay();
         });
 
         // Al iniciar el vivo, el manifest/variante/segmentos pueden devolver 404
@@ -136,6 +162,17 @@ function HlsPlayer({ url }: { url: string }) {
         muted
         className="w-full h-full object-contain"
       />
+      {needsTap && (
+        <button
+          onClick={handleTapToPlay}
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm text-white"
+        >
+          <span className="flex items-center justify-center w-16 h-16 rounded-full bg-white/15 border border-white/30 mb-3">
+            <Tv className="h-7 w-7" />
+          </span>
+          <span className="text-sm font-semibold">Toca para reproducir el directo</span>
+        </button>
+      )}
       <div className="absolute top-4 left-4 bg-red-600/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1.5 shadow-lg shadow-red-600/20">
         <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
         EN VIVO
