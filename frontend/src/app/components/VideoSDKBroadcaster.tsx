@@ -91,11 +91,17 @@ function MeetingControls({
   // funcionando con el dispositivo por defecto (el flujo ya probado).
   const devicesAppliedRef = useRef(false);
   useEffect(() => {
-    if (!localParticipant || devicesAppliedRef.current) return;
+    // Aplicamos la cámara/micrófono elegidos SOLO cuando la webcam ya está
+    // encendida; si lo hacemos antes, VideoSDK ignora el cambio y deja la cámara
+    // por defecto (frontal en móvil). Reintentamos un par de veces por si la
+    // pista tarda en estar lista.
+    if (devicesAppliedRef.current) return;
+    if (!localParticipant?.webcamOn) return;
     devicesAppliedRef.current = true;
 
-    // Pequeño retardo para que la webcam ya esté activa antes de cambiarla.
-    const t = setTimeout(() => {
+    let attempts = 0;
+    const apply = () => {
+      attempts += 1;
       if (selectedCamId && typeof changeWebcam === "function") {
         try {
           changeWebcam(selectedCamId);
@@ -110,10 +116,13 @@ function MeetingControls({
           console.error("No se pudo aplicar el micrófono seleccionado:", err);
         }
       }
-    }, 800);
+      // Reintento: a veces el primer changeWebcam no "engancha" en móvil.
+      if (attempts < 3) setTimeout(apply, 700);
+    };
+    const t = setTimeout(apply, 400);
 
     return () => clearTimeout(t);
-  }, [localParticipant, selectedCamId, selectedMicId, changeWebcam, changeMic]);
+  }, [localParticipant?.webcamOn, selectedCamId, selectedMicId, changeWebcam, changeMic]);
 
   const [isCamOn, setIsCamOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);

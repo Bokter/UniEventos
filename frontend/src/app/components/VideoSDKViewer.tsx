@@ -133,7 +133,27 @@ function HlsPlayer({ url }: { url: string }) {
 
     initPlayer();
 
+    // Watchdog para iOS Safari: si el autoplay queda bloqueado de forma silenciosa
+    // (sin disparar el catch), el vídeo se queda en 0:00. A los ~3s, si sigue
+    // pausado o sin avanzar, mostramos el botón "Toca para reproducir".
+    let checks = 0;
+    const watchdog = setInterval(() => {
+      const v = videoRef.current;
+      if (!v) return;
+      checks += 1;
+      // Solo si está PAUSADO (autoplay bloqueado, caso iOS). Mientras bufferiza,
+      // v.paused es false, así que Android no muestra el overlay.
+      if (v.paused) {
+        setNeedsTap(true);
+      } else {
+        setNeedsTap(false);
+        clearInterval(watchdog);
+      }
+      if (checks >= 5) clearInterval(watchdog); // ~15s de ventana de arranque
+    }, 3000);
+
     return () => {
+      clearInterval(watchdog);
       if (hls) {
         hls.destroy();
       }
