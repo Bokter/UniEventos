@@ -11,6 +11,19 @@ interface VideoSDKViewerProps {
 function HlsPlayer({ url }: { url: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasError, setHasError] = useState(false);
+  // El autoplay en móvil (iOS/Android) solo se permite si el video está silenciado.
+  // Arrancamos muteado para garantizar la reproducción del vivo y ofrecemos
+  // un botón para activar el sonido.
+  const [isMuted, setIsMuted] = useState(true);
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const next = !video.muted;
+    video.muted = next;
+    setIsMuted(next);
+    if (!next) video.play().catch(() => {});
+  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -20,14 +33,18 @@ function HlsPlayer({ url }: { url: string }) {
 
     const initPlayer = () => {
       setHasError(false);
-      
+      // Imprescindible para autoplay en móvil: muteado + inline.
+      video.muted = true;
+      video.playsInline = true;
+      setIsMuted(true);
+
       // Soporte nativo para HLS (Safari/iOS)
       if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = url;
         video.addEventListener("loadedmetadata", () => {
           video.play().catch((err) => console.log("Autoplay bloqueado:", err));
         });
-      } 
+      }
       // Soporte usando hls.js (Chrome, Firefox, Edge, etc.)
       else if (Hls.isSupported()) {
         hls = new Hls({
@@ -96,12 +113,21 @@ function HlsPlayer({ url }: { url: string }) {
         controls
         playsInline
         autoPlay
+        muted
         className="w-full h-full object-contain"
       />
       <div className="absolute top-4 left-4 bg-red-600/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1.5 shadow-lg shadow-red-600/20">
         <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
         EN VIVO
       </div>
+      {isMuted && (
+        <button
+          onClick={toggleMute}
+          className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-lg hover:bg-black/90"
+        >
+          🔊 Activar sonido
+        </button>
+      )}
     </div>
   );
 }

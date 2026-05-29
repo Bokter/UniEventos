@@ -41,6 +41,12 @@ export class TransmisionService {
         organizadorId,
       );
 
+      // TODO(transmision): reutilizar la sala mientras no esté 'ended' puede
+      // resucitar una sala con participantes fantasma de una sesión anterior que
+      // no hizo leave() limpio (pestaña cerrada/crash). Como todos entran con el
+      // mismo nombre "Organizador", ese fantasma aparece como otro host en el
+      // layout HLS. Si se confirma, restringir el reuso a estado === 'live'
+      // (reanudar un vivo en curso) y crear sala nueva cuando esté 'idle'.
       if (existing?.meeting_id && existing.estado !== 'ended') {
         const token = this.videosdkService.generateToken(existing.meeting_id, 'host');
         return {

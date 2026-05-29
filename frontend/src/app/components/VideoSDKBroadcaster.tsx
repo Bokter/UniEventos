@@ -203,12 +203,15 @@ function MeetingControls({
       if (isUnmountingRef.current) return;
 
       const playbackUrl = resolveHlsPlaybackUrl(hlsUrls);
-      const isPlayable = hlsState === "HLS_STARTED" || hlsState === "HLS_PLAYABLE";
+      // Solo publicamos a los asistentes cuando el stream está realmente reproducible
+      // y existe una URL: HLS_STARTED puede devolver 404 todavía y deja al viewer
+      // "cargando" o reintentando.
+      const isPlayable = hlsState === "HLS_PLAYABLE";
 
       if (isPlayable && playbackUrl) {
         try {
           await syncBackendEstado("live", playbackUrl);
-          if (hlsState === "HLS_PLAYABLE" && prev !== "HLS_PLAYABLE") {
+          if (prev !== "HLS_PLAYABLE") {
             toast.success("¡Transmisión EN VIVO publicada para los asistentes!");
           }
         } catch {
