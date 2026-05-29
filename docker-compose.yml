@@ -25,10 +25,4 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - VIDEOSDK_API_KEY=${VIDEOSDK_API_KEY}
       - VIDEOSDK_SECRET_KEY=${VIDEOSDK_SECRET_KEY}
-    depends_on:
-      db:
-        condition: service_healthy
-    command: sh -c "npm run build && npm run migration:run && node dist/main.js"
-
-volumes:
-  pgdata:
+    command: sh -c "npm run build && npx typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts && node dist/main.js"

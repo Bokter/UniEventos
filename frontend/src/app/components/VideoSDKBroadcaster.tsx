@@ -387,6 +387,197 @@ function MeetingControls({
   );
 }
 
+/**
+ * Sala de espera previa: solicita permisos de cámara/micrófono, muestra una
+ * previsualización y deja elegir qué dispositivo usar antes de entrar a la sala.
+ */
+function Lobby({
+  meetingId,
+  onJoin,
+  onCancel,
+}: {
+  meetingId: string;
+  onJoin: (selection: { camId: string; micId: string }) => void;
+  onCancel: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
+  const [camId, setCamId] = useState<string>("");
+  const [micId, setMicId] = useState<string>("");
+  const [permission, setPermission] = useState<"pending" | "granted" | "denied">("pending");
+  const [error, setError] = useState<string | null>(null);
+
+  const stopPreview = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, []);
+
+  const startPreview = useCallback(
+    async (deviceId?: string, audioDeviceId?: string) => {
+      try {
+        stopPreview();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: deviceId ? { deviceId: { exact: deviceId } } : true,
+          audio: audioDeviceId ? { deviceId: { exact: audioDeviceId } } : true,
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => {});
+        }
+        setPermission("granted");
+        setError(null);
+
+        // enumerateDevices solo expone labels tras conceder permisos.
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cams = devices.filter((d) => d.kind === "videoinput");
+        const ms = devices.filter((d) => d.kind === "audioinput");
+        setCameras(cams);
+        setMics(ms);
+
+        const activeCam = stream.getVideoTracks()[0]?.getSettings().deviceId;
+        const activeMic = stream.getAudioTracks()[0]?.getSettings().deviceId;
+        setCamId(deviceId || activeCam || cams[0]?.deviceId || "");
+        setMicId(audioDeviceId || activeMic || ms[0]?.deviceId || "");
+      } catch (err) {
+        console.error("Error al solicitar permisos de medios:", err);
+        setPermission("denied");
+        setError(
+          "No se pudo acceder a la cámara o al micrófono. Concede los permisos en el navegador y vuelve a intentarlo.",
+        );
+      }
+    },
+    [stopPreview],
+  );
+
+  useEffect(() => {
+    void startPreview();
+    return () => stopPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleCamChange = (id: string) => {
+    setCamId(id);
+    void startPreview(id, micId || undefined);
+  };
+
+  const handleMicChange = (id: string) => {
+    setMicId(id);
+    void startPreview(camId || undefined, id);
+  };
+
+  const handleJoin = () => {
+    stopPreview();
+    onJoin({ camId, micId });
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="relative rounded-xl overflow-hidden bg-zinc-950 aspect-video w-full shadow-lg border border-zinc-800">
+        {permission === "granted" ? (
+          <video
+            ref={videoRef}
+            className="w-full h-full object-cover transform scale-x-[-1]"
+            playsInline
+            muted
+            autoPlay
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full w-full text-zinc-400 bg-zinc-900 px-6 text-center">
+            {permission === "denied" ? (
+              <>
+                <VideoOff className="h-12 w-12 mb-2 stroke-[1.5] text-red-400" />
+                <span className="text-sm text-red-300">{error}</span>
+              </>
+            ) : (
+              <>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-3" />
+                <span className="text-sm">Solicitando permisos de cámara y micrófono…</span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {permission === "granted" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1.5 text-xs text-zinc-400">
+            <span className="flex items-center gap-1.5 font-medium text-zinc-300">
+              <Video className="h-3.5 w-3.5" /> Cámara
+            </span>
+            <select
+              value={camId}
+              onChange={(e) => handleCamChange(e.target.value)}
+              className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+            >
+              {cameras.map((c, i) => (
+                <option key={c.deviceId} value={c.deviceId}>
+                  {c.label || `Cámara ${i + 1}`}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-xs text-zinc-400">
+            <span className="flex items-center gap-1.5 font-medium text-zinc-300">
+              <Mic className="h-3.5 w-3.5" /> Micrófono
+            </span>
+            <select
+              value={micId}
+              onChange={(e) => handleMicChange(e.target.value)}
+              className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+            >
+              {mics.map((m, i) => (
+                <option key={m.deviceId} value={m.deviceId}>
+                  {m.label || `Micrófono ${i + 1}`}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <Button
+          variant="ghost"
+          onClick={() => {
+            stopPreview();
+            onCancel();
+          }}
+          className="text-zinc-400 hover:text-white border border-transparent hover:border-zinc-800 hover:bg-zinc-800/40 rounded-full px-4"
+        >
+          Cancelar
+        </Button>
+
+        {permission === "denied" ? (
+          <Button
+            onClick={() => void startPreview()}
+            className="bg-zinc-800 hover:bg-zinc-700 text-white font-medium px-6 py-2.5 rounded-full"
+          >
+            Reintentar permisos
+          </Button>
+        ) : (
+          <Button
+            onClick={handleJoin}
+            disabled={permission !== "granted"}
+            className="bg-violet-600 hover:bg-violet-700 text-white font-medium px-6 py-2.5 rounded-full flex items-center gap-2 shadow-lg shadow-violet-600/20 disabled:opacity-50"
+          >
+            <Tv className="h-4 w-4" />
+            Entrar a la sala
+          </Button>
+        )}
+      </div>
+      <p className="text-[11px] text-zinc-500 text-center">Sala ID: {meetingId}</p>
+    </div>
+  );
+}
+
 export function VideoSDKBroadcaster({
   meetingId,
   token,
@@ -394,6 +585,9 @@ export function VideoSDKBroadcaster({
   sessionKey,
   onClose,
 }: VideoSDKBroadcasterProps) {
+  const [phase, setPhase] = useState<"setup" | "live">("setup");
+  const [devices, setDevices] = useState<{ camId: string; micId: string } | null>(null);
+
   if (!token || token === "mock-token" || meetingId === "mock-room-id") {
     return (
       <div className="p-6 text-center text-zinc-300">
@@ -417,27 +611,45 @@ export function VideoSDKBroadcaster({
             <Radio className="h-5 w-5 text-violet-500" />
             Panel del Transmisor
           </h2>
-          <p className="text-xs text-zinc-400 mt-1">Sala ID: {meetingId}</p>
+          <p className="text-xs text-zinc-400 mt-1">
+            {phase === "setup" ? "Configura tu cámara antes de entrar" : `Sala ID: ${meetingId}`}
+          </p>
         </div>
-        <div className="bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full text-xs font-semibold text-violet-400 animate-pulse">
-          Transmisión en vivo
+        <div className="bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full text-xs font-semibold text-violet-400">
+          {phase === "setup" ? "Preparando" : "Transmisión en vivo"}
         </div>
       </div>
 
-      <MeetingProvider
-        key={sessionKey}
-        config={{
-          meetingId,
-          micEnabled: true,
-          webcamEnabled: true,
-          name: "Organizador",
-          mode: "SEND_AND_RECV",
-        }}
-        token={token}
-        joinWithoutUserInteraction
-      >
-        <MeetingControls eventoId={eventoId} onClose={onClose} />
-      </MeetingProvider>
+      {phase === "setup" ? (
+        <Lobby
+          meetingId={meetingId}
+          onCancel={onClose}
+          onJoin={(selection) => {
+            setDevices(selection);
+            setPhase("live");
+          }}
+        />
+      ) : (
+        <MeetingProvider
+          key={sessionKey}
+          config={{
+            meetingId,
+            micEnabled: true,
+            webcamEnabled: true,
+            name: "Organizador",
+            mode: "SEND_AND_RECV",
+          }}
+          token={token}
+          joinWithoutUserInteraction
+        >
+          <MeetingControls
+            eventoId={eventoId}
+            onClose={onClose}
+            selectedCamId={devices?.camId}
+            selectedMicId={devices?.micId}
+          />
+        </MeetingProvider>
+      )}
     </div>
   );
 }
