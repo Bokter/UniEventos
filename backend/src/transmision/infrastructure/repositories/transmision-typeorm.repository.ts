@@ -18,11 +18,21 @@ export class TransmisionTypeormRepository implements ITransmisionRepository {
     });
   }
 
-  async upsert(eventoId: number, organizadorId: number, url: string) {
-    let transmision = await this.repo.findOne({
-      where: { 
+  async findByEventoAndOrganizador(eventoId: number, organizadorId: number) {
+    return this.repo.findOne({
+      where: {
         evento: { id: eventoId },
-        organizador: { id: organizadorId }
+        organizador: { id: organizadorId },
+      },
+      relations: ['organizador'],
+    });
+  }
+
+  async upsert(eventoId: number, organizadorId: number, meetingId: string | null, streamUrl: string | null) {
+    let transmision = await this.repo.findOne({
+      where: {
+        evento: { id: eventoId },
+        organizador: { id: organizadorId },
       },
     });
 
@@ -33,18 +43,62 @@ export class TransmisionTypeormRepository implements ITransmisionRepository {
       });
     }
 
-    transmision.stream_url = url;
+    transmision.meeting_id = meetingId;
+    transmision.stream_url = streamUrl;
+    transmision.estado = streamUrl ? 'live' : 'idle';
+    transmision.hls_url = null;
     return this.repo.save(transmision);
+  }
+
+  async updateEstado(eventoId: number, estado: 'idle' | 'live' | 'ended', hlsUrl?: string | null) {
+    const updatePayload = this.buildEstadoPayload(estado, hlsUrl);
+    await this.repo
+      .createQueryBuilder()
+      .update(TransmisionOrmEntity)
+      .set(updatePayload)
+      .where('evento_id = :eventoId', { eventoId })
+      .execute();
+  }
+
+  async updateEstadoForOrganizador(
+    eventoId: number,
+    organizadorId: number,
+    estado: 'idle' | 'live' | 'ended',
+    hlsUrl?: string | null,
+  ) {
+    const updatePayload = this.buildEstadoPayload(estado, hlsUrl);
+    await this.repo
+      .createQueryBuilder()
+      .update(TransmisionOrmEntity)
+      .set(updatePayload)
+      .where('evento_id = :eventoId AND usuario_id = :organizadorId', {
+        eventoId,
+        organizadorId,
+      })
+      .execute();
+  }
+
+  private buildEstadoPayload(
+    estado: 'idle' | 'live' | 'ended',
+    hlsUrl?: string | null,
+  ): Partial<TransmisionOrmEntity> {
+    const updatePayload: Partial<TransmisionOrmEntity> = { estado };
+    if (hlsUrl !== undefined) {
+      updatePayload.hls_url = hlsUrl;
+    } else if (estado === 'idle' || estado === 'ended') {
+      updatePayload.hls_url = null;
+    }
+    return updatePayload;
   }
 
   async remove(eventoId: number, organizadorId: number) {
     const transmision = await this.repo.findOne({
-      where: { 
+      where: {
         evento: { id: eventoId },
-        organizador: { id: organizadorId }
+        organizador: { id: organizadorId },
       },
     });
-    
+
     if (transmision) {
       await this.repo.remove(transmision);
     }
