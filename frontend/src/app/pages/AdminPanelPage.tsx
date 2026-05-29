@@ -1,6 +1,7 @@
+/* @logic — do not touch */
 import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
-import { FileText, Users, Tag, Check, X } from "lucide-react";
+import { FileText, Users, Tag, Check, X, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { Navbar } from "../components/Navbar";
 import { StatusBadge } from "../components/StatusBadge";
@@ -11,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
+import { StatCard } from "../components/visual/StatCard";
 import { EditUserModal } from "../components/EditUserModal";
 import { EditCategoryModal } from "../components/EditCategoryModal";
 import { useAuth } from "../../context/AuthContext";
@@ -227,30 +229,35 @@ export function AdminPanelPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #f0faf4 0%, #e4f5eb 40%, #eef8f2 100%)' }}>
+    <div className="min-h-screen dashboard-shell">
       <Navbar showSearch={false} />
 
       <div className="flex flex-col md:flex-row">
-        {/* Sidebar */}
         <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} pendingEventsCount={pendingEvents.length} />
 
-        {/* Main Content */}
-        <div className="flex-1 p-4 sm:p-6 md:p-8">
+        <div className="dashboard-main">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard label="Pendientes" value={pendingEvents.length} icon={<Clock className="h-5 w-5" />} trend={{ value: 12, positive: false }} />
+            <StatCard label="Total eventos" value={allEvents.length} icon={<FileText className="h-5 w-5" />} />
+            <StatCard label="Usuarios" value={usuarios.length} icon={<Users className="h-5 w-5" />} trend={{ value: 8, positive: true }} />
+            <StatCard label="Categorías" value={categorias.length} icon={<Tag className="h-5 w-5" />} />
+          </div>
+
           {activeTab === 'pending' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Eventos Pendientes</h1>
-                <p className="text-muted-foreground">
+                <h1 className="font-h1 mb-1">Eventos Pendientes</h1>
+                <p className="font-caption">
                   Revisa y aprueba o rechaza los eventos enviados
                 </p>
               </div>
 
               {pendingEvents.length > 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+                <div className="uni-table-wrap overflow-x-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Título</TableHead>
+                    <TableHeader className="uni-table-head">
+                      <TableRow className="uni-table-row border-0 hover:bg-transparent">
+                        <TableHead className="text-[var(--text-muted)]">Título</TableHead>
                         <TableHead>Organizador</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Enviado</TableHead>
@@ -259,12 +266,12 @@ export function AdminPanelPage() {
                     </TableHeader>
                     <TableBody>
                       {pendingEvents.map((event) => (
-                        <TableRow key={event.id}>
+                        <TableRow key={event.id} className="uni-table-row">
                           <TableCell>
                             <Link
                               to={`/event/${event.id}`}
-                              className="hover:text-accent hover:underline"
-                              style={{ fontWeight: 600 }}
+                              className="hover:underline font-body"
+                              style={{ fontWeight: 600, color: "var(--text-accent)" }}
                             >
                               {event.titulo}
                             </Link>
@@ -285,8 +292,7 @@ export function AdminPanelPage() {
                                 <Button
                                   size="sm"
                                   onClick={() => handleApprove(event.id)}
-                                  className="hover:opacity-90 active:scale-95 transition-all"
-                                  style={{ background: '#A4D4B4', color: '#293241', fontWeight: 700, border: 'none' }}
+                                  className="dashboard-btn-outline dashboard-btn-success active:scale-95 transition-all"
                                 >
                                   <Check className="h-4 w-4 mr-1" />
                                   Aprobar
@@ -295,7 +301,7 @@ export function AdminPanelPage() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleRejectClick(event)}
-                                  className="border-destructive text-destructive hover:bg-destructive/10 active:scale-95 transition-all"
+                                  className="dashboard-btn-outline dashboard-btn-danger-outline active:scale-95 transition-all"
                                 >
                                   <X className="h-4 w-4 mr-1" />
                                   Rechazar
@@ -308,12 +314,12 @@ export function AdminPanelPage() {
                   </Table>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg mb-2" style={{ fontWeight: 600 }}>
+                <div className="dashboard-panel p-12 text-center">
+                  <FileText className="h-12 w-12 dashboard-empty-icon mx-auto mb-4" />
+                  <h3 className="font-h3 text-lg mb-2">
                     Sin eventos pendientes
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="font-caption">
                     Todos los eventos han sido revisados
                   </p>
                 </div>
@@ -324,16 +330,16 @@ export function AdminPanelPage() {
           {activeTab === 'all' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Todos los Eventos</h1>
-                <p className="text-muted-foreground">
+                <h1 className="font-h1 mb-1">Todos los Eventos</h1>
+                <p className="font-caption">
                   Visualiza y gestiona todos los eventos del sistema
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+              <div className="dashboard-panel overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
+                  <TableHeader className="uni-table-head">
+                    <TableRow className="uni-table-row">
                       <TableHead>Título</TableHead>
                       <TableHead>Organizador</TableHead>
                       <TableHead>Categoría</TableHead>
@@ -343,7 +349,7 @@ export function AdminPanelPage() {
                   </TableHeader>
                   <TableBody>
                     {allEvents.map((event) => (
-                      <TableRow key={event.id}>
+                      <TableRow key={event.id} className="uni-table-row">
                         <TableCell>
                           <Link
                             to={`/event/${event.id}`}
@@ -383,15 +389,15 @@ export function AdminPanelPage() {
           {activeTab === 'users' && (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Usuarios</h1>
-                <p className="text-muted-foreground">
+                <h1 className="font-h1 mb-1">Usuarios</h1>
+                <p className="font-caption">
                   Gestionar usuarios del sistema
                 </p>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+              <div className="dashboard-panel overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
+                  <TableHeader className="uni-table-head">
+                    <TableRow className="uni-table-row">
                       <TableHead>Nombre</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Rol</TableHead>
@@ -401,19 +407,19 @@ export function AdminPanelPage() {
                   </TableHeader>
                   <TableBody>
                     {usuarios.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell style={{ fontWeight: 500 }}>{user.nombre_completo}</TableCell>
+                      <TableRow key={user.id} className="uni-table-row">
+                        <TableCell style={{ fontWeight: 600 }}>{user.nombre_completo}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${user.rol === 'admin' ? 'bg-purple-100 text-purple-700' :
-                            user.rol === 'organizador' ? 'bg-blue-100 text-blue-700' :
-                              'bg-gray-100 text-gray-700'
+                          <span className={`dashboard-badge ${user.rol === 'admin' ? 'dashboard-badge--accent' :
+                            user.rol === 'organizador' ? 'dashboard-badge--accent' :
+                              'dashboard-badge--neutral'
                             }`}>
                             {user.rol === 'admin' ? 'Administrador' : user.rol === 'organizador' ? 'Organizador' : 'Asistente'}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${user.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          <span className={`dashboard-badge ${user.activo ? 'dashboard-badge--success' : 'dashboard-badge--danger'}`}>
                             {user.activo ? 'Activo' : 'Inactivo'}
                           </span>
                         </TableCell>
@@ -423,8 +429,7 @@ export function AdminPanelPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleEditUserClick(user)}
-                              className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
-                              style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                              className="dashboard-btn-outline dashboard-btn-edit active:scale-95 transition-all"
                             >
                               Editar
                             </Button>
@@ -442,14 +447,13 @@ export function AdminPanelPage() {
             <>
               <div className="mb-6 flex justify-between items-center">
                 <div>
-                  <h1 className="text-2xl mb-1" style={{ fontWeight: 600 }}>Categorías</h1>
-                  <p className="text-muted-foreground">
+                  <h1 className="font-h1 mb-1">Categorías</h1>
+                  <p className="font-caption">
                     Gestionar categorías de eventos
                   </p>
                 </div>
                 <Button
-                  className="text-white font-bold hover:opacity-90 active:scale-95 transition-all"
-                  style={{ background: 'linear-gradient(135deg, #EE6C4D 0%, #e05a3c 100%)', border: 'none' }}
+                  className="dashboard-btn-primary-filled font-bold hover:opacity-90 active:scale-95 transition-all"
                   onClick={() => {
                     setSelectedCategoryToEdit(null);
                     setEditCategoryDialogOpen(true);
@@ -458,10 +462,10 @@ export function AdminPanelPage() {
                   Nueva Categoría
                 </Button>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+              <div className="dashboard-panel overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
+                  <TableHeader className="uni-table-head">
+                    <TableRow className="uni-table-row">
                       <TableHead>Nombre</TableHead>
                       <TableHead>Estado</TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
@@ -469,12 +473,12 @@ export function AdminPanelPage() {
                   </TableHeader>
                   <TableBody>
                     {categorias.map((category) => (
-                      <TableRow key={category.id}>
+                      <TableRow key={category.id} className="uni-table-row">
                         <TableCell>
                           <CategoryBadge category={category.nombre as any} />
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${category.activa ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          <span className={`dashboard-badge ${category.activa ? 'dashboard-badge--success' : 'dashboard-badge--danger'}`}>
                             {category.activa ? 'Activo' : 'Inactivo'}
                           </span>
                         </TableCell>
@@ -484,8 +488,7 @@ export function AdminPanelPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleToggleCategoryStatus(category.id, category.activa)}
-                              className="hover:bg-[#A4D4B4]/10 active:scale-95 transition-all"
-                              style={{ borderColor: '#A4D4B4', color: '#293241', fontWeight: 600 }}
+                              className="dashboard-btn-outline dashboard-btn-toggle active:scale-95 transition-all"
                             >
                               {category.activa ? 'Desactivar' : 'Activar'}
                             </Button>
@@ -493,8 +496,7 @@ export function AdminPanelPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleEditCategoryClick(category)}
-                              className="hover:bg-[#98C1D9]/10 active:scale-95 transition-all"
-                              style={{ borderColor: '#98C1D9', color: '#3D5A80', fontWeight: 600 }}
+                              className="dashboard-btn-outline dashboard-btn-edit active:scale-95 transition-all"
                             >
                               Editar
                             </Button>
@@ -522,9 +524,9 @@ export function AdminPanelPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {selectedEvent && (
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm" style={{ fontWeight: 600 }}>{selectedEvent.titulo}</p>
-                <p className="text-xs text-muted-foreground">
+              <div className="dialog-info-box">
+                <p className="text-sm font-body" style={{ fontWeight: 600 }}>{selectedEvent.titulo}</p>
+                <p className="text-xs font-caption">
                   por {selectedEvent.organizador?.nombre_completo ?? '—'}
                   {selectedEvent.coorganizadores && selectedEvent.coorganizadores.length > 0 && 
                     `, ${selectedEvent.coorganizadores.map(c => c.nombre_completo).join(', ')}`}
@@ -546,7 +548,7 @@ export function AdminPanelPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              className="hover:bg-gray-100 active:scale-95 transition-all"
+              className="dashboard-btn-outline dashboard-btn-edit active:scale-95 transition-all"
               onClick={() => {
                 setRejectDialogOpen(false);
                 setRejectionReason("");
