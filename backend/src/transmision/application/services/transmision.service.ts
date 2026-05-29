@@ -1,4 +1,4 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, Logger } from '@nestjs/common';
 import type { ITransmisionRepository } from '../../domain/repositories/transmision.repository.interface';
 import { TRANSMISION_REPOSITORY } from '../../domain/repositories/transmision.repository.interface';
 import { VIDEOSDK_SERVICE } from '../../domain/services/videosdk.service.interface';
@@ -6,6 +6,8 @@ import type { IVideoSDKService } from '../../domain/services/videosdk.service.in
 
 @Injectable()
 export class TransmisionService {
+  private readonly logger = new Logger(TransmisionService.name);
+
   constructor(
     @Inject(TRANSMISION_REPOSITORY)
     private readonly transmisionRepository: ITransmisionRepository,
@@ -57,7 +59,13 @@ export class TransmisionService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('No se pudo iniciar la transmisión.');
+      const detalle =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Error al iniciar transmisión (evento ${eventoId}, organizador ${organizadorId}): ${detalle}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw new BadRequestException(`No se pudo iniciar la transmisión: ${detalle}`);
     }
   }
 
