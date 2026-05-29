@@ -60,33 +60,37 @@ function HlsPlayer({ url }: { url: string }) {
         hls.loadSource(url);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          // Saltar al borde en vivo en lugar de empezar desde el inicio del playlist.
-          if (hls && hls.liveSyncPosition != null) {
-            video.currentTime = hls.liveSyncPosition;
-          }
+          // NO forzamos currentTime: hls.js ya arranca en el borde en vivo.
+          // Forzarlo a liveSyncPosition cuando el buffer aún está vacío deja el
+          // vídeo congelado en 0:00.
           video.play().catch((err) => console.log("Autoplay bloqueado:", err));
         });
 
+        // Al iniciar el vivo, el manifest/variante/segmentos pueden devolver 404
+        // durante unos segundos hasta que VideoSDK publica los primeros segmentos.
+        // No debemos mostrar error: hay que reintentar la carga.
+        let retries = 0;
+        const MAX_RETRIES = 30; // ~30s de margen para el arranque del vivo
         hls.on(Hls.Events.ERROR, (_event, data) => {
-          if (data.fatal) {
-            if (data.type === Hls.ErrorTypes.NETWORK_ERROR && data.response?.code === 404) {
-              setHasError(true);
-              return;
-            }
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                console.warn("Error fatal de red en HLS, intentando recuperar...", data);
-                hls?.startLoad();
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                console.warn("Error fatal de medios en HLS, intentando recuperar...", data);
-                hls?.recoverMediaError();
-                break;
-              default:
-                console.error("Error fatal HLS no recuperable:", data);
+          if (!data.fatal) return;
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              if (retries >= MAX_RETRIES) {
                 setHasError(true);
-                break;
-            }
+                return;
+              }
+              retries += 1;
+              console.warn(`HLS network error, reintentando (${retries})...`, data?.details);
+              setTimeout(() => hls?.startLoad(), 1000);
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.warn("HLS media error, recuperando...", data?.details);
+              hls?.recoverMediaError();
+              break;
+            default:
+              console.error("Error fatal HLS no recuperable:", data);
+              setHasError(true);
+              break;
           }
         });
       } else {
