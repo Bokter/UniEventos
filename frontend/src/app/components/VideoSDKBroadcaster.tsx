@@ -87,20 +87,32 @@ function MeetingControls({
   } = useMeeting();
 
   // Aplica la cámara/micrófono elegidos en el lobby una vez unidos a la sala.
+  // Es tolerante a fallos: si falla o la API no existe, la sala sigue
+  // funcionando con el dispositivo por defecto (el flujo ya probado).
   const devicesAppliedRef = useRef(false);
   useEffect(() => {
     if (!localParticipant || devicesAppliedRef.current) return;
     devicesAppliedRef.current = true;
-    try {
-      if (selectedCamId) changeWebcam(selectedCamId);
-    } catch (err) {
-      console.error("No se pudo aplicar la cámara seleccionada:", err);
-    }
-    try {
-      if (selectedMicId) changeMic(selectedMicId);
-    } catch (err) {
-      console.error("No se pudo aplicar el micrófono seleccionado:", err);
-    }
+
+    // Pequeño retardo para que la webcam ya esté activa antes de cambiarla.
+    const t = setTimeout(() => {
+      if (selectedCamId && typeof changeWebcam === "function") {
+        try {
+          changeWebcam(selectedCamId);
+        } catch (err) {
+          console.error("No se pudo aplicar la cámara seleccionada:", err);
+        }
+      }
+      if (selectedMicId && typeof changeMic === "function") {
+        try {
+          changeMic(selectedMicId);
+        } catch (err) {
+          console.error("No se pudo aplicar el micrófono seleccionado:", err);
+        }
+      }
+    }, 800);
+
+    return () => clearTimeout(t);
   }, [localParticipant, selectedCamId, selectedMicId, changeWebcam, changeMic]);
 
   const [isCamOn, setIsCamOn] = useState(true);
@@ -585,8 +597,17 @@ export function VideoSDKBroadcaster({
   sessionKey,
   onClose,
 }: VideoSDKBroadcasterProps) {
-  const [phase, setPhase] = useState<"setup" | "live">("setup");
+  const [phase, setPhase] = useState<"setup" | "connecting" | "live">("setup");
   const [devices, setDevices] = useState<{ camId: string; micId: string } | null>(null);
+
+  // Tras salir del lobby esperamos un instante a que el navegador libere
+  // la cámara/micrófono del preview antes de que el SDK los vuelva a tomar.
+  // Sin esta pausa, el SDK recibe NotReadableError y la webcam nunca enciende.
+  useEffect(() => {
+    if (phase !== "connecting") return;
+    const t = setTimeout(() => setPhase("live"), 500);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   if (!token || token === "mock-token" || meetingId === "mock-room-id") {
     return (
@@ -612,11 +633,11 @@ export function VideoSDKBroadcaster({
             Panel del Transmisor
           </h2>
           <p className="text-xs text-zinc-400 mt-1">
-            {phase === "setup" ? "Configura tu cámara antes de entrar" : `Sala ID: ${meetingId}`}
+            {phase === "live" ? `Sala ID: ${meetingId}` : "Configura tu cámara antes de entrar"}
           </p>
         </div>
         <div className="bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full text-xs font-semibold text-violet-400">
-          {phase === "setup" ? "Preparando" : "Transmisión en vivo"}
+          {phase === "live" ? "Transmisión en vivo" : "Preparando"}
         </div>
       </div>
 
@@ -626,9 +647,16 @@ export function VideoSDKBroadcaster({
           onCancel={onClose}
           onJoin={(selection) => {
             setDevices(selection);
-            setPhase("live");
+            setPhase("connecting");
           }}
         />
+      ) : phase === "connecting" ? (
+        <div className="flex items-center justify-center bg-zinc-900 rounded-xl border border-zinc-800 aspect-video w-full text-zinc-400">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-3" />
+            <p className="text-sm">Conectando a la sala…</p>
+          </div>
+        </div>
       ) : (
         <MeetingProvider
           key={sessionKey}
