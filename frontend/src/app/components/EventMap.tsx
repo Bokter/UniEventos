@@ -10,6 +10,24 @@ interface EventMapProps {
 export function EventMap({ lat, lng, locationName }: EventMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+
+  const getIsLight = () => document.documentElement.classList.contains('light');
+
+  const getDarkTile = () => L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      maxZoom: 19
+    }
+  );
+
+  const getLightTile = () => L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }
+  );
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -31,11 +49,10 @@ export function EventMap({ lat, lng, locationName }: EventMapProps) {
         scrollWheelZoom: false,
       });
 
-      // Add tile layer - Puede fallar si OpenStreetMap no responde
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(map);
+      // Add tile layer
+      const tileLayer = getIsLight() ? getLightTile() : getDarkTile();
+      tileLayer.addTo(map);
+      tileLayerRef.current = tileLayer;
 
       // Add marker con popup opcional
       L.marker([lat, lng])
@@ -55,6 +72,7 @@ export function EventMap({ lat, lng, locationName }: EventMapProps) {
         if (mapInstanceRef.current) {
           mapInstanceRef.current.remove();
           mapInstanceRef.current = null;
+          tileLayerRef.current = null;
         }
       } catch (error) {
         console.error("Error limpiando mapa:", error);
@@ -62,10 +80,25 @@ export function EventMap({ lat, lng, locationName }: EventMapProps) {
     };
   }, [lat, lng]);
 
+  // Swap tile layers when theme changes
+  useEffect(() => {
+    const handleThemeChange = () => {
+      if (!mapInstanceRef.current) return;
+      if (tileLayerRef.current) {
+        mapInstanceRef.current.removeLayer(tileLayerRef.current);
+      }
+      const newTile = getIsLight() ? getLightTile() : getDarkTile();
+      newTile.addTo(mapInstanceRef.current);
+      tileLayerRef.current = newTile;
+    };
+    window.addEventListener('theme-changed', handleThemeChange);
+    return () => window.removeEventListener('theme-changed', handleThemeChange);
+  }, []);
+
   return (
     <div
       ref={mapRef}
-      className="h-64 rounded-lg overflow-hidden border border-gray-200 z-0 relative"
+      className="h-64 map-dark-frame z-0 relative"
     />
   );
 }

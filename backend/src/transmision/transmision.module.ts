@@ -5,8 +5,8 @@ import { TransmisionTypeormRepository } from './infrastructure/repositories/tran
 import { TransmisionService } from './application/services/transmision.service';
 import { TransmisionController } from './presentation/transmision.controller';
 import { TRANSMISION_REPOSITORY } from './domain/repositories/transmision.repository.interface';
-import { MUX_SERVICE } from './domain/services/mux.service.interface';
-import { MuxNodeService } from './infrastructure/services/mux-node.service';
+import { VIDEOSDK_SERVICE } from './domain/services/videosdk.service.interface';
+import { VideoSDKNodeService } from './infrastructure/services/videosdk-node.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([TransmisionOrmEntity])],
@@ -18,8 +18,8 @@ import { MuxNodeService } from './infrastructure/services/mux-node.service';
       useClass: TransmisionTypeormRepository,
     },
     {
-      provide: MUX_SERVICE,
-      useClass: MuxNodeService,
+      provide: VIDEOSDK_SERVICE,
+      useClass: VideoSDKNodeService,
     },
   ],
 })

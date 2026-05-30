@@ -23,4 +23,6 @@ services:
       - NODE_ENV=${NODE_ENV}
       - TZ=${TZ}
       - JWT_SECRET=${JWT_SECRET}
+      - VIDEOSDK_API_KEY=${VIDEOSDK_API_KEY}
+      - VIDEOSDK_SECRET_KEY=${VIDEOSDK_SECRET_KEY}
     command: sh -c "npm run build && npx typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts && node dist/main.js"
