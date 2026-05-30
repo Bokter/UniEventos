@@ -83,6 +83,7 @@ function MeetingControls({
     toggleMic,
     changeWebcam,
     changeMic,
+    getCameras,
   } = useMeeting();
 
   // Aplica la cámara/micrófono elegidos en el lobby una vez unidos a la sala.
@@ -127,17 +128,48 @@ function MeetingControls({
   const [isMicOn, setIsMicOn] = useState(true);
 
   // Lista de cámaras disponibles para alternar frontal/trasera en móvil.
-  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [cameras, setCameras] = useState<{ deviceId: string; label?: string }[]>([]);
   const [camIndex, setCamIndex] = useState(0);
   const [isSwitchingCam, setIsSwitchingCam] = useState(false);
 
   useEffect(() => {
     if (!localParticipant?.webcamOn) return;
-    navigator.mediaDevices
-      .enumerateDevices()
-      .then((ds) => setCameras(ds.filter((d) => d.kind === "videoinput")))
-      .catch(() => {});
-  }, [localParticipant?.webcamOn]);
+    let cancelled = false;
+    let attempts = 0;
+
+    const loadCameras = async () => {
+      attempts += 1;
+      let list: { deviceId: string; label?: string }[] = [];
+      // getCameras() del SDK es lo más fiable en móvil.
+      try {
+        if (typeof getCameras === "function") {
+          list = (await getCameras()) || [];
+        }
+      } catch {
+        /* ignore */
+      }
+      // Respaldo: enumerateDevices del navegador.
+      if (list.length < 2) {
+        try {
+          const ds = await navigator.mediaDevices.enumerateDevices();
+          const vids = ds.filter((d) => d.kind === "videoinput");
+          if (vids.length > list.length) list = vids;
+        } catch {
+          /* ignore */
+        }
+      }
+      if (cancelled) return;
+      setCameras(list);
+      // Reintentar un par de veces: tras encender la webcam, la lista puede
+      // tardar en exponer todas las cámaras (frontal + trasera) en móvil.
+      if (list.length < 2 && attempts < 4) setTimeout(loadCameras, 1000);
+    };
+
+    loadCameras();
+    return () => {
+      cancelled = true;
+    };
+  }, [localParticipant?.webcamOn, getCameras]);
 
   const handleSwitchCamera = async () => {
     if (cameras.length < 2 || isSwitchingCam) return;
