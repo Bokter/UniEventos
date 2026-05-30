@@ -73,7 +73,6 @@ function MeetingControls({
   selectedMicId?: string;
 }) {
   const {
-    join,
     leave,
     localParticipant,
     startHls,
@@ -195,7 +194,9 @@ function MeetingControls({
   );
 
   useEffect(() => {
-    join();
+    // NO llamamos join() aquí: el MeetingProvider ya une la sala con
+    // `joinWithoutUserInteraction`. Si además llamáramos join() se crearía una
+    // segunda sesión (el "organizador" fantasma).
     hasJoinedRef.current = true;
 
     return () => {
@@ -722,6 +723,7 @@ export function VideoSDKBroadcaster({
             mode: "SEND_AND_RECV",
           }}
           token={token}
+          joinWithoutUserInteraction
         >
           <MeetingControls
             eventoId={eventoId}
