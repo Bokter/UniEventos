@@ -85,7 +85,7 @@ export function Navbar({ showSearch = true, onSearchChange, searchValue = "" }: 
                   type="search"
                   placeholder="Buscar eventos..."
                   className="uni-input pl-9 h-10 text-sm"
-                  style={{ paddingTop: "8px", paddingBottom: "8px" }}
+                  style={{ paddingTop: "8px", paddingBottom: "8px", paddingLeft: "36px" }}
                   value={searchValue}
                   onChange={(e) => onSearchChange?.(e.target.value)}
                 />

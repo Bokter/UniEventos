@@ -6,13 +6,13 @@ services:
         - VITE_EMAILJS_SERVICE_ID=${VITE_EMAILJS_SERVICE_ID}
         - VITE_EMAILJS_TEMPLATE_ID=${VITE_EMAILJS_TEMPLATE_ID}
         - VITE_EMAILJS_PUBLIC_KEY=${VITE_EMAILJS_PUBLIC_KEY}
-    expose:
-      - "5173"
+    ports:
+      - "5173:5173"
 
   backend:
     build: ./backend
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
     environment:
       - DB_HOST=${DB_HOST}
       - DB_NAME=${DB_NAME}
@@ -25,4 +25,4 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - VIDEOSDK_API_KEY=${VIDEOSDK_API_KEY}
       - VIDEOSDK_SECRET_KEY=${VIDEOSDK_SECRET_KEY}
-    command: sh -c "npm run build && npx typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts && node dist/main.js"
+    command: sh -c "npx typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts && node dist/main.js"
