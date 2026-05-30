@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { DashboardSidebar, SidebarTab } from "../components/DashboardSidebar";
+import { VideoSDKBroadcaster } from "../components/VideoSDKBroadcaster";
 import { useAuth } from "../../context/AuthContext";
 import { eventosApi, favoritosApi } from "../services/api.service";
 import { toast } from "sonner";
@@ -40,7 +41,12 @@ export function OrganizerDashboardPage() {
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [streamDialogOpen, setStreamDialogOpen] = useState(false);
   const [selectedEventForStream, setSelectedEventForStream] = useState<EventoBackend | null>(null);
-  const [streamLink, setStreamLink] = useState("");
+  // Flujo de transmisión (mismo que en la página de detalle del evento).
+  const [externalStreamUrl, setExternalStreamUrl] = useState("");
+  const [isLoadingStream, setIsLoadingStream] = useState(false);
+  const [broadcasterData, setBroadcasterData] = useState<{ meetingId: string; token: string } | null>(null);
+  const [broadcasterSessionKey, setBroadcasterSessionKey] = useState("");
+  const [isBroadcasterOpen, setIsBroadcasterOpen] = useState(false);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
 
@@ -148,29 +154,32 @@ export function OrganizerDashboardPage() {
 
   const handleOpenStreamDialog = (event: EventoBackend) => {
     setSelectedEventForStream(event);
-    const userStream = event.streams?.find(s => String(s.organizerId) === String(usuario?.id));
-    setStreamLink(userStream?.streamLink || "");
+    setExternalStreamUrl("");
     setStreamDialogOpen(true);
   };
 
-  const handleSaveStreamLink = () => {
-    // El stream link se guarda localmente hasta que exista endpoint en el backend
-    if (!selectedEventForStream) return;
-    setOrganizerEvents(prev =>
-      prev.map(e => {
-        if (e.id !== selectedEventForStream.id) return e;
-        const streams = [...(e.streams || [])];
-        const idx = streams.findIndex(s => String(s.organizerId) === String(usuario?.id));
-        if (idx >= 0) {
-          streams[idx] = { ...streams[idx], streamLink };
-        } else {
-          streams.push({ organizerId: String(usuario.id), streamLink });
-        }
-        return { ...e, streams };
-      })
-    );
-    toast.success("Enlace de transmisión guardado");
+  // Inicia la transmisión igual que en la página de detalle del evento:
+  // con cámara (VideoSDK) o con un enlace externo.
+  const startStreamFlow = async (url?: string) => {
+    const ev = selectedEventForStream;
+    if (!ev) return;
+    setIsLoadingStream(true);
     setStreamDialogOpen(false);
+    try {
+      const res = await eventosApi.iniciarStream(ev.id, url) as any;
+      if (res.meetingId && !url) {
+        setBroadcasterData({ meetingId: res.meetingId, token: res.token });
+        setBroadcasterSessionKey(`${res.meetingId}-${Date.now()}`);
+        setIsBroadcasterOpen(true);
+      } else {
+        toast.success("Transmisión externa iniciada");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "No se pudo iniciar la transmisión en vivo");
+    } finally {
+      setIsLoadingStream(false);
+      setExternalStreamUrl("");
+    }
   };
 
   const handleLogout = () => {
@@ -272,7 +281,7 @@ export function OrganizerDashboardPage() {
                                 onClick={() => handleOpenStreamDialog(event)}
                                 disabled={event.estado !== 'Approved' && event.estado !== 'aprobado'}
                                 className="dashboard-btn-outline dashboard-btn-toggle active:scale-90 transition-all"
-                                title={event.estado === 'Approved' || event.estado === 'aprobado' ? 'Añadir enlace de transmisión' : 'Solo eventos aprobados pueden tener transmisión'}
+                                title={event.estado === 'Approved' || event.estado === 'aprobado' ? 'Iniciar transmisión en vivo' : 'Solo eventos aprobados pueden tener transmisión'}
                               >
                                 <Video className="h-4 w-4" />
                               </Button>
@@ -403,31 +412,87 @@ export function OrganizerDashboardPage() {
         </div>
       </div>
 
-      {/* Dialog para añadir el enlace del stream */}
+      {/* Dialog de opciones de transmisión (igual que en el detalle del evento) */}
       <Dialog open={streamDialogOpen} onOpenChange={setStreamDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md bg-[var(--bg-elevated)] border-[var(--border-default)]">
           <DialogHeader>
-            <DialogTitle>Enlace de Transmisión (Stream)</DialogTitle>
+            <DialogTitle>¿Cómo deseas transmitir?</DialogTitle>
             <DialogDescription>
-              Añade el enlace de YouTube, Twitch u otra plataforma para la transmisión en vivo del evento "{selectedEventForStream?.titulo}".
+              Elige entre usar la cámara de tu dispositivo o un enlace externo para "{selectedEventForStream?.titulo}".
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="stream-link" className="uni-label">Enlace o ID de Transmisión</Label>
+          <div className="flex flex-col gap-4 py-4">
+            <Button onClick={() => startStreamFlow()} disabled={isLoadingStream} className="dashboard-btn-primary-filled h-12">
+              <Video className="h-5 w-5 mr-2" />
+              Usar cámara (VideoSDK)
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-[var(--border-default)]" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[var(--bg-elevated)] px-2 text-[var(--text-muted)]">O usar enlace externo</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="externalUrl">Enlace de YouTube, Twitch, etc.</Label>
               <Input
-                id="stream-link"
-                className="uni-input mt-0"
-                placeholder="Ej. m3u8, Playback ID de Mux..."
-                value={streamLink}
-                onChange={(e) => setStreamLink(e.target.value)}
+                id="externalUrl"
+                placeholder="https://youtube.com/watch?v=..."
+                value={externalStreamUrl}
+                onChange={(e) => setExternalStreamUrl(e.target.value)}
+                className="bg-[var(--bg-base)] border-[var(--border-default)]"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStreamDialogOpen(false)} className="dashboard-btn-outline dashboard-btn-edit">Cancelar</Button>
-            <Button onClick={handleSaveStreamLink} className="dashboard-btn-primary-filled font-bold">Guardar</Button>
+            <Button variant="outline" onClick={() => setStreamDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (!externalStreamUrl) {
+                  toast.error("Ingresa una URL válida");
+                  return;
+                }
+                startStreamFlow(externalStreamUrl);
+              }}
+              disabled={!externalStreamUrl || isLoadingStream}
+            >
+              Iniciar con enlace
+            </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Panel del transmisor (VideoSDK) */}
+      <Dialog
+        open={isBroadcasterOpen}
+        onOpenChange={(open) => {
+          setIsBroadcasterOpen(open);
+          if (!open) setBroadcasterData(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[700px] border-zinc-800 bg-zinc-950 p-0 overflow-hidden" aria-describedby="broadcaster-dialog-desc-dash">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Panel de transmisión en vivo</DialogTitle>
+            <DialogDescription id="broadcaster-dialog-desc-dash">
+              Controla cámara, micrófono y la publicación HLS para los asistentes del evento.
+            </DialogDescription>
+          </DialogHeader>
+          {broadcasterData && selectedEventForStream && (
+            <VideoSDKBroadcaster
+              key={broadcasterSessionKey}
+              sessionKey={broadcasterSessionKey}
+              meetingId={broadcasterData.meetingId}
+              token={broadcasterData.token}
+              eventoId={selectedEventForStream.id}
+              onClose={() => {
+                setIsBroadcasterOpen(false);
+                setBroadcasterData(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

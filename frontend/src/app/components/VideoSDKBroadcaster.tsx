@@ -359,6 +359,22 @@ function MeetingControls({
     setIsMicOn((prev) => !prev);
   };
 
+  // Watchdog: si el HLS se queda en "iniciando" demasiado tiempo, avisamos.
+  // Causa típica: límite de transmisiones HLS concurrentes del plan de VideoSDK
+  // (otro organizador ya está transmitiendo) o un fallo del servicio.
+  useEffect(() => {
+    if (hlsState !== "HLS_STARTING") return;
+    const t = setTimeout(() => {
+      if (hlsStateRef.current === "HLS_STARTING") {
+        toast.error(
+          "No se pudo iniciar el directo. Puede que ya haya otra transmisión HLS activa (límite del plan de VideoSDK). Espera a que termine la otra o inténtalo de nuevo.",
+          { duration: 8000 },
+        );
+      }
+    }, 45000);
+    return () => clearTimeout(t);
+  }, [hlsState]);
+
   const handleStartTransmitting = () => {
     if (hlsState === "HLS_STATE_NOT_STARTED" || hlsState === "HLS_STOPPED") {
       toast.info("Iniciando transmisión HLS...");
